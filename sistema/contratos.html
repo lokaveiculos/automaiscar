@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Auto Mais - Vendas</title><style>*{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#080808;--sb:#0c0c0c;--card:#111;--card2:#161616;--border:#1c1c1c;--border2:#252525;--accent:#f97316;--ah:#fb923c;--adim:rgba(249,115,22,.12);--adim2:rgba(249,115,22,.05);--text:#f0f0f0;--t2:#888;--t3:#444;--ok:#22c55e;--err:#ef4444;--info:#3b82f6;--warn:#f59e0b;--r:8px;--rsm:5px;--rlg:12px}
+<title>Auto Mais - Contratos</title><style>*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#1c1d28;--sb:#13141e;--card:#22233a;--card2:#2a2b42;--border:#32344a;--border2:#3d3f58;--accent:#f5a623;--ah:#f7b84b;--adim:rgba(245,166,35,.13);--adim2:rgba(245,166,35,.06);--text:#eef0f8;--t2:#8890a8;--t3:#50546a;--ok:#22c55e;--err:#ef4444;--info:#3b82f6;--warn:#f59e0b;--r:8px;--rsm:5px;--rlg:12px}
 body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
 .app{display:flex;min-height:100vh}
 .sidebar{width:210px;background:var(--sb);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:100;transition:transform .3s}
@@ -111,23 +111,24 @@ textarea{resize:vertical;min-height:70px}
 <div class="mbtn" id="mbtn" onclick="tsb()">&#9776;</div>
 <div class="ov" id="ov" onclick="csb()"></div>
 <div class="sidebar" id="sb">
-<div class="logo"><div class="logo-inner"><div class="logo-mark">&#128663;</div>
-<div><div class="logo-name">Auto Mais</div><div class="logo-tag">Veiculos</div></div></div></div>
+<div class="logo" style="padding:14px 12px;border-bottom:1px solid var(--border)"><img src="data:image/png;base64,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" alt="Auto Mais" style="width:100%;max-width:160px;display:block;margin:0 auto"></div>
 <nav class="nav">
 <div class="nsec">Principal</div>
 <a class="ni" href="index.html">&#128202; Painel</a>
 <div class="nsec">Comercial</div>
-<a class="ni active" href="vendas.html">&#128176; Vendas</a>
-<a class="ni" href="contratos.html">&#128196; Contratos</a>
+<a class="ni" href="vendas.html">&#128176; Vendas</a>
+<a class="ni active" href="contratos.html">&#128196; Contratos</a>
 <div class="nsec">Cadastros</div>
 <a class="ni" href="veiculos.html">&#128664; Veiculos</a>
 <a class="ni" href="cadastros.html">&#128101; Clientes / Fornec.</a>
 <div class="nsec">Operacoes</div>
 <a class="ni" href="gestao.html">&#128295; Manutencao</a>
+    <a class="ni" href="despesas.html">&#128181; Despesas</a>
 <a class="ni" href="veiculos.html">&#9524; Placa de Venda</a>
-<div class="nsec">Gestao</div>
-<a class="ni" href="gestao.html">&#128200; Relatorios</a>
-<a class="ni" href="gestao.html">&#128100; Usuarios</a>
+<div class="nsec admin-nav">Gestao</div>
+<a class="ni admin-nav" href="gestao.html">&#128200; Relatorios</a>
+<a class="ni admin-nav" href="gestao.html">&#128100; Usuarios</a>
+    <a class="ni admin-nav" href="gestao.html#cfg">&#9881; Configuracoes</a>
 </nav><div class="sf"><div class="sf-lbl">Logado como</div><div class="sf-name" id="lu">Carregando...</div><button onclick="logout()" style="width:100%;margin-top:8px;padding:7px;background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.2);border-radius:5px;font-size:12px;font-weight:700;cursor:pointer;">&#128682; Sair</button></div></div>
 <main class="main" id="main"><div class="empty"><span class="ei">&#128260;</span>Carregando...</div></main>
 <div class="mo hidden" id="modal"><div class="md" id="mdc"></div></div>
@@ -179,7 +180,7 @@ function cNome(id){const c=DB.clientes.find(x=>x.id==id);return c?c.nome:'';}
 function cObj(id){return DB.clientes.find(x=>x.id==id)||{};}
 function fNome(id){const f=DB.fornecedores.find(x=>x.id==id);return f?f.nome:'';}
 function fObj(id){return DB.fornecedores.find(x=>x.id==id)||{};}
-function sbV(s){const m={disponivel:'bg-g',vendido:'bg-b',consignado:'bg-y',manutencao:'bg-r'};return'<span class="badge '+(m[s]||'bg-gr')+'">'+s+'</span>';}
+function sbV(s){const m={disponivel:'bg-g',vendido:'bg-b',consignado:'bg-y',manutencao:'bg-r',reservado:'bg-o'};return'<span class="badge '+(m[s]||'bg-gr')+'">'+s+'</span>';}
 function sbC(s){const m={ativo:'bg-g',assinado:'bg-b',cancelado:'bg-r',concluido:'bg-gr'};return'<span class="badge '+(m[s]||'bg-gr')+'">'+s+'</span>';}
 function sbM(s){const m={concluida:'bg-g',andamento:'bg-y',pendente:'bg-gr'};return'<span class="badge '+(m[s]||'bg-gr')+'">'+s+'</span>';}
 function om(h,lg){const md=document.getElementById('mdc');md.className='md'+(lg?' md-lg':'');md.innerHTML=h;document.getElementById('modal').classList.remove('hidden');}
@@ -360,126 +361,6 @@ e.cidade+' - '+e.uf+', '+dt+'\n\n\n'+
 'TESTEMUNHAS:\n_______________________    _______________________\nNome:                      Nome:\nCPF:                       CPF:';
 }
 
-function verChecklist(vid){
-  const venda=DB.vendas.find(x=>x.id==vid);if(!venda)return;
-  const v=vObj(venda.veiculo_id),cl=cObj(venda.cliente_id);
-  const secs=[
-    {t:'Documentacao',i:['CRLV / DUT em maos','Manual do proprietario','Chave reserva','Nota fiscal / Recibo assinado']},
-    {t:'Itens do Veiculo',i:['Estepe em boas condicoes','Macaco e chave de roda','Triangulo de sinalizacao','Extintor valido']},
-    {t:'Vistoria Exterior',i:['Lataria sem avarias nao informadas','Vidros e retrovisores integros','Pneus em bom estado','Luzes funcionando']},
-    {t:'Vistoria Interior',i:['Bancos e estofados ok','Painel sem alertas','Ar condicionado ok','Multimidia ok']},
-    {t:'Entrega Final',i:['KM: '+Number(v.km||0).toLocaleString('pt-BR'),'Combustivel informado','Controles explicados ao comprador','Recibo de quitacao assinado']},
-  ];
-  const html=secs.map(s=>'<div class="cl-sec">'+s.t+'</div>'+s.i.map(it=>'<div class="cl-item" onclick="tgCl(this)"><div class="cl-box">&#10003;</div><span>'+it+'</span></div>').join('')).join('');
-  om('<div class="mt2"><span>&#10004; Checklist de Entrega</span><button class="btn bg2 bsm" onclick="cm()">X</button></div>'+
-  '<div style="padding:12px;background:var(--adim2);border-radius:var(--rsm);font-size:12px;margin-bottom:12px">'+
-  '<b>Veiculo:</b> '+v.marca+' '+v.modelo+' '+v.placa+'<br>'+
-  '<b>Cliente:</b> '+cl.nome+'<br>'+
-  '<b>Data:</b> '+fd(venda.data)+'</div>'+html+
-  '<div style="margin-top:18px;padding:14px;border:1px solid var(--border2);border-radius:var(--rsm)">'+
-  '<div style="font-size:10px;font-weight:800;color:var(--t3);text-transform:uppercase;margin-bottom:10px">Assinaturas</div>'+
-  '<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;font-size:12px;color:var(--t2)">'+
-  '<div style="border-top:1px solid var(--border2);padding-top:8px;text-align:center">'+cl.nome+'<br><small>Comprador</small></div>'+
-  '<div style="border-top:1px solid var(--border2);padding-top:8px;text-align:center">Auto Mais Veiculos<br><small>Vendedor</small></div>'+
-  '</div></div>'+
-  '<div class="mf"><button class="btn bg2" onclick="cm()">Fechar</button><button class="btn bp" onclick="impChecklist()">&#128438; Imprimir</button></div>',true);
-}
-function tgCl(el){el.querySelector('.cl-box').classList.toggle('ck');}
-function impChecklist(){
-  const c=document.querySelector('.md').innerHTML;
-  const w=window.open('','_blank');
-  w.document.write('<!DOCTYPE html><html><head><meta charset=UTF-8><style>body{font-family:Segoe UI,sans-serif;padding:28px;color:#000;font-size:13px}.cl-sec{font-size:10px;font-weight:800;text-transform:uppercase;color:#f97316;margin:14px 0 6px;padding-bottom:6px;border-bottom:1px solid #ddd}.cl-item{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid #eee}.cl-box{width:16px;height:16px;border:2px solid #555;border-radius:2px;flex-shrink:0;text-align:center;font-size:10px;line-height:14px}.cl-box.ck{background:#f97316;border-color:#f97316;color:#fff}.btn,.mt2 button{display:none}.mt2{font-size:18px;font-weight:900;margin-bottom:16px}</style></head><body>'+c+'</body></html>');
-  w.document.close();w.print();
-}
-
-checkAuth(function(){
-  showLoading("Carregando vendas...");
-  loadFromFirestore().then(function(){
-(function(){
-  const params=new URLSearchParams(window.location.search);
-  const preVid=Number(params.get('vid'))||null;
-  if(preVid) setTimeout(()=>novaVenda(preVid),100);
-  else render();
-})();
-
-function render(){
-  const total=DB.vendas.reduce((s,v)=>s+Number(v.valor||0),0);
-  document.getElementById('main').innerHTML=
-  '<div class="ph"><div><div class="pt">Vendas</div><div class="ps">'+DB.vendas.length+' vendas &bull; Total: R$ '+brl(total)+'</div></div>'+
-  '<button class="btn bp" onclick="novaVenda(null)">+ Nova Venda</button></div>'+
-  '<div class="tw"><table><thead><tr><th>Numero</th><th>Data</th><th>Veiculo</th><th>Cliente</th><th>Valor</th><th>Pagamento</th><th>Acoes</th></tr></thead><tbody>'+
-  (DB.vendas.length===0?'<tr><td colspan="7"><div class="empty"><span class="ei">&#128176;</span>Nenhuma venda registrada</div></td></tr>':'')+
-  DB.vendas.slice().reverse().map(v=>
-    '<tr><td style="font-family:monospace;font-weight:700">'+v.numero+'</td>'+
-    '<td style="font-size:12px">'+fd(v.data)+'</td>'+
-    '<td style="font-weight:700">'+vNome(v.veiculo_id)+'</td>'+
-    '<td>'+cNome(v.cliente_id)+'</td>'+
-    '<td style="font-weight:800;color:var(--ok)">R$ '+brl(v.valor)+'</td>'+
-    '<td style="font-size:12px;color:var(--t2)">'+v.pagamento+'</td>'+
-    '<td><div class="acts">'+
-    '<button class="btn bi bsm" onclick="modalContratosVenda('+v.id+')" title="Ver Documentos">&#128196;</button>'+
-    '<button class="btn bd bsm" onclick="dlVenda('+v.id+')" title="Excluir">&#128465;</button>'+
-    '</div></td></tr>'
-  ).join('')+
-  '</tbody></table></div>';
-}
-
-function novaVenda(preVid){
-  const disp=DB.veiculos.filter(v=>v.status==='disponivel');
-  const hoje=new Date().toISOString().split('T')[0];
-  const num='VD-'+new Date().getFullYear()+'-'+String(nid(DB.vendas)).padStart(3,'0');
-  const vPre=preVid?DB.veiculos.find(x=>x.id==preVid):null;
-  om('<div class="mt2"><span>Nova Venda</span><button class="btn bg2 bsm" onclick="cm();typeof history!=='undefined'&&window.location.protocol!=='file:'?typeof history!=='undefined'&&window.location.protocol!=='file:'?history.replaceState(null,'','vendas.html'):null:null">X</button></div>'+
-  '<div class="ib">&#128161; Ao confirmar, o veiculo sera marcado como <b>Vendido</b> e o contrato sera gerado automaticamente.</div>'+
-  '<div class="fr"><div class="fg"><label>Numero</label><input id="vdnum" value="'+num+'" readonly></div>'+
-  '<div class="fg"><label>Data *</label><input id="vddata" type="date" value="'+hoje+'"></div></div>'+
-  '<div class="fr">'+
-  '<div class="fg"><label>Veiculo *</label><select id="vdveic" onchange="autoPreco()">'+
-  '<option value="">Selecione...</option>'+disp.map(v=>'<option value="'+v.id+'" '+(v.id==preVid?'selected':'')+'>'+v.marca+' '+v.modelo+' '+v.placa+' - R$'+brl(v.preco)+'</option>').join('')+'</select></div>'+
-  '<div class="fg"><label>Cliente *</label><select id="vdcli"><option value="">Selecione...</option>'+DB.clientes.map(c=>'<option value="'+c.id+'">'+c.nome+'</option>').join('')+'</select></div></div>'+
-  '<div class="fr"><div class="fg"><label>Valor de Venda (R$) *</label><input id="vdval" type="number" value="'+(vPre?vPre.preco:'')+'" placeholder="85000"></div>'+
-  '<div class="fg"><label>Entrada (R$)</label><input id="vdent" type="number" placeholder="0"></div></div>'+
-  '<div class="fr"><div class="fg"><label>Forma de Pagamento</label><select id="vdpag">'+
-  ['A vista','Financiamento','Consorcio','Permuta','Entrada + Parcelas'].map(p=>'<option>'+p+'</option>').join('')+'</select></div>'+
-  '<div class="fg"><label>Financeira / Banco</label><input id="vdfin" placeholder="(se houver)"></div></div>'+
-  '<div class="fr"><div class="fg"><label>N. Parcelas</label><input id="vdnp" type="number" placeholder="0"></div>'+
-  '<div class="fg"><label>Valor da Parcela</label><input id="vdvp" type="number" placeholder="0"></div></div>'+
-  '<div class="fr"><div class="fg full"><label>Observacoes</label><textarea id="vdobs"></textarea></div></div>'+
-  '<div class="mf"><button class="btn bg2" onclick="cm();typeof history!=='undefined'&&window.location.protocol!=='file:'?typeof history!=='undefined'&&window.location.protocol!=='file:'?history.replaceState(null,'','vendas.html'):null:null">Cancelar</button>'+
-  '<button class="btn bp" onclick="svVenda()">&#10004; Confirmar Venda</button></div>',true);
-  if(preVid)autoPreco();
-}
-function autoPreco(){
-  var sel=document.getElementById('vdveic');if(!sel)return;
-  var v=DB.veiculos.find(function(x){return x.id==Number(sel.value);});
-  if(v){var f=document.getElementById('vdval');if(f&&!f.value)f.value=v.preco;}
-}
-function svVenda(){
-  const vid=Number(document.getElementById('vdveic').value);
-  const cid=Number(document.getElementById('vdcli').value);
-  const val=document.getElementById('vdval').value;
-  const pag=document.getElementById('vdpag').value;
-  const data=document.getElementById('vddata').value;
-  if(!vid||!cid||!val){alert('Preencha Veiculo, Cliente e Valor.');return;}
-  const num=document.getElementById('vdnum').value;
-  const ent=document.getElementById('vdent').value||'0';
-  const fin=document.getElementById('vdfin').value;
-  const np=document.getElementById('vdnp').value||'0';
-  const vp=document.getElementById('vdvp').value||'0';
-  const obs=document.getElementById('vdobs').value;
-  const ct={id:nid(DB.contratos),tipo:'venda',numero:num.replace('VD','CV'),data,cliente_id:cid,fornecedor_id:'',veiculo_id:vid,valor:val,entrada:ent,saldo:String(Number(val)-Number(ent)),pagamento:pag,financeira:fin,num_parcelas:np,valor_parcela:vp,prazo:'',tipo_comissao:'percentual',comissao:'',valor_minimo:'',condicao:'',debitos:'',status:'ativo',obs};
-  DB.contratos.push(ct);
-  const venda={id:nid(DB.vendas),numero:num,data,cliente_id:cid,veiculo_id:vid,valor:val,pagamento:pag,contrato_id:ct.id,obs};
-  DB.vendas.push(venda);
-  DB.veiculos=DB.veiculos.map(v=>v.id==vid?Object.assign({},v,{status:'vendido'}):v);
-  sDB();
-  fsave("contratos",ct);
-  fsave("vendas",venda);
-  var vVendido=DB.veiculos.find(function(x){return x.id==vid;});
-  if(vVendido) fsave("veiculos",vVendido);
-  cm();typeof history!=='undefined'&&window.location.protocol!=='file:'?history.replaceState(null,'','vendas.html'):null;render();
-  setTimeout(()=>verChecklist(venda.id),200);
-}
 
 function gerarTermo(venda){
   const v=vObj(venda.veiculo_id), cl=cObj(venda.cliente_id), e=DB.empresa;
@@ -642,9 +523,9 @@ VENDEDOR / ENTREGADOR`;
 
 function impTermoChecklist(vid){
   const venda=DB.vendas.find(x=>x.id==vid);
-  if(!venda){alert('Venda nao encontrada.');return;}
+  if(!venda){toast('Venda nao encontrada','err');return;}
   const ct=DB.contratos.find(x=>x.id==venda.contrato_id);
-  if(!ct){alert('Contrato nao encontrado.');return;}
+  if(!ct){toast('Contrato nao encontrado','err');return;}
   const txtCV=gerarCV(ct);
   const txtTermo=gerarTermo(venda);
   const txtCheck=gerarChecklist(venda);
@@ -656,7 +537,7 @@ function impTermoChecklist(vid){
 
 function modalContratosVenda(vid){
   const venda=DB.vendas.find(x=>x.id==vid);
-  if(!venda){alert('Venda nao encontrada.');return;}
+  if(!venda){toast('Venda nao encontrada','err');return;}
   const ct=DB.contratos.find(x=>x.id==venda.contrato_id);
   const txtCV=ct?gerarCV(ct):'Contrato nao encontrado.';
   const txtTermo=gerarTermo(venda);
@@ -691,23 +572,139 @@ function impSingle(){
   impWin(txt);
 }
 
-function verCont(vid){
-  const venda=DB.vendas.find(x=>x.id==vid);if(!venda)return;
-  const ct=DB.contratos.find(x=>x.id==venda.contrato_id);if(!ct){alert('Contrato nao encontrado.');return;}
-  const txt=gerarCV(ct);
-  om('<div class="mt2"><span>&#128196; Contrato de Compra e Venda</span><button class="btn bg2 bsm" onclick="cm()">X</button></div>'+
-  '<div class="ct" id="ctxt">'+txt+'</div>'+
-  '<div class="mf"><button class="btn bg2" onclick="cm()">Fechar</button><button class="btn bp" onclick="impWin(document.getElementById(\'ctxt\').innerText)">&#128438; Imprimir</button></div>',true);
-}
-function dlVenda(id){
-  if(confirm('Excluir venda? O veiculo voltara para disponivel.')){
-    const v=DB.vendas.find(x=>x.id==id);
-    if(v)DB.veiculos=DB.veiculos.map(x=>x.id==v.veiculo_id?Object.assign({},x,{status:'disponivel'}):x);
-    DB.vendas=DB.vendas.filter(x=>x.id!=id);
-    sDB();fdel("vendas",id);
-    if(v)fsave("veiculos",DB.veiculos.find(function(x){return x.id==v.veiculo_id;})||{id:0});
+let ctSrch='', ctPag=1;
+checkAuth(function(){
+  applyProfile();showLoading('Carregando contratos...');
+  loadFromFirestore().then(function(){
     render();
-  }
+  });
+});
+function render(){
+  const fl=DB.contratos.filter(c=>{const m=ctSrch.toLowerCase();return !m||c.numero.toLowerCase().includes(m)||(cNome(c.cliente_id)||'').toLowerCase().includes(m)||(fNome(c.fornecedor_id)||'').toLowerCase().includes(m);});
+  const tl={venda:'Compra e Venda',compra:'Compra',consignacao:'Consignacao'};
+  document.getElementById('main').innerHTML=
+  '<div class="ph"><div><div class="pt">Contratos</div><div class="ps">'+DB.contratos.length+' contratos</div></div>'+
+  '<button class="btn bp" onclick="fmCt(null)">+ Novo Contrato</button></div>'+
+  '<div class="sb2"><div class="sw"><span class="sico">&#128269;</span><input value="'+ctSrch+'" oninput="ctSrch=this.value;ctPag=1;render()" placeholder="Numero, cliente ou fornecedor..."></div></div>'+
+  '<div class="tw"><table><thead><tr><th>Numero</th><th>Tipo</th><th>Data</th><th>Parte</th><th>Veiculo</th><th>Valor</th><th>Status</th><th>Acoes</th></tr></thead><tbody>'+
+  (fl.length===0?'<tr><td colspan="8"><div class="empty"><span class="ei">&#128196;</span>Nenhum contrato</div></td></tr>':'')+
+  fl.slice().reverse().map(c=>
+    '<tr><td style="font-family:monospace;font-weight:700">'+c.numero+'</td>'+
+    '<td><span class="badge '+(c.tipo==='venda'?'bg-b':c.tipo==='compra'?'bg-g':'bg-y')+'">'+(tl[c.tipo]||c.tipo)+'</span></td>'+
+    '<td style="font-size:12px">'+fd(c.data)+'</td>'+
+    '<td style="font-size:12px">'+(c.tipo==='consignacao'?fNome(c.fornecedor_id)||'-':cNome(c.cliente_id)||fNome(c.fornecedor_id)||'-')+'</td>'+
+    '<td style="font-size:12px;color:var(--t3)">'+vNome(c.veiculo_id)+'</td>'+
+    '<td style="font-weight:800;color:var(--accent)">R$ '+brl(c.valor)+'</td>'+
+    '<td>'+sbC(c.status)+'</td>'+
+    '<td><div class="acts">'+
+    '<button class="btn bi bsm" onclick="vizCt('+c.id+')" title="Ver">&#128196;</button>'+
+    '<button class="btn bg2 bsm" onclick="fmCt('+c.id+')" title="Editar">&#9999;</button>'+
+    '+(isAdmin()?'<button class="btn bd bsm" onclick="dlCt('+c.id+')">&#128465;</button>':'')+''+
+    '</div></td></tr>'
+  ).join('')+
+  '</tbody></table>'+pagCT+'</div>';
+}
+
+function vizCt(id){
+  const c=DB.contratos.find(x=>x.id==id);if(!c)return;
+  const txt=c.tipo==='venda'?gerarCV(c):c.tipo==='compra'?gerarCompra(c):gerarConsig(c);
+  const extraBtn=c.tipo==='venda'?'<button class="btn bw" onclick="impVendaDocsPorCt('+c.id+')">&#128438; Todos os Docs</button>':'';
+  om('<div class="mt2"><span>&#128196; '+c.numero+'</span><button class="btn bg2 bsm" onclick="cm()">X</button></div>'+
+  '<div class="ct" id="ctxt">'+txt+'</div>'+
+  '<div class="mf"><button class="btn bg2" onclick="cm()">Fechar</button>'+extraBtn+'<button class="btn bp" onclick="impWin(document.getElementById(\'ctxt\').innerText)">&#128438; Imprimir</button></div>',true);
+}
+
+function fmCt(id){
+  const c=id?DB.contratos.find(x=>x.id==id):{tipo:'venda',numero:'',data:'',cliente_id:'',fornecedor_id:'',veiculo_id:'',valor:'',entrada:'',pagamento:'A vista',financeira:'',num_parcelas:'',valor_parcela:'',prazo:'90',tipo_comissao:'percentual',comissao:'5',valor_minimo:'',condicao:'',debitos:'Nenhum',status:'ativo',obs:''};
+  const optsCli='<option value="">Selecione...</option>'+DB.clientes.map(x=>'<option value="'+x.id+'" '+(x.id==c.cliente_id?'selected':'')+'>'+x.nome+'</option>').join('');
+  const optsForn='<option value="">Selecione...</option>'+DB.fornecedores.map(x=>'<option value="'+x.id+'" '+(x.id==c.fornecedor_id?'selected':'')+'>'+x.nome+'</option>').join('');
+  const optsVeic='<option value="">Selecione...</option>'+DB.veiculos.map(x=>'<option value="'+x.id+'" '+(x.id==c.veiculo_id?'selected':'')+'>'+x.marca+' '+x.modelo+' '+x.placa+'</option>').join('');
+  om('<div class="mt2"><span>'+(id?'Editar Contrato':'Novo Contrato')+'</span><button class="btn bg2 bsm" onclick="cm()">X</button></div>'+
+  '<div class="fr"><div class="fg"><label>Tipo</label><select id="ctt" onchange="tgCt()">'+
+  ['venda','compra','consignacao'].map(t=>'<option value="'+t+'" '+(c.tipo===t?'selected':'')+'>'+{venda:'Compra e Venda',compra:'Compra de Veiculo',consignacao:'Consignacao'}[t]+'</option>').join('')+'</select></div>'+
+  '<div class="fg"><label>Numero</label><input id="ctn" value="'+c.numero+'" placeholder="CV-2024-001"></div></div>'+
+  '<div class="fr"><div class="fg"><label>Data</label><input id="ctd" type="date" value="'+c.data+'"></div>'+
+  '<div class="fg"><label>Status</label><select id="cts">'+['ativo','assinado','cancelado','concluido'].map(s=>'<option value="'+s+'" '+(c.status===s?'selected':'')+'>'+s+'</option>').join('')+'</select></div></div>'+
+  '<div id="f_cli" style="'+(c.tipo==='consignacao'?'display:none':'')+'"><div class="fr"><div class="fg full"><label>Cliente</label><select id="ctcli">'+optsCli+'</select></div></div></div>'+
+  '<div id="f_forn" style="'+(c.tipo!=='consignacao'&&c.tipo!=='compra'?'display:none':'')+'"><div class="fr"><div class="fg full"><label>Fornecedor / Proprietario</label><select id="ctforn">'+optsForn+'</select></div></div></div>'+
+  '<div class="fr"><div class="fg full"><label>Veiculo</label><select id="ctv">'+optsVeic+'</select></div></div>'+
+  '<div class="fr"><div class="fg"><label>Valor (R$)</label><input id="ctval" type="number" value="'+c.valor+'" placeholder="85000"></div>'+
+  '<div class="fg"><label>Pagamento</label><select id="ctpag">'+['A vista','Financiamento','Consorcio','Entrada + Parcelas'].map(p=>'<option '+(c.pagamento===p?'selected':'')+'>'+p+'</option>').join('')+'</select></div></div>'+
+  '<div id="f_vex" style="'+(c.tipo!=='venda'?'display:none':'')+'">'+
+  '<div class="fr"><div class="fg"><label>Entrada (R$)</label><input id="ctent" type="number" value="'+(c.entrada||'')+'"></div>'+
+  '<div class="fg"><label>Financeira</label><input id="ctfin" value="'+(c.financeira||'')+'"></div></div>'+
+  '<div class="fr"><div class="fg"><label>N. Parcelas</label><input id="ctnp" type="number" value="'+(c.num_parcelas||'')+'"></div>'+
+  '<div class="fg"><label>Valor Parcela</label><input id="ctvp" type="number" value="'+(c.valor_parcela||'')+'"></div></div></div>'+
+  '<div id="f_cons" style="'+(c.tipo!=='consignacao'?'display:none':'')+'">'+
+  '<div class="fr"><div class="fg"><label>Prazo (dias)</label><input id="ctpz" type="number" value="'+(c.prazo||90)+'"></div>'+
+  '<div class="fg"><label>Valor Minimo (R$)</label><input id="ctvm" type="number" value="'+(c.valor_minimo||'')+'"></div></div>'+
+  '<div class="fr"><div class="fg"><label>Tipo Comissao</label><select id="cttc" onchange="document.getElementById(\'lcom\').textContent=this.value===\'fixo\'?\'Comissao (R$)\':\'Comissao (%)\'">'+
+  '<option value="percentual" '+(c.tipo_comissao==='percentual'?'selected':'')+'>Percentual (%)</option>'+
+  '<option value="fixo" '+(c.tipo_comissao==='fixo'?'selected':'')+'>Valor Fixo (R$)</option></select></div>'+
+  '<div class="fg"><label id="lcom">Comissao '+(c.tipo_comissao==='fixo'?'(R$)':'(%)')+'</label><input id="ctcom" type="number" value="'+(c.comissao||5)+'"></div></div>'+
+  '<div class="fr"><div class="fg"><label>Condicao do Veiculo</label><input id="ctcond" value="'+(c.condicao||'')+'"></div>'+
+  '<div class="fg"><label>Debitos Informados</label><input id="ctdeb" value="'+(c.debitos||'Nenhum')+'"></div></div></div>'+
+  '<div class="fr"><div class="fg full"><label>Observacoes</label><textarea id="ctobs">'+(c.obs||'')+'</textarea></div></div>'+
+  '<div class="mf"><button class="btn bg2" onclick="cm()">Cancelar</button><button class="btn bp" onclick="svCt('+(id||'null')+')">Salvar</button></div>',true);
+}
+function tgCt(){
+  var t=document.getElementById('ctt').value;
+  var cli=document.getElementById('f_cli');
+  var forn=document.getElementById('f_forn');
+  var vex=document.getElementById('f_vex');
+  var cons=document.getElementById('f_cons');
+  if(cli) cli.style.display=t==='consignacao'?'none':'';
+  if(forn) forn.style.display=(t==='consignacao'||t==='compra')?'':'none';
+  if(vex) vex.style.display=t==='venda'?'':'none';
+  if(cons) cons.style.display=t==='consignacao'?'':'none';
+}
+function svCt(id){
+  var tipo = document.getElementById('ctt').value;
+  var num  = document.getElementById('ctn').value.trim();
+  var val  = document.getElementById('ctval').value;
+  var cliEl  = document.getElementById('ctcli');
+  var fornEl = document.getElementById('ctforn');
+  var veicEl = document.getElementById('ctv');
+  if(!num){toast('Informe o numero do contrato','err');return;}
+  if(!val||Number(val)<=0){toast('Informe um valor valido','err');return;}
+  if(tipo==='venda'&&(!cliEl||!Number(cliEl.value))){toast('Selecione o cliente','err');return;}
+  if((tipo==='compra'||tipo==='consignacao')&&(!fornEl||!Number(fornEl.value))){toast('Selecione o fornecedor/proprietario','err');return;}
+  if(!veicEl||!Number(veicEl.value)){toast('Selecione o veiculo','err');return;}
+  const obj={id:id||nid(DB.contratos),tipo,numero:num,data:document.getElementById('ctd').value,
+    cliente_id:Number(document.getElementById('ctcli')?.value)||'',
+    fornecedor_id:Number(document.getElementById('ctforn')?.value)||'',
+    veiculo_id:Number(document.getElementById('ctv').value)||'',
+    valor:val,status:document.getElementById('cts').value,
+    pagamento:document.getElementById('ctpag').value,
+    entrada:document.getElementById('ctent')?.value||'',
+    financeira:document.getElementById('ctfin')?.value||'',
+    num_parcelas:document.getElementById('ctnp')?.value||'',
+    valor_parcela:document.getElementById('ctvp')?.value||'',
+    prazo:document.getElementById('ctpz')?.value||'90',
+    tipo_comissao:document.getElementById('cttc')?.value||'percentual',
+    comissao:document.getElementById('ctcom')?.value||'5',
+    valor_minimo:document.getElementById('ctvm')?.value||'',
+    condicao:document.getElementById('ctcond')?.value||'',
+    debitos:document.getElementById('ctdeb')?.value||'Nenhum',
+    obs:document.getElementById('ctobs').value};
+  if(id)DB.contratos=DB.contratos.map(c=>c.id==id?obj:c);else DB.contratos.push(obj);
+  sDB();fsave("contratos",obj);cm();render();
+  toast(id?'Contrato atualizado':'Contrato gerado com sucesso','ok');
+  toast(id?'Contrato atualizado':'Contrato gerado com sucesso','ok');
+}
+function impVendaDocsPorCt(ctId){
+  const ct=DB.contratos.find(x=>x.id==ctId);
+  if(!ct)return;
+  const venda=DB.vendas.find(x=>x.contrato_id==ctId);
+  if(!venda){toast('Nenhuma venda vinculada a este contrato','warn');return;}
+  impTermoChecklist(venda.id);
+}
+
+function dlCt(id){
+  if(!confirm('Excluir este contrato? Esta acao nao pode ser desfeita.')) return;
+  DB.contratos=DB.contratos.filter(function(c){return c.id!=id;});
+  sDB();fdel('contratos',id);render();
+  toast('Contrato excluido','ok');
 }
 
 </script></body></html>

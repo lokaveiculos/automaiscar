@@ -1,242 +1,179 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Auto Mais - Painel</title><style>*{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#080808;--sb:#0c0c0c;--card:#111;--card2:#161616;--border:#1c1c1c;--border2:#252525;--accent:#f97316;--ah:#fb923c;--adim:rgba(249,115,22,.12);--adim2:rgba(249,115,22,.05);--text:#f0f0f0;--t2:#888;--t3:#444;--ok:#22c55e;--err:#ef4444;--info:#3b82f6;--warn:#f59e0b;--r:8px;--rsm:5px;--rlg:12px}
-body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
-.app{display:flex;min-height:100vh}
-.sidebar{width:210px;background:var(--sb);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:100;transition:transform .3s}
-.main{margin-left:210px;flex:1;padding:28px;min-height:100vh}
-.logo{padding:20px 16px 16px;border-bottom:1px solid var(--border)}
-.logo-inner{display:flex;align-items:center;gap:10px}
-.logo-mark{width:36px;height:36px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
-.logo-name{font-size:14.5px;font-weight:900;color:var(--text)}
-.logo-tag{font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:1.5px;margin-top:1px}
-.nav{flex:1;padding:8px 7px;overflow-y:auto}
-.nsec{font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:1.5px;padding:13px 8px 4px;font-weight:700}
-.ni{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--rsm);cursor:pointer;font-size:12.5px;color:var(--t2);transition:all .12s;margin-bottom:1px;user-select:none;text-decoration:none}
-.ni:hover{background:var(--adim2);color:var(--text)}
-.ni.active{background:var(--adim);color:var(--accent);font-weight:700}
-.sf{padding:12px 14px;border-top:1px solid var(--border)}
-.sf-lbl{font-size:10px;color:var(--t3)}
-.sf-name{font-size:12px;font-weight:700;color:var(--text);margin-top:2px}
-.ph{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;gap:12px;flex-wrap:wrap}
-.pt{font-size:22px;font-weight:900;color:var(--text);letter-spacing:-.5px}
-.ps{font-size:12px;color:var(--t3);margin-top:3px}
-.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:var(--rsm);border:none;cursor:pointer;font-size:12.5px;font-weight:700;transition:all .12s;white-space:nowrap;text-decoration:none}
-.bp{background:var(--accent);color:#000}.bp:hover{background:var(--ah)}
-.bg2{background:transparent;color:var(--t2);border:1px solid var(--border2)}.bg2:hover{background:var(--card2);color:var(--text)}
-.bsm{padding:5px 10px;font-size:11.5px}
-.bd{background:rgba(239,68,68,.1);color:var(--err);border:1px solid rgba(239,68,68,.2)}.bd:hover{background:rgba(239,68,68,.2)}
-.bs{background:rgba(34,197,94,.1);color:var(--ok);border:1px solid rgba(34,197,94,.2)}
-.bi{background:rgba(59,130,246,.1);color:var(--info);border:1px solid rgba(59,130,246,.2)}
-.bw{background:rgba(245,158,11,.1);color:var(--warn);border:1px solid rgba(245,158,11,.2)}
-.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px}
-.shd{font-size:9.5px;font-weight:800;color:var(--t3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border)}
-.sg{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:22px}
-.sc{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px}
-.si{font-size:20px;margin-bottom:8px}.sl{font-size:9.5px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;font-weight:700}
-.sv{font-size:26px;font-weight:900;margin-top:4px}
-.tw{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:auto}
-table{width:100%;border-collapse:collapse;min-width:480px}
-th{background:var(--card2);font-size:9.5px;text-transform:uppercase;letter-spacing:1px;color:var(--t3);padding:11px 16px;text-align:left;font-weight:800;border-bottom:1px solid var(--border);white-space:nowrap}
-td{padding:11px 16px;font-size:13px;color:var(--text);border-bottom:1px solid var(--border)}
-tr:last-child td{border-bottom:none}
-tr:hover td{background:var(--adim2)}
-.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
-.bg-g{background:rgba(34,197,94,.1);color:var(--ok)}.bg-y{background:rgba(245,158,11,.1);color:var(--warn)}.bg-r{background:rgba(239,68,68,.1);color:var(--err)}.bg-b{background:rgba(59,130,246,.1);color:var(--info)}.bg-gr{background:rgba(255,255,255,.04);color:var(--t2)}.bg-o{background:var(--adim);color:var(--accent)}
-.fr{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
-.fg{display:flex;flex-direction:column;gap:5px}.fg.full{grid-column:1/-1}
-label{font-size:10.5px;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing:.5px}
-input,select,textarea{background:#0a0a0a;border:1px solid var(--border2);border-radius:var(--rsm);padding:8px 11px;font-size:13px;color:var(--text);outline:none;transition:border .12s;width:100%;font-family:inherit}
-input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--adim)}
-select option{background:#111}
-textarea{resize:vertical;min-height:70px}
-.mo{position:fixed;inset:0;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center;z-index:999;padding:16px}
-.md{background:#0c0c0c;border:1px solid var(--border2);border-radius:var(--rlg);padding:26px;width:100%;max-width:700px;max-height:92vh;overflow-y:auto}
-.md-lg{max-width:900px}
-.mt2{font-size:16px;font-weight:900;margin-bottom:18px;color:var(--text);display:flex;align-items:center;justify-content:space-between}
-.mf{display:flex;gap:10px;justify-content:flex-end;margin-top:18px;padding-top:14px;border-top:1px solid var(--border)}
-.sb2{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
-.sw{flex:1;position:relative;min-width:180px}
-.sico{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--t3);font-size:13px;pointer-events:none}
-.sw input{padding-left:30px}
-.acts{display:flex;gap:5px}
-.empty{text-align:center;padding:48px;color:var(--t3)}
-.ei{font-size:30px;display:block;margin-bottom:10px;opacity:.35}
-.av{width:32px;height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0}
-.ct{background:#050505;border:1px solid var(--border);border-radius:var(--r);padding:18px;font-size:11.5px;line-height:1.95;color:#bbb;white-space:pre-wrap;font-family:'Courier New',monospace;max-height:420px;overflow-y:auto}
-.ib{background:var(--adim2);border:1px solid rgba(249,115,22,.15);border-radius:var(--rsm);padding:10px 13px;font-size:12px;color:var(--t2);margin-bottom:12px}
-.g2{display:grid;grid-template-columns:1.3fr 1fr;gap:16px}
-.sr2{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border)}
-.sr2:last-child{border-bottom:none}
-.di{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border)}
-.di:last-child{border-bottom:none}
-.hidden{display:none}
-.mbtn{display:none;position:fixed;top:14px;left:14px;z-index:200;width:36px;height:36px;background:var(--card);border:1px solid var(--border);border-radius:var(--rsm);cursor:pointer;align-items:center;justify-content:center;font-size:16px}
-.ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:99}
-.ov.show{display:block}
-.tabs{display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border)}
-.tab{padding:10px 18px;cursor:pointer;font-size:13px;font-weight:600;color:var(--t2);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .12s}
-.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
-.placa-wrap{display:flex;flex-wrap:wrap;gap:20px;padding:8px 0}
-.placa{background:#fff;color:#000;border-radius:10px;overflow:hidden;width:310px;border:2px solid #111;page-break-inside:avoid}
-.pph{background:#000;color:#f97316;padding:10px 16px;text-align:center}
-.plogo{font-size:18px;font-weight:900;letter-spacing:1px}
-.psub2{font-size:8px;letter-spacing:3px;color:#555;margin-top:1px;text-transform:uppercase}
-.pb{padding:14px 16px}
-.pm{font-size:21px;font-weight:900;color:#000;line-height:1.1}
-.pa{font-size:12px;color:#555;margin-top:2px}
-.pp-lbl{font-size:9px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-top:10px}
-.pp{font-size:32px;font-weight:900;color:#f97316;line-height:1}
-.pinfos{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin:10px 0}
-.pinfo{background:#f5f5f5;border-radius:4px;padding:5px 8px}
-.pil{font-size:8px;color:#888;text-transform:uppercase;font-weight:700}
-.piv{font-size:12px;font-weight:800;color:#000}
-.pfoot{background:#000;color:#fff;padding:8px 16px;text-align:center}
-.ptel{font-size:13px;font-weight:900;color:#f97316}
-.pftel{font-size:9px;color:#666;text-transform:uppercase;letter-spacing:1px}
-.cl-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;cursor:pointer}
-.cl-item:last-child{border-bottom:none}
-.cl-box{width:17px;height:17px;border:2px solid var(--border2);border-radius:3px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .12s}
-.cl-box.ck{background:var(--accent);border-color:var(--accent);color:#000;font-size:11px}
-.cl-sec{font-size:10px;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin:14px 0 6px;padding-bottom:6px;border-bottom:1px solid var(--border)}
-@media(max-width:900px){.sg{grid-template-columns:repeat(3,1fr)}.g2{grid-template-columns:1fr}}
-@media(max-width:640px){.sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}.main{margin-left:0}.sg{grid-template-columns:1fr 1fr}.fr{grid-template-columns:1fr}.mbtn{display:flex}}
-@media print{.sidebar,.btn,.sb2,.mbtn,.ov,.nsec{display:none!important}.main{margin-left:0;padding:0}body{background:#fff;color:#000}}</style>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Auto Mais Veículos — Compra, venda e consignação de veículos seminovos em Feira de Santana, Bahia.">
+<title>Auto Mais Veículos — Em Breve</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#1c1d28;--card:#22233a;--border:#32344a;
+  --accent:#f5a623;--ah:#f7b84b;
+  --text:#eef0f8;--t2:#8890a8;--t3:#50546a
+}
+body{
+  font-family:'Segoe UI',system-ui,sans-serif;
+  background:var(--bg);color:var(--text);
+  min-height:100vh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:32px 20px;
+  background-image:
+    radial-gradient(ellipse at 20% 20%, rgba(245,166,35,.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(245,166,35,.04) 0%, transparent 50%);
+}
+.wrap{
+  text-align:center;max-width:560px;width:100%;
+  animation:fadeIn .8s ease;
+}
+@keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+.logo-box{margin-bottom:36px}
+.logo-box img{max-width:220px;width:100%}
+
+.badge{
+  display:inline-block;
+  background:rgba(245,166,35,.12);
+  border:1px solid rgba(245,166,35,.25);
+  color:var(--accent);
+  font-size:11px;font-weight:800;
+  letter-spacing:2px;text-transform:uppercase;
+  padding:6px 16px;border-radius:20px;
+  margin-bottom:20px;
+}
+h1{
+  font-size:clamp(28px,6vw,46px);
+  font-weight:900;line-height:1.1;
+  margin-bottom:16px;
+  letter-spacing:-1px;
+}
+h1 span{color:var(--accent)}
+.sub{
+  font-size:16px;color:var(--t2);
+  line-height:1.6;margin-bottom:40px;
+  max-width:420px;margin-left:auto;margin-right:auto;
+}
+.divider{
+  width:48px;height:3px;
+  background:var(--accent);
+  border-radius:2px;
+  margin:0 auto 40px;
+}
+
+/* Cards de contato */
+.contacts{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:12px;margin-bottom:32px;
+}
+@media(max-width:400px){.contacts{grid-template-columns:1fr}}
+
+.contact-card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:18px 16px;
+  text-decoration:none;
+  color:inherit;
+  transition:all .15s;
+  display:flex;flex-direction:column;
+  align-items:center;gap:8px;
+}
+.contact-card:hover{
+  border-color:var(--accent);
+  background:rgba(245,166,35,.06);
+  transform:translateY(-2px);
+}
+.contact-icon{font-size:28px}
+.contact-label{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;font-weight:700}
+.contact-value{font-size:14px;font-weight:700;color:var(--text)}
+
+/* Botão WhatsApp */
+.btn-wa{
+  display:inline-flex;align-items:center;gap:10px;
+  background:#25d366;color:#fff;
+  padding:14px 28px;border-radius:10px;
+  font-size:15px;font-weight:800;
+  text-decoration:none;
+  transition:all .15s;
+  margin-bottom:32px;
+  box-shadow:0 4px 20px rgba(37,211,102,.25);
+}
+.btn-wa:hover{background:#1fb85a;transform:translateY(-2px)}
+
+.footer{
+  font-size:12px;color:var(--t3);
+  border-top:1px solid var(--border);
+  padding-top:24px;
+  line-height:1.8;
+}
+.footer a{color:var(--t2);text-decoration:none}
+.footer a:hover{color:var(--accent)}
+
+/* Pontos animados */
+.dots{display:inline-flex;gap:6px;margin-bottom:32px}
+.dots span{
+  width:8px;height:8px;
+  background:var(--accent);
+  border-radius:50%;
+  animation:pulse 1.4s ease-in-out infinite;
+  opacity:.4;
+}
+.dots span:nth-child(2){animation-delay:.2s}
+.dots span:nth-child(3){animation-delay:.4s}
+@keyframes pulse{0%,100%{opacity:.4;transform:scale(1)}50%{opacity:1;transform:scale(1.3)}}
+</style>
 </head>
 <body>
-<div class="mbtn" id="mbtn" onclick="tsb()">&#9776;</div>
-<div class="ov" id="ov" onclick="csb()"></div>
-<div class="sidebar" id="sb">
-<div class="logo"><div class="logo-inner"><div class="logo-mark">&#128663;</div>
-<div><div class="logo-name">Auto Mais</div><div class="logo-tag">Veiculos</div></div></div></div>
-<nav class="nav">
-<div class="nsec">Principal</div>
-<a class="ni active" href="index.html">&#128202; Painel</a>
-<div class="nsec">Comercial</div>
-<a class="ni" href="vendas.html">&#128176; Vendas</a>
-<a class="ni" href="contratos.html">&#128196; Contratos</a>
-<div class="nsec">Cadastros</div>
-<a class="ni" href="veiculos.html">&#128664; Veiculos</a>
-<a class="ni" href="cadastros.html">&#128101; Clientes / Fornec.</a>
-<div class="nsec">Operacoes</div>
-<a class="ni" href="gestao.html">&#128295; Manutencao</a>
-<a class="ni" href="veiculos.html">&#9524; Placa de Venda</a>
-<div class="nsec">Gestao</div>
-<a class="ni" href="gestao.html">&#128200; Relatorios</a>
-<a class="ni" href="gestao.html">&#128100; Usuarios</a>
-</nav><div class="sf"><div class="sf-lbl">Logado como</div><div class="sf-name" id="lu">Carregando...</div><button onclick="logout()" style="width:100%;margin-top:8px;padding:7px;background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.2);border-radius:5px;font-size:12px;font-weight:700;cursor:pointer;">&#128682; Sair</button></div></div>
-<main class="main" id="main"><div class="empty"><span class="ei">&#128260;</span>Carregando...</div></main>
-<div class="mo hidden" id="modal"><div class="md" id="mdc"></div></div>
-<script src="firebase-shared.js"></script>
-<script>
+<div class="wrap">
+  <div class="logo-box">
+    <img src="data:image/png;base64,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" alt="Auto Mais Veículos">
+  </div>
 
-const SK='automais_v3';
-function loadDB(){
-  try{const s=localStorage.getItem(SK);if(s)return JSON.parse(s);}catch(e){}
-  return{
-    veiculos:[
-      {id:1,placa:'ABC-1234',marca:'Toyota',modelo:'Corolla',versao:'XEi',ano:'2021',cor:'Prata',km:'45000',preco:'89500',status:'disponivel',tipo_est:'proprio',proprietario_id:'',chassi:'9BR111AAA000001',renavam:'00111222333',combustivel:'Flex',opcionais:'Ar condicionado, Vidros eletricos',obs:'Unico dono'},
-      {id:2,placa:'XYZ-5678',marca:'Honda',modelo:'Civic',versao:'EXL',ano:'2022',cor:'Preto',km:'28000',preco:'115000',status:'consignado',tipo_est:'consignado',proprietario_id:1,chassi:'9BR222BBB000002',renavam:'00444555666',combustivel:'Flex',opcionais:'Teto solar, Couro',obs:''},
-      {id:3,placa:'DEF-9012',marca:'Volkswagen',modelo:'Polo',versao:'Highline',ano:'2023',cor:'Branco',km:'12000',preco:'82000',status:'disponivel',tipo_est:'proprio',proprietario_id:'',chassi:'9BR333CCC000003',renavam:'00777888999',combustivel:'Flex',opcionais:'',obs:''},
-      {id:4,placa:'GHI-3456',marca:'Fiat',modelo:'Strada',versao:'Volcano',ano:'2020',cor:'Vermelho',km:'62000',preco:'68000',status:'vendido',tipo_est:'proprio',proprietario_id:'',chassi:'9BR444DDD000004',renavam:'00000111222',combustivel:'Flex',opcionais:'',obs:''},
-    ],
-    clientes:[
-      {id:1,nome:'Carlos Mendes',cpf:'123.456.789-00',rg:'1234567 SSP/BA',nasc:'1985-06-15',estado_civil:'Casado',profissao:'Engenheiro',telefone:'(71) 99999-1111',email:'carlos@email.com',endereco:'Rua A, 100, Centro',cidade:'Feira de Santana',uf:'BA',cep:'44001-000',obs:''},
-      {id:2,nome:'Ana Paula Silva',cpf:'987.654.321-00',rg:'9876543 SSP/BA',nasc:'1990-03-22',estado_civil:'Solteira',profissao:'Professora',telefone:'(71) 98888-2222',email:'ana@email.com',endereco:'Av B, 200',cidade:'Salvador',uf:'BA',cep:'40000-000',obs:''},
-    ],
-    fornecedores:[
-      {id:1,nome:'Maria Oliveira',cpf:'111.222.333-44',rg:'1112223 SSP/BA',telefone:'(71) 96666-4444',email:'maria@email.com',endereco:'Rua das Flores, 50',cidade:'Feira de Santana',uf:'BA',cep:'44050-000',tipo:'pessoa_fisica',banco:'Banco do Brasil',agencia:'1234-5',conta:'00001-2',obs:''},
-    ],
-    contratos:[
-      {id:1,tipo:'venda',numero:'CV-2024-001',data:'2024-03-15',cliente_id:1,fornecedor_id:'',veiculo_id:4,valor:'68000',entrada:'68000',saldo:'0',pagamento:'A vista',financeira:'',num_parcelas:'',valor_parcela:'',prazo:'90',tipo_comissao:'percentual',comissao:'5',valor_minimo:'',condicao:'',debitos:'Nenhum',status:'assinado',obs:''},
-    ],
-    vendas:[
-      {id:1,numero:'VD-2024-001',data:'2024-03-15',cliente_id:1,veiculo_id:4,valor:'68000',pagamento:'A vista',contrato_id:1,obs:''},
-    ],
-    manutencoes:[
-      {id:1,veiculo_id:1,placa:'ABC-1234',tipo:'Revisao geral',data:'2024-02-10',valor:'850',descricao:'Troca de oleo e filtros',oficina:'Auto Center Sao Joao',status:'concluida'},
-    ],
-    usuarios:[
-      {id:1,nome:'Admin Master',email:'admin@automais.com',perfil:'admin',status:'ativo'},
-      {id:2,nome:'Joao Vendas',email:'joao@automais.com',perfil:'vendedor',status:'ativo'},
-    ],
-    empresa:{nome:'AUTO MAIS COMERCIO E CORRETORA DE VEICULOS LTDA',cnpj:'05.622.137/0001-00',endereco:'Rua Juarez Tavora, 346',bairro:'Sao Joao',cidade:'Feira de Santana',uf:'BA',cep:'44052-310',telefone:'(75) 3225-2932 / (75) 98135-5322',email:'atendimento@automaiscar.com.br'}
-  };
-}
-let DB=loadDB();
-function sDB(){try{localStorage.setItem(SK,JSON.stringify(DB));}catch(e){}}
-function brl(v){return Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
-function fd(d){if(!d)return'-';try{return new Date(d+'T12:00').toLocaleDateString('pt-BR');}catch(e){return d;}}
-function nid(a){return a.length?Math.max(...a.map(x=>x.id))+1:1;}
-function ini(n){return(n||'?').split(' ').slice(0,2).map(p=>p[0]).join('').toUpperCase();}
-function vNome(id){const v=DB.veiculos.find(x=>x.id==id);return v?v.marca+' '+v.modelo+' '+v.placa:'';}
-function vObj(id){return DB.veiculos.find(x=>x.id==id)||{};}
-function cNome(id){const c=DB.clientes.find(x=>x.id==id);return c?c.nome:'';}
-function cObj(id){return DB.clientes.find(x=>x.id==id)||{};}
-function fNome(id){const f=DB.fornecedores.find(x=>x.id==id);return f?f.nome:'';}
-function fObj(id){return DB.fornecedores.find(x=>x.id==id)||{};}
-function sbV(s){const m={disponivel:'bg-g',vendido:'bg-b',consignado:'bg-y',manutencao:'bg-r'};return'<span class="badge '+(m[s]||'bg-gr')+'">'+s+'</span>';}
-function sbC(s){const m={ativo:'bg-g',assinado:'bg-b',cancelado:'bg-r',concluido:'bg-gr'};return'<span class="badge '+(m[s]||'bg-gr')+'">'+s+'</span>';}
-function sbM(s){const m={concluida:'bg-g',andamento:'bg-y',pendente:'bg-gr'};return'<span class="badge '+(m[s]||'bg-gr')+'">'+s+'</span>';}
-function om(h,lg){const md=document.getElementById('mdc');md.className='md'+(lg?' md-lg':'');md.innerHTML=h;document.getElementById('modal').classList.remove('hidden');}
-function cm(){document.getElementById('modal').classList.add('hidden');}
-document.getElementById('modal').addEventListener('click',function(e){if(e.target===this)cm();});
-function tsb(){document.getElementById('sb').classList.toggle('open');document.getElementById('ov').classList.toggle('show');}
-function csb(){document.getElementById('sb').classList.remove('open');document.getElementById('ov').classList.remove('show');}
-function impWin(txt){const w=window.open('','_blank');w.document.write('<!DOCTYPE html><html><head><meta charset=UTF-8><style>body{font-family:Courier New,monospace;font-size:12px;padding:28px;line-height:1.8;color:#000;white-space:pre-wrap}</style></head><body>'+txt+'</body></html>');w.document.close();w.print();}
+  <div class="badge">&#128640; Novo site chegando</div>
 
+  <h1>Em <span>Breve</span><br>por aqui</h1>
 
-checkAuth(function(){
-  showLoading("Sincronizando...");
-  loadFromFirestore().then(function(){
-  const disp=DB.veiculos.filter(v=>v.status==='disponivel').length;
-  const vend=DB.veiculos.filter(v=>v.status==='vendido').length;
-  const cons=DB.veiculos.filter(v=>v.status==='consignado').length;
-  const est=DB.veiculos.filter(v=>v.status!=='vendido').reduce((s,v)=>s+Number(v.preco||0),0);
-  const now=new Date();
-  const fatMes=DB.vendas.filter(v=>{const d=new Date(v.data+'T12:00');return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();}).reduce((s,v)=>s+Number(v.valor||0),0);
-  const manutT=DB.manutencoes.reduce((s,m)=>s+Number(m.valor||0),0);
-  document.getElementById('main').innerHTML=
-  '<div class="ph"><div><div class="pt">Painel Geral</div><div class="ps">Visao geral do negocio</div></div></div>'+
-  '<div class="sg">'+
-  '<div class="sc"><div class="si">&#9899;</div><div class="sl">Disponiveis</div><div class="sv" style="color:var(--ok)">'+disp+'</div></div>'+
-  '<div class="sc"><div class="si">&#128992;</div><div class="sl">Consignados</div><div class="sv" style="color:var(--warn)">'+cons+'</div></div>'+
-  '<div class="sc"><div class="si">&#128309;</div><div class="sl">Vendidos</div><div class="sv" style="color:var(--info)">'+vend+'</div></div>'+
-  '<div class="sc"><div class="si">&#128101;</div><div class="sl">Clientes</div><div class="sv" style="color:var(--accent)">'+DB.clientes.length+'</div></div>'+
-  '<div class="sc"><div class="si">&#128176;</div><div class="sl">Fat. Mes</div><div class="sv" style="color:var(--ok);font-size:18px">R$'+brl(fatMes)+'</div></div>'+
-  '</div>'+
-  '<div class="g2">'+
-  '<div class="card"><div class="shd">Estoque Atual</div>'+
-  DB.veiculos.filter(v=>v.status!=='vendido').map(v=>
-    '<div class="di"><div style="display:flex;align-items:center;gap:10px">'+
-    '<div class="av" style="background:var(--adim);color:var(--accent)">&#128664;</div>'+
-    '<div><div style="font-weight:700;font-size:13px">'+v.marca+' '+v.modelo+'</div>'+
-    '<div style="font-size:11px;color:var(--t3)">'+v.placa+' &bull; '+v.ano+' &bull; '+Number(v.km||0).toLocaleString('pt-BR')+' km</div></div></div>'+
-    '<div style="text-align:right"><div style="font-weight:800;font-size:13px;color:var(--accent)">R$ '+brl(v.preco)+'</div>'+sbV(v.status)+'</div></div>'
-  ).join('')+'</div>'+
-  '<div style="display:flex;flex-direction:column;gap:14px">'+
-  '<div class="card"><div class="shd">Resumo Financeiro</div>'+
-  [['Valor em estoque','R$ '+brl(est),'var(--accent)'],['Custo manutencoes','R$ '+brl(manutT),'var(--warn)'],['Total de contratos',DB.contratos.length,'var(--text)'],['Fornecedores / Consign.',DB.fornecedores.length,'var(--t2)']].map(r=>
-    '<div class="sr2"><span style="font-size:13px;color:var(--t2)">'+r[0]+'</span><span style="font-weight:800;font-size:13px;color:'+r[2]+'">'+r[1]+'</span></div>'
-  ).join('')+'</div>'+
-  '<div class="card"><div class="shd">Ultimas Vendas</div>'+
-  (DB.vendas.length?DB.vendas.slice(-5).reverse().map(v=>
-    '<div class="sr2"><div><div style="font-size:12px;font-weight:700">'+vNome(v.veiculo_id)+'</div>'+
-    '<div style="font-size:11px;color:var(--t3)">'+cNome(v.cliente_id)+' &bull; '+fd(v.data)+'</div></div>'+
-    '<span style="color:var(--ok);font-weight:800;font-size:13px">R$ '+brl(v.valor)+'</span></div>'
-  ).join(''):'<div class="empty"><span class="ei">&#128176;</span>Nenhuma venda</div>')+
-  '</div>'+
-  '<div class="card"><div class="shd">Acesso Rapido</div>'+
-  '<div style="display:flex;flex-direction:column;gap:8px">'+
-  '<a class="btn bp" href="vendas.html" style="justify-content:center">&#128176; Nova Venda</a>'+
-  '<a class="btn bg2" href="veiculos.html" style="justify-content:center">&#128664; Cadastrar Veiculo</a>'+
-  '<a class="btn bg2" href="cadastros.html" style="justify-content:center">&#128101; Novo Cliente</a>'+
-  '</div></div>'+
-  '</div></div>';
-})();
+  <div class="divider"></div>
 
-</script></body></html>
+  <p class="sub">
+    Estamos preparando algo incrível para você.
+    Enquanto isso, fale direto com a gente pelo WhatsApp
+    ou visite nossa loja em Feira de Santana.
+  </p>
+
+  <div class="dots">
+    <span></span><span></span><span></span>
+  </div>
+
+  <a href="https://wa.me/5575981355322?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20saber%20mais%20sobre%20os%20ve%C3%ADculos."
+     class="btn-wa" target="_blank" rel="noopener">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+    </svg>
+    Falar no WhatsApp
+  </a>
+
+  <div class="contacts">
+    <a href="tel:+557532252932" class="contact-card">
+      <span class="contact-icon">&#128222;</span>
+      <span class="contact-label">Telefone</span>
+      <span class="contact-value">(75) 3225-2932</span>
+    </a>
+    <a href="tel:+5575981355322" class="contact-card">
+      <span class="contact-icon">&#128241;</span>
+      <span class="contact-label">Celular / WhatsApp</span>
+      <span class="contact-value">(75) 98135-5322</span>
+    </a>
+  </div>
+
+  <div class="footer">
+    <strong>AUTO MAIS COMERCIO E CORRETORA DE VEÍCULOS LTDA</strong><br>
+    Rua Juarez Távora, 346 — São João — Feira de Santana/BA<br>
+    CNPJ 05.622.137/0001-00<br><br>
+    <a href="mailto:atendimento@automaiscar.com.br">atendimento@automaiscar.com.br</a>
+    &nbsp;&bull;&nbsp;
+    <a href="/sistema/login.html">&#128274; Acesso ao Sistema</a>
+  </div>
+</div>
+</body>
+</html>
