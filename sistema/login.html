@@ -7,7 +7,7 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--bg:#1c1d28;--card:#22233a;--border:#32344a;--border2:#3d3f58;--accent:#f5a623;--ah:#f7b84b;--adim:rgba(245,166,35,.13);--text:#eef0f8;--t2:#888;--t3:#50546a;--err:#ef4444;--ok:#22c55e;--r:8px;--rsm:5px}
-body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+html{overflow-x:hidden}body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
 .box{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:40px 36px;width:100%;max-width:380px;box-shadow:0 24px 48px rgba(0,0,0,.4)}
 .logo{text-align:center;margin-bottom:32px}
 .logo-mark{width:56px;height:56px;background:var(--accent);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 14px}
@@ -23,6 +23,10 @@ input:focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--adim)}
 .error{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:var(--rsm);padding:10px 13px;font-size:12px;color:var(--err);margin-bottom:12px;display:none;text-align:center}
 .shake{animation:shake .4s ease}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+@media(max-width:480px){
+  .box{padding:28px 20px;border-radius:10px}
+  .logo-name{font-size:17px}
+}
 </style>
 </head>
 <body>
