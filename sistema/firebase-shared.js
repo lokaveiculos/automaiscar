@@ -90,44 +90,13 @@ function showLoading(msg){
 }
 
 
-// ── Toast Notifications ───────────────────────────────────────
-(function(){
-  var style = document.createElement('style');
-  style.textContent = [
-    '.am-toast{position:fixed;top:20px;right:20px;padding:12px 18px;border-radius:8px;',
-    'font-size:13px;font-weight:700;color:#fff;z-index:99999;',
-    'animation:amIn .3s ease;max-width:340px;min-width:200px;',
-    'box-shadow:0 4px 20px rgba(0,0,0,.4);display:flex;align-items:center;gap:8px;',
-    'border-left:4px solid rgba(255,255,255,.4);line-height:1.4}',
-    '.am-toast+.am-toast{margin-top:8px}',
-    '.am-toast.ok{background:#16a34a}',
-    '.am-toast.err{background:#dc2626}',
-    '.am-toast.warn{background:#d97706}',
-    '.am-toast.info{background:#2563eb}',
-    '@keyframes amIn{from{transform:translateX(120%);opacity:0}to{transform:translateX(0);opacity:1}}',
-    '@keyframes amOut{to{transform:translateX(120%);opacity:0}}'
-  ].join('');
-  document.head.appendChild(style);
-})();
-
-var _toastOffset = 0;
+// ── Toast (compatibilidade — implementação em cada página) ──────
 function toast(msg, type, dur) {
-  type = type || 'ok';
-  dur  = dur  || 3000;
-  var icons = {ok:'✓', err:'✗', warn:'⚠', info:'ℹ'};
-  var el = document.createElement('div');
-  el.className = 'am-toast ' + type;
-  el.innerHTML = '<span style="font-size:16px">' + (icons[type]||'') + '</span><span>' + msg + '</span>';
-  // Stack toasts
-  var existing = document.querySelectorAll('.am-toast');
-  var top = 20;
-  existing.forEach(function(e){ top += e.offsetHeight + 8; });
-  el.style.top = top + 'px';
-  document.body.appendChild(el);
-  setTimeout(function(){
-    el.style.animation = 'amOut .3s ease forwards';
-    setTimeout(function(){ if(el.parentNode) el.parentNode.removeChild(el); }, 300);
-  }, dur);
+  if(typeof window.toast_impl === 'function') {
+    window.toast_impl(msg, type, dur);
+  } else {
+    console.log('[toast]', type, msg);
+  }
 }
 
 // ── Máscaras de entrada ───────────────────────────────────────
@@ -281,14 +250,8 @@ var _isOnline = navigator.onLine;
       if(!ex){
         var el = document.createElement('div');
         el.id = bannerId;
-        el.style.cssText = [
-          'position:fixed;top:0;left:0;right:0;z-index:9998;',
-          'background:#dc2626;color:#fff;text-align:center;',
-          'padding:9px 16px;font-size:13px;font-weight:700;',
-          'letter-spacing:.2px;display:flex;align-items:center;',
-          'justify-content:center;gap:8px;box-shadow:0 2px 8px rgba(0,0,0,.3)'
-        ].join('');
-        el.innerHTML = '&#128994; Voce esta <b>offline</b> &mdash; os dados serao sincronizados quando a conexao voltar.';
+        el.className = 'offline-banner';
+        el.className = 'offline-banner visible'; el.textContent = 'Você está offline — os dados serão sincronizados quando a conexão voltar.';
         document.body.appendChild(el);
         // Empurrar conteúdo para baixo
         var main = document.getElementById('main');
@@ -313,13 +276,13 @@ var _isOnline = navigator.onLine;
         if(op.type==='del')  fdb.collection(op.col).doc(String(op.id)).delete();
       }catch(e){}
     });
-    toast('Conexao restaurada &mdash; '+q.length+' operacao(es) sincronizadas!','ok',4000);
+    if(typeof window.toast_impl==='function') window.toast_impl('Conexão restaurada — '+q.length+' op(s) sincronizadas','ok',4000);
   }
 
   window.addEventListener('offline', function(){
     _isOnline = false;
     showBanner(true);
-    toast('Voce esta offline. Os dados serao salvos localmente.','warn',4000);
+    if(typeof window.toast_impl==='function') window.toast_impl('Você está offline. Dados salvos localmente.','warn',4000);
   });
 
   window.addEventListener('online', function(){
