@@ -198,10 +198,10 @@ function loadDB(){
       {id:1,nome:'Maria Oliveira',cpf:'111.222.333-44',rg:'1112223 SSP/BA',telefone:'(71) 96666-4444',email:'maria@email.com',endereco:'Rua das Flores, 50',cidade:'Feira de Santana',uf:'BA',cep:'44050-000',tipo:'pessoa_fisica',banco:'Banco do Brasil',agencia:'1234-5',conta:'00001-2',obs:''},
     ],
     contratos:[
-      {id:1,tipo:'venda',numero:'CV-2024-001',data:'2024-03-15',cliente_id:1,fornecedor_id:'',veiculo_id:4,valor:'68000',entrada:'68000',saldo:'0',pagamento:'A vista',financeira:'',num_parcelas:'',valor_parcela:'',prazo:'90',tipo_comissao:'percentual',comissao:'5',valor_minimo:'',condicao:'',debitos:'Nenhum',status:'assinado',obs:''},
+      {id:1,tipo:'venda',numero:'CV-2024-001',data:'2024-03-15',cliente_id:1,fornecedor_id:'',veiculo_id:1,valor:'68000',entrada:'68000',saldo:'0',pagamento:'A vista',financeira:'',num_parcelas:'',valor_parcela:'',prazo:'90',tipo_comissao:'percentual',comissao:'5',valor_minimo:'',condicao:'',debitos:'Nenhum',status:'assinado',obs:''},
     ],
     vendas:[
-      {id:1,numero:'VD-2024-001',data:'2024-03-15',cliente_id:1,veiculo_id:4,valor:'68000',pagamento:'A vista',contrato_id:1,obs:''},
+      {id:1,numero:'VD-2024-001',data:'2024-03-15',cliente_id:1,veiculo_id:1,valor:'68000',pagamento:'A vista',contrato_id:1,obs:''},
     ],
     manutencoes:[
       {id:1,veiculo_id:1,placa:'ABC-1234',tipo:'Revisao geral',data:'2024-02-10',valor:'850',descricao:'Troca de oleo e filtros',oficina:'Auto Center Sao Joao',status:'concluida'},
@@ -210,6 +210,7 @@ function loadDB(){
       {id:1,nome:'Admin Master',email:'admin@automais.com',perfil:'admin',status:'ativo'},
       {id:2,nome:'Joao Vendas',email:'joao@automais.com',perfil:'vendedor',status:'ativo'},
     ],
+    despesas:[],
     empresa:{nome:'AUTO MAIS COMERCIO E CORRETORA DE VEICULOS LTDA',cnpj:'05.622.137/0001-00',endereco:'Rua Juarez Tavora, 346',bairro:'Sao Joao',cidade:'Feira de Santana',uf:'BA',cep:'44052-310',telefone:'(75) 3225-2932 / (75) 98135-5322',email:'atendimento@automaiscar.com.br'}
   };
 }
@@ -354,6 +355,31 @@ function dlMnt(id){
 }
 
 // ── RELATORIOS ──────────────────────────────────────────────────
+function renderMnt(){
+  var mntSrch = document.getElementById('mnt-srch') ?
+    document.getElementById('mnt-srch').value : '';
+  var fl = mntSrch
+    ? DB.manutencoes.filter(function(m){
+        return vNome(m.veiculo_id).toLowerCase().includes(mntSrch.toLowerCase())||
+               (m.tipo||'').toLowerCase().includes(mntSrch.toLowerCase())||
+               (m.placa||'').toLowerCase().includes(mntSrch.toLowerCase());
+      })
+    : DB.manutencoes;
+  var totVal = fl.reduce(function(s,m){return s+Number(m.valor||0);},0);
+
+  document.getElementById('main').innerHTML=
+  '<div class="ph"><div><div class="pt">Gestao</div>'+
+  '<div class="ps">'+DB.manutencoes.length+' manutencoes &bull; Total: R$ '+brl(totVal)+'</div></div>'+
+  (isAdmin()?'<button class="btn bp" onclick="fmMnt(null)">+ Nova Manutencao</button>':'')+
+  '</div>'+
+  tabsHtml('mnt')+
+  '<div class="sb2"><div class="sw">'+
+  '<span class="sico">&#128269;</span>'+
+  '<input id="mnt-srch" value="'+mntSrch+'" oninput="renderMnt()" placeholder="Veiculo, servico ou placa...">'+
+  '</div></div>'+
+  '<div id="mbody">'+buildMntRows(fl)+'</div>';
+}
+
 function renderRel(){
   var totV  = DB.vendas.reduce(function(s,v){return s+Number(v.valor||0);},0);
   var totM  = DB.manutencoes.reduce(function(s,m){return s+Number(m.valor||0);},0);
