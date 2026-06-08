@@ -158,6 +158,7 @@ svg { display: block; flex-shrink: 0; }
 }
 
 .layout-main {
+  margin-left: var(--sidebar-w);
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -887,11 +888,22 @@ tbody td {
 /* ══════════════════════════════════════════════════════════════
    RESPONSIVE
    ══════════════════════════════════════════════════════════════ */
+
+/* ── Layout main (margem da sidebar) ─────────────────────────── */
+.layout-main {
+  margin-left: var(--sidebar-w);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+.layout-main .main { flex: 1; }
+
 @media (max-width: 1024px) {
   .stat-grid { grid-template-columns: repeat(3, 1fr); }
 }
 
 @media (max-width: 768px) {
+  .layout-main { margin-left: 0; }
   .sidebar { transform: translateX(-100%); }
   .sidebar.open { transform: translateX(0); }
   .sidebar-overlay.open { display: block; }
