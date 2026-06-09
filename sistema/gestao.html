@@ -170,15 +170,17 @@ function impWin(txt){const w=window.open('','_blank');w.document.write('<!DOCTYP
 
 
 let gTab='mnt';
-checkAuth(function(){
-  applyProfile();showLoading('Carregando gestao...');
-  loadFromFirestore().then(function(){
-    if(window.location.hash==='#rel') gTab='rel';
-    if(window.location.hash==='#usr') gTab='usr';
-    renderTab();
-  });
+checkAuth(function() {
+  applyProfile();
+  if (DB && DB.veiculos && (DB.veiculos.length > 0 || DB.clientes.length > 0)) {
+    renderTab()
+  } else {
+    showLoading('Carregando...');
+  }
+  loadFromFirestore().then(function() {
+    renderTab()
+  }).catch(function(e){ console.error('[gestao.html]', e); });
 });
-
 function renderTab(){
   if(gTab==='rel'&&isAdmin()) renderRel();
   else if(gTab==='usr'&&isAdmin()) renderUsr();

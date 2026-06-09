@@ -373,15 +373,18 @@ function impChecklist(){
 
 checkAuth(function() {
   applyProfile();
-  showLoading("Carregando vendas...");
+  if (DB && DB.veiculos && (DB.veiculos.length > 0 || DB.clientes.length > 0)) {
+    render();
+  } else {
+    showLoading('Carregando vendas...');
+  }
   loadFromFirestore().then(function() {
     var params = new URLSearchParams(window.location.search);
     var preVid = Number(params.get('vid')) || null;
-    if (preVid) { setTimeout(function(){ novaVenda(preVid); }, 200); }
+    if (preVid) { setTimeout(function(){ novaVenda(preVid); }, 100); }
     else { render(); }
-  });
+  }).catch(function(e){ console.error('[vendas]', e); });
 });
-
 var vdPag=1;
 function render(){
   const total=DB.vendas.reduce((s,v)=>s+Number(v.valor||0),0);

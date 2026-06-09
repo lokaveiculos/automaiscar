@@ -169,14 +169,17 @@ function impWin(txt){const w=window.open('','_blank');w.document.write('<!DOCTYP
 
 
 let cadTab='clientes', cSrch='', fSrch='', cPag=1, fPag=1;
-checkAuth(function(){
-  applyProfile();showLoading('Carregando cadastros...');
-  loadFromFirestore().then(function(){
-    if(window.location.hash==='#forn') cadTab='forn';
-    renderTab();
-  });
+checkAuth(function() {
+  applyProfile();
+  if (DB && DB.veiculos && (DB.veiculos.length > 0 || DB.clientes.length > 0)) {
+    renderCad()
+  } else {
+    showLoading('Carregando cadastros...');
+  }
+  loadFromFirestore().then(function() {
+    renderCad()
+  }).catch(function(e){ console.error('[cadastros.html]', e); });
 });
-
 function renderTab(){ cadTab==='forn'?renderForn():renderCli(); }
 
 function renderCli(){

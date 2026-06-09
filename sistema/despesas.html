@@ -173,13 +173,17 @@ function impWin(txt){const w=window.open('','_blank');w.document.write('<!DOCTYP
 
 let dSrch='', dFiltDe='', dFiltAte='', dFiltPlaca='', dPag=1;
 
-checkAuth(function(){
-  applyProfile();showLoading('Carregando despesas...');
-  loadFromFirestore().then(function(){
-    renderDesp();
-  });
+checkAuth(function() {
+  applyProfile();
+  if (DB && DB.veiculos && (DB.veiculos.length > 0 || DB.clientes.length > 0)) {
+    renderDesp()
+  } else {
+    showLoading('Carregando despesas...');
+  }
+  loadFromFirestore().then(function() {
+    renderDesp()
+  }).catch(function(e){ console.error('[despesas.html]', e); });
 });
-
 function renderDesp(){
   var fl = filtrarDespesas();
   var total = fl.reduce(function(s,d){return s+Number(d.valor||0);},0);

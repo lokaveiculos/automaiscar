@@ -244,12 +244,15 @@ function renderDashboard() {
 
 checkAuth(function() {
   applyProfile();
-  showLoading("Sincronizando...");
+  if (DB && DB.veiculos && (DB.veiculos.length > 0 || DB.clientes.length > 0)) {
+    renderDashboard()
+  } else {
+    showLoading('Sincronizando...');
+  }
   loadFromFirestore().then(function() {
-    renderDashboard();
-  });
+    renderDashboard()
+  }).catch(function(e){ console.error('[index.html]', e); });
 });
-
 // ── Busca Global (Bloco 12) ──────────────────────────────────
 function buscaGlobal(q){
   var el = document.getElementById('buscaResultados');

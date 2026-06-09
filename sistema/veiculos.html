@@ -169,14 +169,17 @@ function impWin(txt){const w=window.open('','_blank');w.document.write('<!DOCTYP
 
 
 let vTab='veiculos', vSrch='', vFilt='todos', placaIds=[], vPag=1;
-checkAuth(function(){
-  applyProfile();showLoading("Carregando veiculos...");
-  loadFromFirestore().then(function(){
-    if(window.location.hash==='#placa') vTab='placa';
-    renderTab();
-  });
+checkAuth(function() {
+  applyProfile();
+  if (DB && DB.veiculos && (DB.veiculos.length > 0 || DB.clientes.length > 0)) {
+    renderTab()
+  } else {
+    showLoading('Carregando veiculos...');
+  }
+  loadFromFirestore().then(function() {
+    renderTab()
+  }).catch(function(e){ console.error('[veiculos.html]', e); });
 });
-
 function renderTab(){ vTab==='placa'?renderPlaca():renderVeic(); }
 
 function renderVeic(){
