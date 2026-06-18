@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Auto Mais - Cadastros</title><style>*{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#080808;--sb:#0c0c0c;--card:#111;--card2:#161616;--border:#1c1c1c;--border2:#252525;--accent:#f97316;--ah:#fb923c;--adim:rgba(249,115,22,.12);--adim2:rgba(249,115,22,.05);--text:#f0f0f0;--t2:#888;--t3:#444;--ok:#22c55e;--err:#ef4444;--info:#3b82f6;--warn:#f59e0b;--r:8px;--rsm:5px;--rlg:12px}
+:root{--bg:#1c1d28;--sb:#13141e;--card:#22233a;--card2:#2a2b42;--border:#32344a;--border2:#3d3f58;--accent:#f5a623;--ah:#f7b84b;--adim:rgba(245,166,35,.13);--adim2:rgba(245,166,35,.06);--text:#eef0f8;--t2:#8890a8;--t3:#50546a;--ok:#22c55e;--err:#ef4444;--info:#3b82f6;--warn:#f59e0b;--r:8px;--rsm:5px;--rlg:12px}
 body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
 .app{display:flex;min-height:100vh}
 .sidebar{width:210px;background:var(--sb);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:100;transition:transform .3s}
@@ -111,8 +111,7 @@ textarea{resize:vertical;min-height:70px}
 <div class="mbtn" id="mbtn" onclick="tsb()">&#9776;</div>
 <div class="ov" id="ov" onclick="csb()"></div>
 <div class="sidebar" id="sb">
-<div class="logo"><div class="logo-inner"><div class="logo-mark">&#128663;</div>
-<div><div class="logo-name">Auto Mais</div><div class="logo-tag">Veiculos</div></div></div></div>
+<div class="logo" style="padding:14px 12px;border-bottom:1px solid var(--border)"><img src="data:image/png;base64,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" alt="Auto Mais" style="width:100%;max-width:160px;display:block;margin:0 auto"></div>
 <nav class="nav">
 <div class="nsec">Principal</div>
 <a class="ni" href="index.html">&#128202; Painel</a>
@@ -124,10 +123,12 @@ textarea{resize:vertical;min-height:70px}
 <a class="ni active" href="cadastros.html">&#128101; Clientes / Fornec.</a>
 <div class="nsec">Operacoes</div>
 <a class="ni" href="gestao.html">&#128295; Manutencao</a>
+    <a class="ni" href="despesas.html">&#128181; Despesas</a>
 <a class="ni" href="veiculos.html">&#9524; Placa de Venda</a>
-<div class="nsec">Gestao</div>
-<a class="ni" href="gestao.html">&#128200; Relatorios</a>
-<a class="ni" href="gestao.html">&#128100; Usuarios</a>
+<div class="nsec admin-nav">Gestao</div>
+<a class="ni admin-nav" href="gestao.html">&#128200; Relatorios</a>
+<a class="ni admin-nav" href="gestao.html">&#128100; Usuarios</a>
+    <a class="ni admin-nav" href="gestao.html#cfg">&#9881; Configuracoes</a>
 </nav><div class="sf"><div class="sf-lbl">Logado como</div><div class="sf-name" id="lu">Carregando...</div><button onclick="logout()" style="width:100%;margin-top:8px;padding:7px;background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.2);border-radius:5px;font-size:12px;font-weight:700;cursor:pointer;">&#128682; Sair</button></div></div>
 <main class="main" id="main"><div class="empty"><span class="ei">&#128260;</span>Carregando...</div></main>
 <div class="mo hidden" id="modal"><div class="md" id="mdc"></div></div>
@@ -179,7 +180,7 @@ function cNome(id){const c=DB.clientes.find(x=>x.id==id);return c?c.nome:'';}
 function cObj(id){return DB.clientes.find(x=>x.id==id)||{};}
 function fNome(id){const f=DB.fornecedores.find(x=>x.id==id);return f?f.nome:'';}
 function fObj(id){return DB.fornecedores.find(x=>x.id==id)||{};}
-function sbV(s){const m={disponivel:'bg-g',vendido:'bg-b',consignado:'bg-y',manutencao:'bg-r'};return'<span class="badge '+(m[s]||'bg-gr')+'">'+s+'</span>';}
+function sbV(s){const m={disponivel:'bg-g',vendido:'bg-b',consignado:'bg-y',manutencao:'bg-r',reservado:'bg-o'};return'<span class="badge '+(m[s]||'bg-gr')+'">'+s+'</span>';}
 function sbC(s){const m={ativo:'bg-g',assinado:'bg-b',cancelado:'bg-r',concluido:'bg-gr'};return'<span class="badge '+(m[s]||'bg-gr')+'">'+s+'</span>';}
 function sbM(s){const m={concluida:'bg-g',andamento:'bg-y',pendente:'bg-gr'};return'<span class="badge '+(m[s]||'bg-gr')+'">'+s+'</span>';}
 function om(h,lg){const md=document.getElementById('mdc');md.className='md'+(lg?' md-lg':'');md.innerHTML=h;document.getElementById('modal').classList.remove('hidden');}
@@ -190,9 +191,9 @@ function csb(){document.getElementById('sb').classList.remove('open');document.g
 function impWin(txt){const w=window.open('','_blank');w.document.write('<!DOCTYPE html><html><head><meta charset=UTF-8><style>body{font-family:Courier New,monospace;font-size:12px;padding:28px;line-height:1.8;color:#000;white-space:pre-wrap}</style></head><body>'+txt+'</body></html>');w.document.close();w.print();}
 
 
-let cadTab='clientes', cSrch='', fSrch='';
+let cadTab='clientes', cSrch='', fSrch='', cPag=1, fPag=1;
 checkAuth(function(){
-  showLoading('Carregando cadastros...');
+  applyProfile();showLoading('Carregando cadastros...');
   loadFromFirestore().then(function(){
     if(window.location.hash==='#forn') cadTab='forn';
     renderTab();
@@ -211,7 +212,7 @@ function renderCli(){
   '<div class="tabs">'+
   '<div class="tab active">&#128101; Clientes ('+DB.clientes.length+')</div>'+
   '<div class="tab" onclick="cadTab=\'forn\';renderForn()">&#127970; Fornecedores ('+DB.fornecedores.length+')</div></div>'+
-  '<div class="sb2"><div class="sw"><span class="sico">&#128269;</span><input value="'+cSrch+'" oninput="cSrch=this.value;renderCli()" placeholder="Nome, CPF ou telefone..."></div></div>'+
+  '<div class="sb2"><div class="sw"><span class="sico">&#128269;</span><input value="'+cSrch+'" oninput="cSrch=this.value;cPag=1;renderCli()" placeholder="Nome, CPF ou telefone..."></div></div>'+
   '<div class="tw"><table><thead><tr><th>Cliente</th><th>CPF</th><th>Telefone</th><th>Cidade/UF</th><th>Acoes</th></tr></thead><tbody>'+
   (fl.length===0?'<tr><td colspan="5"><div class="empty"><span class="ei">&#128101;</span>Nenhum cliente</div></td></tr>':'')+
   fl.map((c,i)=>
@@ -220,23 +221,23 @@ function renderCli(){
     '<div><div style="font-weight:700">'+c.nome+'</div><div style="font-size:11px;color:var(--t3)">'+(c.email||'-')+'</div></div></div></td>'+
     '<td style="font-family:monospace">'+c.cpf+'</td><td>'+c.telefone+'</td>'+
     '<td style="font-size:12px;color:var(--t3)">'+(c.cidade||'-')+(c.uf?' / '+c.uf:'')+'</td>'+
-    '<td><div class="acts"><button class="btn bg2 bsm" onclick="fmCli('+c.id+')">&#9999;</button><button class="btn bd bsm" onclick="dlCli('+c.id+')">&#128465;</button></div></td></tr>'
+    '<td><div class="acts"><button class="btn bg2 bsm" onclick="fmCli('+c.id+')">&#9999;</button>'+(isAdmin()?'<button class="btn bd bsm" onclick="dlCli('+c.id+')">&#128465;</button>':'')+' </div></td></tr>'
   ).join('')+
-  '</tbody></table></div>';
+  '</tbody></table>'+pagC+'</div>';
 }
 
 function fmCli(id){
   const c=id?DB.clientes.find(x=>x.id==id):{nome:'',cpf:'',rg:'',nasc:'',estado_civil:'',profissao:'',telefone:'',email:'',endereco:'',cidade:'',uf:'BA',cep:'',obs:''};
   om('<div class="mt2"><span>'+(id?'Editar':'Novo Cliente')+'</span><button class="btn bg2 bsm" onclick="cm()">X</button></div>'+
   '<div class="fr"><div class="fg full"><label>Nome Completo *</label><input id="cn" value="'+c.nome+'"></div></div>'+
-  '<div class="fr"><div class="fg"><label>CPF *</label><input id="ccpf" value="'+c.cpf+'" placeholder="000.000.000-00"></div>'+
+  '<div class="fr"><div class="fg"><label>CPF *</label><input id="ccpf" value="'+c.cpf+'" placeholder="000.000.000-00" oninput="this.value=maskCPF(this.value)"></div>'+
   '<div class="fg"><label>RG</label><input id="crg" value="'+(c.rg||'')+'"></div></div>'+
   '<div class="fr"><div class="fg"><label>Nascimento</label><input id="cnasc" type="date" value="'+(c.nasc||'')+'"></div>'+
   '<div class="fg"><label>Estado Civil</label><select id="cec">'+['','Solteiro(a)','Casado(a)','Divorciado(a)','Viuvo(a)','Uniao Estavel'].map(x=>'<option '+(c.estado_civil===x?'selected':'')+'>'+x+'</option>').join('')+'</select></div></div>'+
   '<div class="fr"><div class="fg"><label>Profissao</label><input id="cprof" value="'+(c.profissao||'')+'"></div>'+
-  '<div class="fg"><label>Telefone *</label><input id="ctel" value="'+c.telefone+'" placeholder="(71) 99999-0000"></div></div>'+
+  '<div class="fg"><label>Telefone *</label><input id="ctel" value="'+c.telefone+'" placeholder="(71) 99999-0000" oninput="this.value=maskPhone(this.value)"></div></div>'+
   '<div class="fr"><div class="fg"><label>Email</label><input id="cemail" value="'+c.email+'" type="email"></div>'+
-  '<div class="fg"><label>CEP</label><input id="ccep" value="'+(c.cep||'')+'"></div></div>'+
+  '<div class="fg"><label>CEP</label><input id="ccep" value="'+(c.cep||'')+'" oninput="this.value=maskCEP(this.value)"></div></div>'+
   '<div class="fr"><div class="fg full"><label>Endereco</label><input id="cend" value="'+c.endereco+'"></div></div>'+
   '<div class="fr"><div class="fg"><label>Cidade</label><input id="ccid" value="'+(c.cidade||'')+'"></div>'+
   '<div class="fg"><label>UF</label><input id="cuf" value="'+(c.uf||'BA')+'" maxlength="2" style="text-transform:uppercase"></div></div>'+
@@ -245,12 +246,34 @@ function fmCli(id){
 }
 function svCli(id){
   const nome=document.getElementById('cn').value.trim(),cpf=document.getElementById('ccpf').value.trim(),tel=document.getElementById('ctel').value.trim();
-  if(!nome||!cpf||!tel){alert('Nome, CPF e Telefone sao obrigatorios.');return;}
+  if(!nome||!cpf||!tel){toast('Preencha Nome, CPF e Telefone','err');return;}
   const obj={id:id||nid(DB.clientes),nome,cpf,rg:document.getElementById('crg').value,nasc:document.getElementById('cnasc').value,estado_civil:document.getElementById('cec').value,profissao:document.getElementById('cprof').value,telefone:tel,email:document.getElementById('cemail').value,cep:document.getElementById('ccep').value,endereco:document.getElementById('cend').value,cidade:document.getElementById('ccid').value,uf:document.getElementById('cuf').value.toUpperCase(),obs:document.getElementById('cobs').value};
+  var dupCPF=DB.clientes.find(function(c){return c.cpf===cpf&&c.id!=id;});
+  if(dupCPF&&!confirm('Ja existe um cliente com o CPF '+cpf+'. Deseja continuar mesmo assim?')) return;
   if(id)DB.clientes=DB.clientes.map(c=>c.id==id?obj:c);else DB.clientes.push(obj);
   sDB();fsave("clientes",obj);cm();renderCli();
+  toast(id?'Cliente atualizado':'Cliente cadastrado com sucesso','ok');
 }
-function dlCli(id){if(confirm('Excluir cliente?')){DB.clientes=DB.clientes.filter(c=>c.id!=id);sDB();fdel("clientes",id);renderCli();}}
+function dlCli(id){
+  var cts = DB.contratos.filter(function(c){return c.cliente_id==id;});
+  var vds = DB.vendas.filter(function(v){return v.cliente_id==id;});
+  var msg = 'Tem certeza que deseja excluir este cliente?';
+  if(cts.length||vds.length){
+    msg = 'Este cliente possui registros vinculados:
+';
+    if(cts.length) msg += '- '+cts.length+' contrato(s)
+';
+    if(vds.length) msg += '- '+vds.length+' venda(s)
+';
+    msg += '
+Os contratos/vendas ficaram sem cliente. Deseja continuar?';
+  }
+  if(!confirm(msg)) return;
+  DB.clientes = DB.clientes.filter(function(c){return c.id!=id;});
+  fdel('clientes',id);
+  sDB(); renderCli();
+  toast('Cliente excluido com sucesso','ok');
+}}
 
 function renderForn(){
   const fl=DB.fornecedores.filter(f=>{const m=fSrch.toLowerCase();return !m||f.nome.toLowerCase().includes(m)||f.cpf.includes(m);});
@@ -260,7 +283,7 @@ function renderForn(){
   '<div class="tabs">'+
   '<div class="tab" onclick="cadTab=\'clientes\';renderCli()">&#128101; Clientes ('+DB.clientes.length+')</div>'+
   '<div class="tab active">&#127970; Fornecedores ('+DB.fornecedores.length+')</div></div>'+
-  '<div class="sb2"><div class="sw"><span class="sico">&#128269;</span><input value="'+fSrch+'" oninput="fSrch=this.value;renderForn()" placeholder="Nome ou CPF/CNPJ..."></div></div>'+
+  '<div class="sb2"><div class="sw"><span class="sico">&#128269;</span><input value="'+fSrch+'" oninput="fSrch=this.value;fPag=1;renderForn()" placeholder="Nome ou CPF/CNPJ..."></div></div>'+
   '<div class="tw"><table><thead><tr><th>Fornecedor</th><th>CPF/CNPJ</th><th>Telefone</th><th>Tipo</th><th>Veiculos</th><th>Acoes</th></tr></thead><tbody>'+
   (fl.length===0?'<tr><td colspan="6"><div class="empty"><span class="ei">&#127970;</span>Nenhum fornecedor</div></td></tr>':'')+
   fl.map(f=>{
@@ -271,16 +294,16 @@ function renderForn(){
     '<td>'+(veics.length?veics.map(v=>'<span class="badge bg-o" style="margin:1px">'+v.placa+'</span>').join(''):'-')+'</td>'+
     '<td><div class="acts"><button class="btn bg2 bsm" onclick="fmForn('+f.id+')">&#9999;</button><button class="btn bd bsm" onclick="dlForn('+f.id+')">&#128465;</button></div></td></tr>';
   }).join('')+
-  '</tbody></table></div>';
+  '</tbody></table>'+pagF+'</div>';
 }
 function fmForn(id){
   const f=id?DB.fornecedores.find(x=>x.id==id):{nome:'',cpf:'',rg:'',telefone:'',email:'',endereco:'',cidade:'',uf:'BA',cep:'',tipo:'pessoa_fisica',banco:'',agencia:'',conta:'',obs:''};
   om('<div class="mt2"><span>'+(id?'Editar':'Novo Fornecedor / Consignante')+'</span><button class="btn bg2 bsm" onclick="cm()">X</button></div>'+
   '<div class="fr"><div class="fg"><label>Tipo</label><select id="ftp"><option value="pessoa_fisica" '+(f.tipo==='pessoa_fisica'?'selected':'')+'>Pessoa Fisica</option><option value="pessoa_juridica" '+(f.tipo==='pessoa_juridica'?'selected':'')+'>Pessoa Juridica</option></select></div>'+
   '<div class="fg"><label>Nome / Razao Social *</label><input id="fn" value="'+f.nome+'"></div></div>'+
-  '<div class="fr"><div class="fg"><label>CPF / CNPJ *</label><input id="fcpf" value="'+f.cpf+'" placeholder="000.000.000-00"></div>'+
+  '<div class="fr"><div class="fg"><label>CPF / CNPJ *</label><input id="fcpf" value="'+f.cpf+'" placeholder="000.000.000-00" oninput="this.value=maskCPFCNPJ(this.value)"></div>'+
   '<div class="fg"><label>RG / IE</label><input id="frg" value="'+(f.rg||'')+'"></div></div>'+
-  '<div class="fr"><div class="fg"><label>Telefone *</label><input id="ftel" value="'+f.telefone+'"></div>'+
+  '<div class="fr"><div class="fg"><label>Telefone *</label><input id="ftel" value="'+f.telefone+'" oninput="this.value=maskPhone(this.value)"></div>'+
   '<div class="fg"><label>Email</label><input id="femail" value="'+f.email+'" type="email"></div></div>'+
   '<div class="fr"><div class="fg full"><label>Endereco</label><input id="fend" value="'+f.endereco+'"></div></div>'+
   '<div class="fr"><div class="fg"><label>Cidade</label><input id="fcid" value="'+(f.cidade||'')+'"></div>'+
@@ -295,11 +318,31 @@ function fmForn(id){
 }
 function svForn(id){
   const nome=document.getElementById('fn').value.trim(),cpf=document.getElementById('fcpf').value.trim(),tel=document.getElementById('ftel').value.trim();
-  if(!nome||!cpf||!tel){alert('Nome, CPF/CNPJ e Telefone sao obrigatorios.');return;}
+  if(!nome||!cpf||!tel){toast('Preencha Nome, CPF e Telefone','err');return;}
   const obj={id:id||nid(DB.fornecedores),nome,cpf,rg:document.getElementById('frg').value,telefone:tel,email:document.getElementById('femail').value,endereco:document.getElementById('fend').value,cidade:document.getElementById('fcid').value,uf:document.getElementById('fuf').value.toUpperCase(),tipo:document.getElementById('ftp').value,banco:document.getElementById('fbco').value,agencia:document.getElementById('fag').value,conta:document.getElementById('fcc').value,obs:document.getElementById('fobs').value};
   if(id)DB.fornecedores=DB.fornecedores.map(f=>f.id==id?obj:f);else DB.fornecedores.push(obj);
   sDB();fsave("fornecedores",obj);cm();renderForn();
+  toast(id?'Fornecedor atualizado':'Fornecedor cadastrado com sucesso','ok');
 }
-function dlForn(id){if(confirm('Excluir fornecedor?')){DB.fornecedores=DB.fornecedores.filter(f=>f.id!=id);sDB();fdel("fornecedores",id);renderForn();}}
+function dlForn(id){
+  var veics = DB.veiculos.filter(function(v){return v.proprietario_id==id;});
+  var cts   = DB.contratos.filter(function(c){return c.fornecedor_id==id;});
+  var msg   = 'Tem certeza que deseja excluir este fornecedor?';
+  if(veics.length||cts.length){
+    msg = 'Este fornecedor possui registros vinculados:
+';
+    if(veics.length) msg += '- '+veics.length+' veiculo(s) consignado(s)
+';
+    if(cts.length)   msg += '- '+cts.length+' contrato(s)
+';
+    msg += '
+Deseja continuar? Os vinculos serao mantidos.';
+  }
+  if(!confirm(msg)) return;
+  DB.fornecedores = DB.fornecedores.filter(function(f){return f.id!=id;});
+  fdel('fornecedores',id);
+  sDB(); renderForn();
+  toast('Fornecedor excluido com sucesso','ok');
+}}
 
 </script></body></html>
