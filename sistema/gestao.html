@@ -287,6 +287,26 @@ function dlMnt(id){
 }
 
 // ── RELATORIOS ──────────────────────────────────────────────────
+function renderMnt(){
+  var srch=document.getElementById('mnt-srch');
+  var q=(srch?srch.value:'').toLowerCase();
+  var fl=q?DB.manutencoes.filter(function(m){
+    return (m.placa||'').toLowerCase().includes(q)||(m.tipo||'').toLowerCase().includes(q)||vNome(m.veiculo_id).toLowerCase().includes(q);
+  }):DB.manutencoes;
+  var tot=fl.reduce(function(s,m){return s+Number(m.valor||0);},0);
+  document.getElementById('main').innerHTML=
+  '<div class="ph"><div><div class="pt">Gestão</div>'+
+  '<div class="ps">'+fl.length+' manutenção(ões) &bull; Total: R$ '+brl(tot)+'</div></div>'+
+  (isAdmin()?'<button class="btn bp" onclick="fmMnt(null)">+ Nova Manutenção</button>':'')+
+  '</div>'+
+  tabsHtml('mnt')+
+  '<div class="sb2"><div class="sw"><span class="sico">&#128269;</span>'+
+  '<input id="mnt-srch" value="'+(q)+'" oninput="renderMnt()" placeholder="Placa, tipo ou veículo...">'+
+  '</div></div>'+
+  '<div id="mbody">'+buildMntRows(fl)+'</div>';
+  renderIcons();
+}
+
 function renderRel(){
   var totV  = DB.vendas.reduce(function(s,v){return s+Number(v.valor||0);},0);
   var totM  = DB.manutencoes.reduce(function(s,m){return s+Number(m.valor||0);},0);

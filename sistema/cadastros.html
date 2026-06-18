@@ -172,12 +172,12 @@ let cadTab='clientes', cSrch='', fSrch='', cPag=1, fPag=1;
 checkAuth(function() {
   applyProfile();
   if (DB && DB.veiculos && (DB.veiculos.length > 0 || DB.clientes.length > 0)) {
-    renderCad()
+    renderTab()
   } else {
     showLoading('Carregando cadastros...');
   }
   loadFromFirestore().then(function() {
-    renderCad()
+    renderTab()
   }).catch(function(e){ console.error('[cadastros.html]', e); });
 });
 function renderTab(){ cadTab==='forn'?renderForn():renderCli(); }

@@ -564,13 +564,17 @@ checkAuth(function() {
 function render(){
   const fl=DB.contratos.filter(c=>{const m=ctSrch.toLowerCase();return !m||c.numero.toLowerCase().includes(m)||(cNome(c.cliente_id)||'').toLowerCase().includes(m)||(fNome(c.fornecedor_id)||'').toLowerCase().includes(m);});
   const tl={venda:'Compra e Venda',compra:'Compra',consignacao:'Consignacao'};
-  document.getElementById('main').innerHTML=
+  var flR=fl.slice().reverse();
+  var _pct=Math.ceil(flR.length/PAG_SIZE)||1;if(ctPag>_pct)ctPag=1;
+  var flCT=pagSlice(flR,ctPag);
+  var pagCT=pagHtml(ctPag,flR.length,'ctPag--;render()','ctPag++;render()');
+    document.getElementById('main').innerHTML=
   '<div class="ph"><div><div class="pt">Contratos</div><div class="ps">'+DB.contratos.length+' contratos</div></div>'+
   '<button class="btn bp" onclick="fmCt(null)">+ Novo Contrato</button></div>'+
   '<div class="sb2"><div class="sw"><span class="sico">&#128269;</span><input value="'+ctSrch+'" oninput="ctSrch=this.value;ctPag=1;render()" placeholder="Numero, cliente ou fornecedor..."></div></div>'+
   '<div class="tw"><table><thead><tr><th>Numero</th><th>Tipo</th><th>Data</th><th>Parte</th><th>Veiculo</th><th>Valor</th><th>Status</th><th>Acoes</th></tr></thead><tbody>'+
   (fl.length===0?'<tr><td colspan="8"><div class="empty"><span class="ei">&#128196;</span>Nenhum contrato</div></td></tr>':'')+
-  fl.slice().reverse().map(c=>
+  flCT.map(c=>
     '<tr><td style="font-family:monospace;font-weight:700">'+c.numero+'</td>'+
     '<td><span class="badge '+(c.tipo==='venda'?'bg-b':c.tipo==='compra'?'bg-g':'bg-y')+'">'+(tl[c.tipo]||c.tipo)+'</span></td>'+
     '<td style="font-size:12px">'+fd(c.data)+'</td>'+
