@@ -228,7 +228,7 @@ function buildMntRows(list){
       '<td>'+sbM(m.status)+'</td>' +
       '<td><div class="acts">' +
       '<button class="btn bg2 bsm" onclick="fmMnt('+m.id+')">&#9999;</button>' +
-      (isAdmin()?'<button class="btn bd bsm" onclick="dlMnt('+m.id+')">&#128465;</button>':'') +
+      +(isAdmin()?'<button class="btn bd bsm" onclick="dlMnt('+m.id+')">&#128465;</button>':'') +
       '</div></td></tr>';
   }).join('');
   return '<div class="tw"><table>' +
@@ -380,12 +380,12 @@ function renderUsr(){
       '<td><div style="display:flex;align-items:center;gap:10px">' +
       '<div class="av" style="background:var(--adim);color:var(--accent)">'+ini(u.nome)+'</div>' +
       '<span style="font-weight:700">'+u.nome+'</span></div></td>' +
-      '<td style="font-size:12px;color:var(--t3)">'+u.email+'</td>' +
+      '<td><div style="font-size:13px;font-weight:700">@'+(u.login||'—')+'</div>'+'<div style="font-size:11px;color:var(--text-muted)">'+u.email+'</div></td>' +
       '<td><span class="badge '+pBadge+'">'+u.perfil+'</span></td>' +
       '<td><span class="badge '+sBadge+'">'+u.status+'</span></td>' +
       '<td><div class="acts">' +
       '<button class="btn bg2 bsm" onclick="fmUsr('+u.id+')">&#9999;</button>' +
-      (isAdmin()?'<button class="btn bd bsm" onclick="dlUsr('+u.id+')">&#128465;</button>':'') +
+      +(isAdmin()?'<button class="btn bd bsm" onclick="dlUsr('+u.id+')">&#128465;</button>':'') +
       '</div></td></tr>';
   }).join('');
   document.getElementById('main').innerHTML =
@@ -397,35 +397,96 @@ function renderUsr(){
     '<tbody>'+(rows||'<tr><td colspan="5"><div class="empty"><span class="ei">&#128100;</span>Nenhum usuario</div></td></tr>')+'</tbody>' +
     '</table></div>';
 }
+function gerarSenha(){
+  var chars='abcdefghjkmnpqrstuvwxyz23456789';
+  var s='';
+  for(var i=0;i<8;i++) s+=chars[Math.floor(Math.random()*chars.length)];
+  var el=document.getElementById('usenha');
+  if(el){ el.value=s; el.type='text'; }
+  toast('Senha gerada: '+s,'ok',5000);
+}
+
 function fmUsr(id){
-  var u = id ? DB.usuarios.find(function(x){return x.id==id;}) : {nome:'',email:'',perfil:'vendedor',status:'ativo'};
-  var optsP = ['admin','gerente','vendedor'].map(function(p){
-    return '<option value="'+p+'" '+(u.perfil===p?'selected':'')+'>'+{admin:'Administrador',gerente:'Gerente',vendedor:'Vendedor'}[p]+'</option>';
+  var u=id?DB.usuarios.find(function(x){return x.id==id;}):{nome:'',login:'',email:'',perfil:'atendimento',status:'ativo',senha:''};
+  if(!u) return;
+  var optsP=['admin','atendimento'].map(function(p){
+    return '<option value="'+p+'" '+(u.perfil===p?'selected':'')+'>'+{admin:'Administrador',atendimento:'Atendimento'}[p]+'</option>';
   }).join('');
-  var optsS = ['ativo','inativo'].map(function(s){
-    return '<option value="'+s+'" '+(u.status===s?'selected':'')+'>'+s+'</option>';
+  var optsS=['ativo','inativo'].map(function(s){
+    return '<option value="'+s+'" '+(u.status===s?'selected':'')+'>'+{ativo:'Ativo',inativo:'Inativo'}[s]+'</option>';
   }).join('');
   om(
-    '<div class="mt2"><span>'+(id?'Editar':'Novo Usuario')+'</span><button class="btn bg2 bsm" onclick="cm()">X</button></div>' +
-    '<div class="fr"><div class="fg full"><label>Nome *</label><input id="un" value="'+u.nome+'"></div></div>' +
-    '<div class="fr">' +
-    '<div class="fg"><label>Email *</label><input id="ue" type="email" value="'+u.email+'"></div>' +
-    '<div class="fg"><label>Perfil</label><select id="up">'+optsP+'</select></div></div>' +
-    '<div class="fr"><div class="fg"><label>Status</label><select id="ust">'+optsS+'</select></div></div>' +
-    '<div class="mf"><button class="btn bg2" onclick="cm()">Cancelar</button><button class="btn bp" onclick="svUsr('+(id||'null')+')">Salvar</button></div>'
+    '<div class="mt2">'+
+    '<div style="display:flex;align-items:center;gap:10px">'+
+    '<div style="width:36px;height:36px;border-radius:50%;background:var(--brand);color:var(--brand-contrast);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px">'+
+    (u.nome?u.nome.charAt(0).toUpperCase():'N')+'</div>'+
+    '<span style="font-weight:700;font-size:16px">'+(id?u.nome:'Novo Usuário')+'</span>'+
+    '</div>'+
+    '<button class="btn bg2 bsm" onclick="cm()">&#10005;</button></div>'+
+    '<div class="mb" style="display:flex;flex-direction:column;gap:14px">'+
+      '<div class="fr"><div class="fg full">'+
+        '<label>Nome completo *</label>'+
+        '<input id="un" value="'+u.nome+'" placeholder="Nome do usuário" oninput="var av=document.getElementById(\'uavatar\');if(av)av.textContent=this.value.charAt(0).toUpperCase()||\'N\'">'+
+      '</div></div>'+
+      '<div class="fr">'+
+        '<div class="fg"><label>Login *</label>'+
+          '<input id="ulog" value="'+(u.login||'')+'" placeholder="Ex: rogel">'+
+        '</div>'+
+        '<div class="fg"><label>Email</label>'+
+          '<input id="ue" type="email" value="'+(u.email||'')+'" placeholder="email@exemplo.com">'+
+        '</div>'+
+      '</div>'+
+      '<div class="fr">'+
+        '<div class="fg">'+
+          '<label>Senha'+(id?' (deixe em branco para não alterar)':' *')+'</label>'+
+          '<div style="display:flex;gap:6px">'+
+            '<input id="usenha" type="password" value="'+(u.senha||'')+'" placeholder="••••••••" style="flex:1">'+
+            '<button class="btn bp bsm" onclick="gerarSenha()" title="Gerar senha aleatória" type="button">&#128273; Gerar</button>'+
+          '</div>'+
+        '</div>'+
+        '<div class="fg"><label>Perfil</label><select id="up">'+optsP+'</select></div>'+
+      '</div>'+
+      '<div class="fr">'+
+        '<div class="fg"><label>Status</label><select id="ust">'+optsS+'</select></div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="mf">'+
+      '<button class="btn bg2" onclick="cm()">Cancelar</button>'+
+      '<button class="btn bp" onclick="svUsr('+(id||'null')+')">&#128190; Salvar</button>'+
+    '</div>'
   );
 }
+
 function svUsr(id){
-  var nome  = document.getElementById('un').value.trim();
-  var email = document.getElementById('ue').value.trim();
-  if(!nome||!email){toast('Preencha Nome e Email','err');return;}
-  var obj = {id:id||nid(DB.usuarios), nome:nome, email:email,
-    perfil: document.getElementById('up').value,
-    status: document.getElementById('ust').value};
-  if(id) DB.usuarios = DB.usuarios.map(function(u){return u.id==id?obj:u;});
-  else DB.usuarios.push(obj);
-  sDB(); fsave("usuarios",obj); cm(); renderUsr();
+  var nome  = (document.getElementById('un')||{value:''}).value.trim();
+  var login = (document.getElementById('ulog')||{value:''}).value.trim().toLowerCase();
+  var email = (document.getElementById('ue')||{value:''}).value.trim();
+  var senha = (document.getElementById('usenha')||{value:''}).value.trim();
+  var perfil= (document.getElementById('up')||{value:'atendimento'}).value;
+  var status= (document.getElementById('ust')||{value:'ativo'}).value;
+  if(!nome){ toast('Informe o nome','err'); return; }
+  if(!login){ toast('Informe o login','err'); return; }
+  if(!id && !senha){ toast('Informe uma senha','err'); return; }
+  // Verificar login duplicado
+  var dup = DB.usuarios.find(function(u){ return u.login===login && u.id!=id; });
+  if(dup){ toast('Login "'+login+'" já está em uso','err'); return; }
+  var existing = id ? DB.usuarios.find(function(u){return u.id==id;}) : null;
+  var obj = {
+    id:     id || nid(DB.usuarios),
+    nome:   nome,
+    login:  login,
+    email:  email,
+    perfil: perfil,
+    status: status,
+    senha:  senha || (existing ? existing.senha : '')
+  };
+  if(id) DB.usuarios = DB.usuarios.map(function(u){ return u.id==id ? obj : u; });
+  else   DB.usuarios.push(obj);
+  sDB(); fsave('usuarios', obj);
+  cm(); renderUsr();
+  toast('Usuário '+(id?'atualizado':'criado')+' com sucesso','ok');
 }
+
 function dlUsr(id){
   if(confirm('Excluir usuario?')){
     DB.usuarios = DB.usuarios.filter(function(u){return u.id!=id;});

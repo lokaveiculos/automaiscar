@@ -28,8 +28,8 @@
 <script src="firebase-shared.js"></script>
 <script async src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js" onload="if(typeof renderIcons==='function')renderIcons()"></script>
 <script>
-let pagC = 1;
-let pagF = 1;
+
+// ── Theme toggle ─────────────────────────────────────────────
 function toggleTheme() {
   var current = document.documentElement.getAttribute('data-theme') || 'light';
   var next = current === 'light' ? 'dark' : 'light';
