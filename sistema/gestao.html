@@ -184,6 +184,7 @@ function impWin(txt){const w=window.open('','_blank');w.document.write('<!DOCTYP
 let gTab='mnt';
 checkAuth(function() {
   applyProfile();
+  gTab=(window.location.hash||"").replace("#","")||"mnt";
   if (DB && DB.veiculos && (DB.veiculos.length > 0 || DB.clientes.length > 0)) {
     renderTab()
   } else {
