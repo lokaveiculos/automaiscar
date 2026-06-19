@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Auto+ Veículos — Despesas</title><link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=Manrope:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="ds.css"></head>
+<body>
+<div class="sidebar-overlay" id="sb-overlay" onclick="csb()"></div><aside class="sidebar" id="sb"><div class="sb-logo"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnN2Zz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZlcnNpb249IjEuMSIgd2lkdGg9IjY2NC4zIiBoZWlnaHQ9IjI4MC4wIiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJ4TWlkWU1pZCBtZWV0IiB2aWV3Qm94PSIxMTA3LjI0IDY2Mi45MiA2NjQuMzIgMjc5Ljk4Ij48ZGVmcz48Y2xpcFBhdGggaWQ9ImNsaXBwYXRoMCIgdHJhbnNmb3JtPSIiPjxwYXRoIGQ9Ik0gMCAxMDgwIEwgMTkyMCAxMDgwIEwgMTkyMCAwIEwgMCAwIFoiIGZpbGw9Im5vbmUiIGNsaXAtcnVsZT0ibm9uemVybyI+PC9wYXRoPjwvY2xpcFBhdGg+PC9kZWZzPjxnIHRyYW5zZm9ybT0ibWF0cml4KDEgMCAwIC0xIDAgMTA4MCkiPjxnIHRyYW5zZm9ybT0iIj48L2c+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNzQyLjk5OTEgODYwLjUxMDMpIj48L2c+PGcgdHJhbnNmb3JtPSIiPjwvZz48ZyBjbGlwLXBhdGg9InVybCgjY2xpcHBhdGgwKSI+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNTk4LjkyNjQgNzgzLjYzMjMpIj48L2c+PC9nPjxnIGNsaXAtcGF0aD0idXJsKCNjbGlwcGF0aDApIj48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgzODUuMjM5MyA3MjQuMzE4NykiPjwvZz48L2c+PGcgY2xpcC1wYXRoPSJ1cmwoI2NsaXBwYXRoMCkiPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDQwNC45NDY0IDcwNC41NDYzKSI+PC9nPjwvZz48ZyBjbGlwLXBhdGg9InVybCgjY2xpcHBhdGgwKSI+PGcgdHJhbnNmb3JtPSIiPjwvZz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSg0NjIuMTIzMSA3MDEuMTM3MSkiPjwvZz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSg1MDAuNDY3OCA3MDMuNzY3KSI+PC9nPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDUxOC4zNTc1IDcwMS41OTEyKSI+PC9nPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDU1MC41OTk3IDcwNi41NTkpIj48L2c+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNTkwLjQ2OTggNzAxLjE2OTMpIj48L2c+PGcgdHJhbnNmb3JtPSIiPjwvZz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxNzAzLjUzNDcgODYwLjUxMDEpIj48L2c+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMTU1OS40NjIgNzgzLjYzMjEpIj48L2c+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMTM0NS43NzY0IDcyNC4zMTg3KSI+PC9nPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDEzNjUuNDgzNCA3MDQuNTQ2MykiPjwvZz48ZyB0cmFuc2Zvcm09IiI+PC9nPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDE0MjIuNjYwMiA3MDEuMTM3MSkiPjwvZz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxNDYxLjAwNDkgNzAzLjc2NykiPjwvZz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxNDc4Ljg5NDUgNzAxLjU5MTIpIj48L2c+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMTUxMS4xMzY3IDcwNi41NTkpIj48L2c+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMTU1MS4wMDY4IDcwMS4xNjkzKSI+PC9nPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDE3MDMuNTM0NyAzMjAuNTA5OCkiPjxwYXRoIGQ9Ik0gMCAwIEwgOC42NDIgNDMuODgyIEwgLTI5LjMxMyA0My44ODIgTCAtMzcuOTIgMCBMIC04MS45MDggMCBMIC04OS4zMTUgLTM4LjA2MSBMIC00NS4zMjggLTM4LjA2MSBMIC01My43OTQgLTgyLjA0OSBMIC0xNS44NzQgLTgyLjA0OSBMIC03LjM3MiAtMzguMDYxIEwgMzYuNjE1IC0zOC4wNjEgTCA0NC4wMjMgMCBaIiBmaWxsPSIjZWRlZGVkIiBmaWxsLW9wYWNpdHk9IjEiPjwvcGF0aD48L2c+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMTU1OS40NjIgMjQzLjYzMTgpIj48cGF0aCBkPSJNIDAgMCBMIC0zNC40NjEgMCBMIC0xMS45NjYgMTE1LjU4OSBMIDIyLjQ2NiAxMTUuNTg5IFogTSAtMzI5LjE3NyAzNy4yMTMgTCAtMzQ2Ljg4NyAzNy4yMTMgTCAtMzIyLjkyNSAxMTUuMzUgWiBNIDU2LjAyOSAxNDIuMjczIEMgNTEuNjkyIDE0Ny4wNTkgNDUuODU5IDE0OS40NTIgMzguNTYgMTQ5LjQ1MiBMIC0xMy44MjEgMTQ5LjQ1MiBMIC0xNC45MjcgMTQ5LjQ1MiBMIC0xNTQuNDc4IDE0OS40NTIgTCAtMTYwLjg3OSAxNDkuNDUyIEwgLTE5MC45NzMgMTQ5LjQ1MiBMIC0yMTkuOTYgMCBMIC0yNTQuNDIxIDAgTCAtMjI1LjQzNSAxNDkuNDUyIEwgLTI2MS44MTEgMTQ5LjQ1MiBMIC0yOTIuMDg0IC02Ljc5MSBMIC0yOTEuOTk0IDE0OS40NTIgTCAtMzQwLjM2NSAxNDkuNDUyIEwgLTQyOC4yMjQgMTQ5LjQ1MiBMIC00MjAuODM1IDEyMy4yNzcgTCAtMzUwLjUzNiAxMjMuMjc3IEwgLTM1OC4yMjQgMTAzLjQ3NCBMIC00MjAuNTA2IDEwMy40NzQgTCAtNDEzLjcxNSA4MC44ODggTCAtMzY2Ljk4OSA4MC44ODggTCAtMzc0LjY3NyA2MS4wODUgTCAtNDEzLjM4NiA2MS4wODUgTCAtNDA2LjYyNiAzOC41IEwgLTM4My40NzIgMzguNSBMIC0zOTEuMTYgMTguNjk2IEwgLTQwNi4yOTcgMTguNjk2IEwgLTM5OS45NzcgLTQuMDMzIEwgLTQwMS43MTkgLTguNTI1IEwgLTQxMS41NjIgLTMzLjg2MyBMIC0zNzQuNzA3IC0zMy44NjMgTCAtMzYwLjEwOSAzLjMyIEwgLTMyOS4wODggMy4zMiBMIC0zMjkuMDg4IC0zMy44NjMgTCAtMzA2LjY5NCAtMzMuODYzIEwgLTMwNi42OTkgLTMzLjg3NCBMIC0yNjYuOTA5IC0zMy44NzQgTCAtMjY2LjkyIC0zMy44NjMgTCAtMjE2Ljk5OSAtMzMuODYzIEMgLTIwOS42OTkgLTMzLjg2MyAtMjAyLjk2OSAtMzEuNDQgLTE5Ni44MDcgLTI2LjU2NCBDIC0xOTAuNDA1IC0yMS43MTggLTE4Ni41MTYgLTE1LjgyNSAtMTg1LjE3IC04Ljg4NSBMIC0xNjEuMDI5IDExNS41ODkgTCAtMTIwLjk0NCAxMTUuNTg5IEwgLTE1MC4wMjEgLTMzLjg2MyBMIC0xMTMuNzY1IC0zMy44NjMgTCAtODQuNjU4IDExNS41ODkgTCAtNDguNDAxIDExNS41ODkgTCAtNzIuNTQyIC04Ljg4NSBDIC03My45MTggLTE1LjgyNSAtNzIuNDUzIC0yMS43MTggLTY4LjExNSAtMjYuNTY0IEMgLTYzLjY4OCAtMzEuNDQgLTU3LjgyNCAtMzMuODYzIC01MC41MjYgLTMzLjg2MyBMIDIuOTYxIC0zMy44NjMgQyAxMC4yNiAtMzMuODYzIDE2Ljk5MSAtMzEuNDQgMjMuMTUzIC0yNi41NjQgQyAyOS41NTUgLTIxLjcxOCAzMy40NDQgLTE1LjgyNSAzNC43OSAtOC44ODUgTCA0NC42MDIgNDEuNzAxIEwgNTAuODg0IDczLjk3OCBMIDYwLjY5NiAxMjQuNDczIEMgNjEuOTgyIDEzMS4zODQgNjAuNDI3IDEzNy4zMzcgNTYuMDI5IDE0Mi4yNzMiIGZpbGw9IiNmZmIxMzMiIGZpbGwtb3BhY2l0eT0iMSI+PC9wYXRoPjwvZz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxMzQ1Ljc3NjQgMTg0LjMxOTcpIj48cGF0aCBkPSJNIDAgMCBMIDMuMzc2IDAgTCAtNi4wMDcgLTIyLjcyOCBMIC05LjQ0OCAtMjIuNzI4IEwgLTE4Ljg2NCAwIEwgLTE1LjQ4OCAwIEwgLTExLjMgLTEwLjI2IEwgLTcuNzI4IC0xOS4wOTEgWiIgZmlsbD0iI2VkZWRlZCIgZmlsbC1vcGFjaXR5PSIxIj48L3BhdGg+PC9nPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDEzNjUuNDgzNCAxNjQuNTQ3MykiPjxwYXRoIGQ9Ik0gMCAwIEwgMTMuNTA3IDAgTCAxMy41MDcgLTIuOTU1IEwgLTMuMTQ5IC0yLjk1NSBMIC0zLjE0OSAxOS43NzIgTCAxMy4zMTMgMTkuNzcyIEwgMTMuMzEzIDE2Ljg1MSBMIDAgMTYuODUxIEwgMCAxMCBMIDEyLjcyOCAxMCBMIDEyLjcyOCA3LjExIEwgMCA3LjExIFoiIGZpbGw9IiNlZGVkZWQiIGZpbGwtb3BhY2l0eT0iMSI+PC9wYXRoPjwvZz48ZyB0cmFuc2Zvcm09IiI+PHBhdGggZD0iTSAxMzkzLjUwNCAxODQuMzIgTCAxMzk2LjY1MyAxODQuMzIgTCAxMzk2LjY1MyAxNjEuNTkyIEwgMTM5My41MDQgMTYxLjU5MiBaIE0gMTM5My41MDQgMTYxLjU5MiBNIDEzOTMuNDcyIDE4Ni41OTMgTCAxMzk1LjgxIDE5MC45MTIgTCAxMzk5LjUxMSAxOTAuOTEyIEwgMTM5Ni4yNjQgMTg2LjU5MyBaIiBmaWxsPSIjZWRlZGVkIiBmaWxsLW9wYWNpdHk9IjEiPjwvcGF0aD48L2c+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMTQyMi42NjAyIDE2MS4xMzgxKSI+PHBhdGggZD0iTSAwIDAgQyAtMy40NjQgMCAtNi4yOTkgMS4xMDQgLTguNTA3IDMuMzEyIEMgLTEwLjcxNSA1LjUyIC0xMS44MTggOC4zNTQgLTExLjgxOCAxMS44MTggQyAtMTEuODE4IDE1LjI4MSAtMTAuNzE1IDE4LjExNyAtOC41MDcgMjAuMzI1IEMgLTYuMjk5IDIyLjUzMiAtMy40NjQgMjMuNjM3IDAgMjMuNjM3IEMgMy4zMTIgMjMuNjM3IDYuMTA0IDIyLjQ2OCA4LjM3NyAyMC4xMyBMIDYuMjAxIDE4LjE4MiBDIDQuNiAxOS44NDkgMi41NjQgMjAuNjgyIDAuMDk4IDIwLjY4MiBDIC0yLjQ3OSAyMC42ODIgLTQuNTc4IDE5Ljg1OSAtNi4yMDEgMTguMjE1IEMgLTcuODI1IDE2LjU2OSAtOC42MzcgMTQuNDM3IC04LjYzNyAxMS44MTggQyAtOC42MzcgOS4xOTkgLTcuODI1IDcuMDY2IC02LjIwMSA1LjQyMiBDIC00LjU3OCAzLjc3NiAtMi40NzkgMi45NTQgMC4wOTggMi45NTQgQyAyLjU4NiAyLjk1NCA0LjY5NiAzLjc5OSA2LjQyOSA1LjQ4NiBMIDguNTA3IDMuMzc2IEMgNi4yMTIgMS4xMjUgMy4zNzcgMCAwIDAiIGZpbGw9IiNlZGVkZWQiIGZpbGwtb3BhY2l0eT0iMSI+PC9wYXRoPjwvZz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxNDYxLjAwNDkgMTYzLjc2OCkiPjxwYXRoIGQ9Ik0gMCAwIEMgLTEuNzMxIC0xLjc1NCAtNC4wMzcgLTIuNjMgLTYuOTE1IC0yLjYzIEMgLTkuNzk0IC0yLjYzIC0xMi4wOTQgLTEuNzU0IC0xMy44MTQgMCBDIC0xNS41MzYgMS43NTMgLTE2LjM5NiA0LjEwMiAtMTYuMzk2IDcuMDQ1IEwgLTE2LjM5NiAyMC41NTIgTCAtMTMuMjc5IDIwLjU1MiBMIC0xMy4yNzkgNy4xMSBDIC0xMy4yNzkgNS4wNzUgLTEyLjcgMy40NDEgLTExLjU0MiAyLjIwNyBDIC0xMC4zODUgMC45NzQgLTguODQyIDAuMzU2IC02LjkxNSAwLjM1NiBDIC00Ljk4OSAwLjM1NiAtMy40NDcgMC45NjggLTIuMjg5IDIuMTkxIEMgLTEuMTMxIDMuNDE0IC0wLjU1MiA1LjA1NCAtMC41NTIgNy4xMSBMIC0wLjU1MiAyMC41NTIgTCAyLjU5OCAyMC41NTIgTCAyLjU5OCA3LjA0NSBDIDIuNTk4IDQuMTAyIDEuNzMxIDEuNzUzIDAgMCIgZmlsbD0iI2VkZWRlZCIgZmlsbC1vcGFjaXR5PSIxIj48L3BhdGg+PC9nPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDE0NzguODk0NSAxNjEuNTkyMikiPjxwYXRoIGQ9Ik0gMCAwIEwgMCAyMi43MjggTCAzLjE0OSAyMi43MjggTCAzLjE0OSAyLjk1NSBMIDE1LjQyMyAyLjk1NSBMIDE1LjQyMyAwIFoiIGZpbGw9IiNlZGVkZWQiIGZpbGwtb3BhY2l0eT0iMSI+PC9wYXRoPjwvZz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxNTExLjEzNjcgMTY2LjU2KSI+PHBhdGggZD0iTSAwIDAgQyAxLjU1OSAtMS42NDYgMy41ODIgLTIuNDY4IDYuMDcxIC0yLjQ2OCBDIDguNTYxIC0yLjQ2OCAxMC41ODUgLTEuNjQ2IDEyLjE0MyAwIEMgMTMuNzAxIDEuNjQ1IDE0LjQ4IDMuNzc3IDE0LjQ4IDYuMzk2IEMgMTQuNDggOS4wMTUgMTMuNzAxIDExLjE0NyAxMi4xNDMgMTIuNzkzIEMgMTAuNTg1IDE0LjQzOCA4LjU2MSAxNS4yNiA2LjA3MSAxNS4yNiBDIDMuNTgyIDE1LjI2IDEuNTU5IDE0LjQzOCAwIDEyLjc5MyBDIC0xLjU1OSAxMS4xNDcgLTIuMzM4IDkuMDE1IC0yLjMzOCA2LjM5NiBDIC0yLjMzOCAzLjc3NyAtMS41NTkgMS42NDUgMCAwIE0gMTQuNDQ4IC0yLjE1OSBDIDEyLjMwNiAtNC4zNTYgOS41MTMgLTUuNDU1IDYuMDcxIC01LjQ1NSBDIDIuNjMgLTUuNDU1IC0wLjE2MiAtNC4zNTYgLTIuMzA2IC0yLjE1OSBDIC00LjQ0OCAwLjAzNyAtNS41MiAyLjg5IC01LjUyIDYuMzk2IEMgLTUuNTIgOS45MDIgLTQuNDQ4IDEyLjc1NSAtMi4zMDYgMTQuOTUxIEMgLTAuMTYyIDE3LjE0OCAyLjYzIDE4LjI0NyA2LjA3MSAxOC4yNDcgQyA5LjUxMyAxOC4yNDcgMTIuMzA2IDE3LjE0OCAxNC40NDggMTQuOTUxIEMgMTYuNTkxIDEyLjc1NSAxNy42NjMgOS45MDIgMTcuNjYzIDYuMzk2IEMgMTcuNjYzIDIuODkgMTYuNTkxIDAuMDM3IDE0LjQ0OCAtMi4xNTkiIGZpbGw9IiNlZGVkZWQiIGZpbGwtb3BhY2l0eT0iMSI+PC9wYXRoPjwvZz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxNTUxLjAwNjggMTYxLjE3MDMpIj48cGF0aCBkPSJNIDAgMCBDIC0zLjY4IDAgLTYuODQgMS4xMTQgLTkuNDggMy4zNDQgTCAtNy43OTIgNS43NDcgQyAtNi44ODMgNC44ODEgLTUuNzI2IDQuMTkzIC00LjMxNyAzLjY4NSBDIC0yLjkxMSAzLjE3NiAtMS40NzIgMi45MjIgMCAyLjkyMiBDIDEuODE4IDIuOTIyIDMuMjY5IDMuMjYzIDQuMzUyIDMuOTQ0IEMgNS40MzQgNC42MjcgNS45NzUgNS41MyA1Ljk3NSA2LjY1NiBDIDUuOTc1IDcuNjk0IDUuNDg3IDguNTEyIDQuNTE0IDkuMTA3IEMgMy41MzkgOS43MDIgMS45NTkgMTAuMTYyIC0wLjIyNyAxMC40ODcgQyAtMy4zMjIgMTAuOTQxIC01LjU1MiAxMS42OTkgLTYuOTE1IDEyLjc2IEMgLTguMjc5IDEzLjgyIC04Ljk2MSAxNS4zMjUgLTguOTYxIDE3LjI3MyBDIC04Ljk2MSAxOS4xMTIgLTguMTQ5IDIwLjYyMiAtNi41MjUgMjEuODAzIEMgLTQuOTAyIDIyLjk4MSAtMi44MjQgMjMuNTcyIC0wLjI5MiAyMy41NzIgQyAyLjg2OCAyMy41NzIgNS42NSAyMi41OTggOC4wNTMgMjAuNjQ5IEwgNi4zOTYgMTguNDA5IEMgNC40NyAxOS45ODkgMi4yNTEgMjAuNzc5IC0wLjI1OSAyMC43NzkgQyAtMS44ODMgMjAuNzc5IC0zLjIxNCAyMC40NDMgLTQuMjUzIDE5Ljc3MyBDIC01LjI5MiAxOS4xMDIgLTUuODEyIDE4LjI0NyAtNS44MTIgMTcuMjA4IEMgLTUuODEyIDE2LjE5IC01LjM1MiAxNS4zOSAtNC40MzIgMTQuODA2IEMgLTMuNTEyIDE0LjIyMSAtMi4wMDIgMTMuNzU1IDAuMDk4IDEzLjQwOSBDIDMuMzY2IDEyLjg5IDUuNjkzIDEyLjEyMSA3LjA3OCAxMS4xMDQgQyA4LjQ2NCAxMC4wODYgOS4xNTYgOC42MzcgOS4xNTYgNi43NTMgQyA5LjE1NiA0LjY5NiA4LjMyMyAzLjA1NyA2LjY1NiAxLjgzNCBDIDQuOTg5IDAuNjExIDIuNzcxIDAgMCAwIiBmaWxsPSIjZWRlZGVkIiBmaWxsLW9wYWNpdHk9IjEiPjwvcGF0aD48L2c+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNzQyLjk5OTEgMzIwLjUxMDQpIj48L2c+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNTk4LjkyNjQgMjQzLjYzMjQpIj48L2c+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMzg1LjIzOTMgMTg0LjMxODcpIj48L2c+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNDA0Ljk0NjQgMTY0LjU0NjMpIj48L2c+PGcgdHJhbnNmb3JtPSIiPjwvZz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSg0NjIuMTIzMSAxNjEuMTM3MSkiPjwvZz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSg1MDAuNDY3OCAxNjMuNzY3KSI+PC9nPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDUxOC4zNTc1IDE2MS41OTEyKSI+PC9nPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDU1MC41OTk3IDE2Ni41NTkpIj48L2c+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNTkwLjQ2OTggMTYxLjE2OTMpIj48L2c+PC9nPjwvZz48L3N2Zz4=" alt="Auto+" style="height:36px;width:auto"></div><nav class="sb-nav"><div class="sb-section">PRINCIPAL</div>
+<a class="sb-item" href="index.html"><i data-lucide="layout-dashboard"></i>Painel</a>
+<div class="sb-section">COMERCIAL</div>
+<a class="sb-item" href="vendas.html"><i data-lucide="banknote"></i>Vendas</a>
+<a class="sb-item" href="contratos.html"><i data-lucide="file-text"></i>Contratos</a>
+<div class="sb-section">CADASTROS</div>
+<a class="sb-item" href="veiculos.html"><i data-lucide="car"></i>Veículos</a>
+<a class="sb-item" href="cadastros.html"><i data-lucide="users"></i>Clientes / Fornec.</a>
+<div class="sb-section">FINANCEIRO</div>
+<a class="sb-item active" href="despesas.html"><i data-lucide="wallet"></i>Despesas</a>
+<div class="sb-section">GESTÃO</div>
+<a class="sb-item" href="gestao.html"><i data-lucide="wrench"></i>Manutenção</a>
+<a class="sb-item" href="gestao.html#rel" data-admin-only=1><i data-lucide="bar-chart-3"></i>Relatórios</a>
+<a class="sb-item" href="gestao.html#usr" data-admin-only=1><i data-lucide="users"></i>Usuários</a>
+<a class="sb-item" href="gestao.html#cfg" data-admin-only=1><i data-lucide="settings"></i>Configurações</a>
+</nav><div class="sb-footer"><div class="sb-footer-label">Logado como</div><div class="sb-footer-user" id="lu">—</div><button class="btn-danger-full" onclick="logout()"><i data-lucide="log-out"></i> Sair</button></div></aside>
+<div class="layout-main">
+  <header class="topbar"><button class="mbtn" id="mbtn" onclick="tsb()"><i data-lucide="menu"></i></button><div class="topbar-right"><button class="theme-toggle-btn" onclick="toggleTheme()"><i data-lucide="sun" id="theme-icon"></i><span id="theme-label">Aparência</span></button><button class="btn-icon"><i data-lucide="bell"></i></button><div class="avatar" id="avatar-initials">R</div></div></header>
+  <main class="main" id="main"><div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:60vh;gap:16px;color:var(--text-muted)"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/></svg><span style="font-size:14px">Carregando...</span></div></main>
+</div>
+<div id="modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);z-index:500;align-items:center;justify-content:center;padding:16px"><div id="mdc" style="background:var(--surface);border-radius:var(--r-modal);width:100%;max-width:600px;max-height:92vh;overflow-y:auto;border:1px solid var(--border);box-shadow:0 20px 48px rgba(0,0,0,.2)"></div></div><script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="firebase-shared.js"></script>
+<script async src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js" onload="if(typeof renderIcons==='function')renderIcons()"></script>
+<script>
+
+// ── Theme toggle ─────────────────────────────────────────────
+function toggleTheme() {
+  var current = document.documentElement.getAttribute('data-theme') || 'light';
+  var next = current === 'light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('am_theme', next);
+  updateThemeBtn(next);
+}
+function updateThemeBtn(theme) {
+  var icon  = document.getElementById('theme-icon');
+  var label = document.getElementById('theme-label');
+  if(icon)  icon.setAttribute('data-lucide', theme === 'dark' ? 'moon' : 'sun');
+  if(label) label.textContent = theme === 'dark' ? 'Tema Escuro' : 'Aparência';
+  if(typeof lucide !== 'undefined') lucide.createIcons();
+}
+(function(){
+  var saved = localStorage.getItem('am_theme') || 'light';
+  document.documentElement.setAttribute('data-theme', saved);
+  // Apply after DOM ready
+  document.addEventListener('DOMContentLoaded', function(){ updateThemeBtn(saved); });
+})();
+
+// ── Sidebar mobile ────────────────────────────────────────────
+function tsb() {
+  var sb = document.getElementById('sb');
+  var ov = document.getElementById('sb-overlay');
+  if(!sb) return;
+  sb.classList.toggle('open');
+  if(ov) ov.classList.toggle('open');
+}
+function csb() {
+  var sb = document.getElementById('sb');
+  var ov = document.getElementById('sb-overlay');
+  if(sb) sb.classList.remove('open');
+  if(ov) ov.classList.remove('open');
+}
+
+// ── Lucide init + reinit helper ───────────────────────────────
+function renderIcons() {
+  if(typeof lucide !== 'undefined') {
+    try { lucide.createIcons(); } catch(e) {}
+  }
+}
+
+// ── Avatar initials ───────────────────────────────────────────
+function setAvatar(name) {
+  var el = document.getElementById('avatar-initials');
+  if(el && name) el.textContent = name.charAt(0).toUpperCase();
+}
+
+// ── Admin nav ─────────────────────────────────────────────────
+function applyProfile() {
+  if(!isAdmin()) {
+    document.querySelectorAll('[data-admin-only]').forEach(function(el){
+      el.style.display = 'none';
+    });
+  }
+}
+
+
+// ── Toast (design system) ─────────────────────────────────────
+(function(){
+  var stack = document.createElement('div');
+  stack.className = 'toast-stack';
+  document.body.appendChild(stack);
+  
+  window.toast = function(msg, type, dur) {
+    type = type || 'ok';
+    dur  = dur  || 3000;
+    var icons = {ok:'check',err:'x-circle',warn:'alert-triangle',info:'info'};
+    var el = document.createElement('div');
+    el.className = 'toast toast-' + type;
+    el.innerHTML = '<i data-lucide="' + (icons[type]||'check') + '"></i><span>' + msg + '</span>';
+    stack.appendChild(el);
+    if(typeof lucide !== 'undefined') lucide.createIcons({nodes:[el]});
+    setTimeout(function(){
+      el.style.animation = 'toastOut 300ms ease forwards';
+      setTimeout(function(){ if(el.parentNode) el.parentNode.removeChild(el); }, 300);
+    }, dur);
+  };
+})();
+
+const SK='automais_v3';
+function loadDB(){
+  try{const s=localStorage.getItem(SK);if(s)return JSON.parse(s);}catch(e){}
+  return{
+    veiculos:[
+      {id:1,placa:'ABC-1234',marca:'Toyota',modelo:'Corolla',versao:'XEi',ano:'2021',cor:'Prata',km:'45000',preco:'89500',status:'disponivel',tipo_est:'proprio',proprietario_id:'',chassi:'9BR111AAA000001',renavam:'00111222333',combustivel:'Flex',opcionais:'Ar condicionado, Vidros eletricos',obs:'Unico dono'},
+      {id:2,placa:'XYZ-5678',marca:'Honda',modelo:'Civic',versao:'EXL',ano:'2022',cor:'Preto',km:'28000',preco:'115000',status:'consignado',tipo_est:'consignado',proprietario_id:1,chassi:'9BR222BBB000002',renavam:'00444555666',combustivel:'Flex',opcionais:'Teto solar, Couro',obs:''},
+      {id:3,placa:'DEF-9012',marca:'Volkswagen',modelo:'Polo',versao:'Highline',ano:'2023',cor:'Branco',km:'12000',preco:'82000',status:'disponivel',tipo_est:'proprio',proprietario_id:'',chassi:'9BR333CCC000003',renavam:'00777888999',combustivel:'Flex',opcionais:'',obs:''},
+      {id:4,placa:'GHI-3456',marca:'Fiat',modelo:'Strada',versao:'Volcano',ano:'2020',cor:'Vermelho',km:'62000',preco:'68000',status:'vendido',tipo_est:'proprio',proprietario_id:'',chassi:'9BR444DDD000004',renavam:'00000111222',combustivel:'Flex',opcionais:'',obs:''},
+    ],
+    clientes:[
+      {id:1,nome:'Carlos Mendes',cpf:'123.456.789-00',rg:'1234567 SSP/BA',nasc:'1985-06-15',estado_civil:'Casado',profissao:'Engenheiro',telefone:'(71) 99999-1111',email:'carlos@email.com',endereco:'Rua A, 100, Centro',cidade:'Feira de Santana',uf:'BA',cep:'44001-000',obs:''},
+      {id:2,nome:'Ana Paula Silva',cpf:'987.654.321-00',rg:'9876543 SSP/BA',nasc:'1990-03-22',estado_civil:'Solteira',profissao:'Professora',telefone:'(71) 98888-2222',email:'ana@email.com',endereco:'Av B, 200',cidade:'Salvador',uf:'BA',cep:'40000-000',obs:''},
+    ],
+    fornecedores:[
+      {id:1,nome:'Maria Oliveira',cpf:'111.222.333-44',rg:'1112223 SSP/BA',telefone:'(71) 96666-4444',email:'maria@email.com',endereco:'Rua das Flores, 50',cidade:'Feira de Santana',uf:'BA',cep:'44050-000',tipo:'pessoa_fisica',banco:'Banco do Brasil',agencia:'1234-5',conta:'00001-2',obs:''},
+    ],
+    contratos:[
+      {id:1,tipo:'venda',numero:'CV-2024-001',data:'2024-03-15',cliente_id:1,fornecedor_id:'',veiculo_id:4,valor:'68000',entrada:'68000',saldo:'0',pagamento:'A vista',financeira:'',num_parcelas:'',valor_parcela:'',prazo:'90',tipo_comissao:'percentual',comissao:'5',valor_minimo:'',condicao:'',debitos:'Nenhum',status:'assinado',obs:''},
+    ],
+    vendas:[
+      {id:1,numero:'VD-2024-001',data:'2024-03-15',cliente_id:1,veiculo_id:4,valor:'68000',pagamento:'A vista',contrato_id:1,obs:''},
+    ],
+    manutencoes:[
+      {id:1,veiculo_id:1,placa:'ABC-1234',tipo:'Revisao geral',data:'2024-02-10',valor:'850',descricao:'Troca de oleo e filtros',oficina:'Auto Center Sao Joao',status:'concluida'},
+    ],
+    usuarios:[
+      {id:1,nome:'Admin Master',email:'admin@automais.com',perfil:'admin',status:'ativo'},
+      {id:2,nome:'Joao Vendas',email:'joao@automais.com',perfil:'vendedor',status:'ativo'},
+    ],
+    empresa:{nome:'AUTO MAIS COMERCIO E CORRETORA DE VEICULOS LTDA',cnpj:'05.622.137/0001-00',endereco:'Rua Juarez Tavora, 346',bairro:'Sao Joao',cidade:'Feira de Santana',uf:'BA',cep:'44052-310',telefone:'(75) 3225-2932 / (75) 98135-5322',email:'atendimento@automaiscar.com.br'}
+  };
+}
+var DB=loadDB();
+function sDB(){try{localStorage.setItem(SK,JSON.stringify(DB));}catch(e){}}
+function brl(v){return Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fd(d){if(!d)return'-';try{return new Date(d+'T12:00').toLocaleDateString('pt-BR');}catch(e){return d;}}
+function nid(a){return a.length?Math.max(...a.map(x=>x.id))+1:1;}
+function ini(n){return(n||'?').split(' ').slice(0,2).map(p=>p[0]).join('').toUpperCase();}
+function vNome(id){const v=DB.veiculos.find(x=>x.id==id);return v?v.marca+' '+v.modelo+' '+v.placa:'';}
+function vObj(id){return DB.veiculos.find(x=>x.id==id)||{};}
+function cNome(id){const c=DB.clientes.find(x=>x.id==id);return c?c.nome:'';}
+function cObj(id){return DB.clientes.find(x=>x.id==id)||{};}
+function fNome(id){const f=DB.fornecedores.find(x=>x.id==id);return f?f.nome:'';}
+function fObj(id){return DB.fornecedores.find(x=>x.id==id)||{};}
+function sbV(s){const m={disponivel:'bg-g',vendido:'bg-b',consignado:'bg-y',manutencao:'bg-r',reservado:'bg-o'};return'<span class="badge '+(m[s]||'bg-gr')+'">'+s+'</span>';}
+function sbC(s){const m={ativo:'bg-g',assinado:'bg-b',cancelado:'bg-r',concluido:'bg-gr'};return'<span class="badge '+(m[s]||'bg-gr')+'">'+s+'</span>';}
+function sbM(s){const m={concluida:'bg-g',andamento:'bg-y',pendente:'bg-gr'};return'<span class="badge '+(m[s]||'bg-gr')+'">'+s+'</span>';}
+function om(h,lg){
+  var md=document.getElementById('mdc');
+  if(!md){console.error('Modal #mdc não encontrado');return;}
+  md.className='md'+(lg?' md-lg':'');
+  md.innerHTML=h;
+  var mo=document.getElementById('modal');
+  if(!mo){console.error('Modal #modal não encontrado');return;}
+  mo.style.display='flex';
+  mo.style.alignItems='center';
+  mo.style.justifyContent='center';
+  // Fechar ao clicar fora
+  mo.onclick=function(e){if(e.target===mo)cm();};
+}
+function cm(){var mo=document.getElementById('modal');if(mo)mo.style.display='none';}
+document.getElementById('modal').addEventListener('click',function(e){if(e.target===this)cm();});
+function tsb(){document.getElementById('sb').classList.toggle('open');document.getElementById('ov').classList.toggle('show');}
+function csb(){document.getElementById('sb').classList.remove('open');document.getElementById('ov').classList.remove('show');}
+function impWin(txt){const w=window.open('','_blank');w.document.write('<!DOCTYPE html><html><head><meta charset=UTF-8><style>body{font-family:Courier New,monospace;font-size:12px;padding:28px;line-height:1.8;color:#000;white-space:pre-wrap}</style></head><body>'+txt+'</body></html>');w.document.close();w.print();}
+
+
+
+function impWin(txt){const w=window.open('','_blank');w.document.write('<!DOCTYPE html><html><head><meta charset=UTF-8><style>body{font-family:Courier New,monospace;font-size:12px;padding:28px;line-height:1.8;color:#000;white-space:pre-wrap}</style></head><body>'+txt+'</body></html>');w.document.close();w.print();}
+
+
+let dSrch='', dFiltDe='', dFiltAte='', dFiltPlaca='', dPag=1;
+
+checkAuth(function() {
+  applyProfile();
+  if (DB && DB.veiculos && (DB.veiculos.length > 0 || DB.clientes.length > 0)) {
+    renderDesp()
+  } else {
+    showLoading('Carregando despesas...');
+  }
+  loadFromFirestore().then(function() {
+    renderDesp()
+  }).catch(function(e){ console.error('[despesas.html]', e); });
+});
+function renderDesp(){
+  var fl = filtrarDespesas();
+  var total = fl.reduce(function(s,d){return s+Number(d.valor||0);},0);
+  var placasDisp = DB.veiculos.map(function(v){
+    return '<option value="'+v.placa+'">'+v.placa+' - '+v.marca+' '+v.modelo+'</option>';
+  }).join('');
+
+  var flS2=fl.slice().sort(function(a,b){return (b.data||'').localeCompare(a.data||'');});
+  var _pdp=Math.ceil(flS2.length/PAG_SIZE)||1;if(dPag>_pdp)dPag=1;
+  var dpP=pagSlice(flS2,dPag);var pagDP=pagHtml(dPag,flS2.length,'dPag--;renderDesp()','dPag++;renderDesp()');
+  document.getElementById('main').innerHTML =
+  '<div class="ph"><div><div class="pt">Despesas</div>'+
+  '<div class="ps">'+fl.length+' registros &bull; Total: <b style="color:var(--accent)">R$ '+brl(total)+'</b></div></div>'+
+  '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
+  '<button class="btn bp" onclick="fmDesp(null)">+ Nova Despesa</button>'+
+  '<a class="btn bg2" href="despesa_form.html" target="_blank">&#128203; Form. Avulso</a>'+
+  '<button class="btn bg2" onclick="exportDespesas()">&#128229; Exportar CSV</button>'+
+  '</div></div>'+
+
+  // FILTROS
+  '<div class="card" style="margin-bottom:16px">'+
+  '<div class="shd">Filtros</div>'+
+  '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:10px;align-items:end;flex-wrap:wrap">'+
+  '<div class="fg"><label>De</label><input id="fde" type="date" value="'+dFiltDe+'" oninput="dFiltDe=this.value;dPag=1;renderDesp()"></div>'+
+  '<div class="fg"><label>Ate</label><input id="fate" type="date" value="'+dFiltAte+'" oninput="dFiltAte=this.value;dPag=1;renderDesp()"></div>'+
+  '<div class="fg"><label>Placa</label>'+
+  '<select id="fplaca" onchange="dFiltPlaca=this.value;dPag=1;renderDesp()">'+
+  '<option value="">Todas as placas</option>'+placasDisp+'</select></div>'+
+  '<div class="fg"><label>Busca</label>'+
+  '<input id="fsrch" value="'+dSrch+'" oninput="dSrch=this.value;dPag=1;renderDesp()" placeholder="Fornecedor, descricao..."></div>'+
+  '<button class="btn bg2" onclick="dSrch=\'\';dFiltDe=\'\';dFiltAte=\'\';dFiltPlaca=\'\';renderDesp()">Limpar</button>'+
+  '</div></div>'+
+  '<div class="tw"><table>'+
+  '<thead><tr><th>Data</th><th>Fornecedor</th><th>Proprietario</th><th>Veiculo</th><th>Placa</th><th>Valor</th><th>Descricao</th><th>Acoes</th></tr></thead>'+
+  '<tbody>'+
+
+  (fl.length===0?'<tr><td colspan="8"><div class="empty"><span class="ei">&#128181;</span>Nenhuma despesa encontrada</div></td></tr>':'')+
+  dpP.map(function(d){
+    return '<tr>'+
+    '<td style="font-size:12px;white-space:nowrap">'+fd(d.data)+'</td>'+
+    '<td style="font-weight:600">'+( d.fornecedor||'-')+'</td>'+
+    '<td style="font-size:12px;color:var(--t2)">'+(d.proprietario||'-')+'</td>'+
+    '<td style="font-size:12px">'+(d.veiculo||'-')+'</td>'+
+    '<td><span style="font-family:monospace;font-weight:700;color:var(--accent)">'+(d.placa||'-')+'</span></td>'+
+    '<td style="font-weight:800;color:var(--ok)">R$ '+brl(d.valor)+'</td>'+
+    '<td style="font-size:12px;color:var(--t2);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+(d.descricao||'')+'">'+(d.descricao||'-')+'</td>'+
+    '<td><div class="acts">'+
+    '<button class="btn bg2 bsm" onclick="fmDesp('+d.id+')" title="Editar">&#9999;</button>'+
+    +(isAdmin()?'<button class="btn bd bsm" onclick="dlDesp('+d.id+')">&#128465;</button>':'')+
+    '</div></td></tr>';
+  }).join('')+
+  '</tbody></table>'+pagDP+'</div>'+
+
+  // TOTALIZADOR POR VEICULO
+  (fl.length > 0 ? resumoPorVeiculo(fl) : '');
+}
+
+function filtrarDespesas(){
+  return (DB.despesas||[]).filter(function(d){
+    var q = dSrch.toLowerCase();
+    var matchSrch = !q || (d.fornecedor||'').toLowerCase().includes(q) ||
+                    (d.descricao||'').toLowerCase().includes(q) ||
+                    (d.proprietario||'').toLowerCase().includes(q);
+    var matchPlaca = !dFiltPlaca || d.placa===dFiltPlaca;
+    var matchDe  = !dFiltDe  || (d.data||'') >= dFiltDe;
+    var matchAte = !dFiltAte || (d.data||'') <= dFiltAte;
+    return matchSrch && matchPlaca && matchDe && matchAte;
+  });
+}
+
+function resumoPorVeiculo(fl){
+  var map = {};
+  fl.forEach(function(d){
+    var key = d.placa||'Sem placa';
+    if(!map[key]) map[key]={placa:key,veiculo:d.veiculo||'-',total:0,qtd:0};
+    map[key].total += Number(d.valor||0);
+    map[key].qtd++;
+  });
+  var rows = Object.values(map).sort(function(a,b){return b.total-a.total;}).map(function(r){
+    return '<div class="di"><div>'+
+    '<div style="font-weight:700;font-family:monospace">'+r.placa+'</div>'+
+    '<div style="font-size:11px;color:var(--t3)">'+r.veiculo+' &bull; '+r.qtd+' lancamento(s)</div></div>'+
+    '<span style="font-weight:800;color:var(--accent)">R$ '+brl(r.total)+'</span></div>';
+  }).join('');
+  return '<div class="card" style="margin-top:16px"><div class="shd">Total por Veiculo</div>'+rows+'</div>';
+}
+
+function fmDesp(id){
+  var d = id ? (DB.despesas||[]).find(function(x){return x.id==id;}) :
+    {data:'', fornecedor:'', proprietario:'', veiculo:'', placa:'', valor:'', descricao:''};
+  if(!d) d = {data:'',fornecedor:'',proprietario:'',veiculo:'',placa:'',valor:'',descricao:''};
+
+  var hoje = new Date().toISOString().split('T')[0];
+  var optsV = '<option value="">-- Selecione um veiculo --</option>'+
+    DB.veiculos.map(function(v){
+      return '<option value="'+v.placa+'" '+(v.placa===d.placa?'selected':'')+'>'+
+        v.placa+' - '+v.marca+' '+v.modelo+' ('+v.ano+')</option>';
+    }).join('');
+
+  om(
+    '<div class="mt2"><span>'+(id?'Editar Despesa':'Nova Despesa')+'</span>'+
+    '<button class="btn bg2 bsm" onclick="cm()">X</button></div>'+
+
+    '<div class="fr">'+
+    '<div class="fg"><label>Data *</label>'+
+    '<input id="dd" type="date" value="'+(d.data||hoje)+'"></div>'+
+    '<div class="fg"><label>Valor (R$) *</label>'+
+    '<input id="dval" type="number" step="0.01" value="'+(d.valor||'')+'" placeholder="0,00"></div></div>'+
+
+    '<div class="fr"><div class="fg full"><label>Veiculo (selecione para preencher placa automaticamente)</label>'+
+    '<select id="dveic" onchange="autoPlaca()">'+optsV+'</select></div></div>'+
+
+    '<div class="fr">'+
+    '<div class="fg"><label>Placa</label>'+
+    '<input id="dplaca" value="'+(d.placa||'')+'" placeholder="ABC-1234" style="font-family:monospace;font-weight:700;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></div>'+
+    '<div class="fg"><label>Proprietario</label>'+
+    '<input id="dprop" value="'+(d.proprietario||'')+'" placeholder="Nome do proprietario"></div></div>'+
+
+    '<div class="fr"><div class="fg full"><label>Fornecedor *</label>'+
+    '<input id="dforn" value="'+(d.fornecedor||'')+'" placeholder="Nome da oficina, loja, prestador..."></div></div>'+
+
+    '<div class="fr"><div class="fg full"><label>Descricao do Servico</label>'+
+    '<textarea id="ddesc">'+(d.descricao||'')+'</textarea></div></div>'+
+
+    '<div class="mf">'+
+    '<button class="btn bg2" onclick="cm()">Cancelar</button>'+
+    '<button class="btn bp" onclick="svDesp('+(id||'null')+')">&#10004; Salvar</button></div>'
+  );
+}
+
+function autoPlaca(){
+  var sel = document.getElementById('dveic');
+  if(!sel) return;
+  var placa = sel.value;
+  var v = DB.veiculos.find(function(x){return x.placa===placa;});
+  var elP = document.getElementById('dplaca');
+  var elV = document.getElementById('dprop');
+  if(elP) elP.value = placa;
+  if(elV && v && v.tipo_est==='consignado'){
+    var f = DB.fornecedores.find(function(x){return x.id==v.proprietario_id;});
+    if(f) elV.value = f.nome;
+  }
+}
+
+function svDesp(id){
+  var data  = document.getElementById('dd').value;
+  var valor = document.getElementById('dval').value;
+  var forn  = document.getElementById('dforn').value.trim();
+  if(!data||!valor||!forn){toast('Preencha Data, Valor e Fornecedor','err');return;}
+  
+  if(!DB.despesas) DB.despesas = [];
+  var obj = {
+    id:       id || nid(DB.despesas),
+    data:     data,
+    fornecedor: forn,
+    proprietario: document.getElementById('dprop').value,
+    veiculo:  document.getElementById('dveic').value,
+    placa:    document.getElementById('dplaca').value.toUpperCase(),
+    valor:    valor,
+    descricao: document.getElementById('ddesc').value,
+  };
+  if(id) DB.despesas = DB.despesas.map(function(d){return d.id==id?obj:d;});
+  else DB.despesas.push(obj);
+  sDB(); fsave('despesas', obj); cm(); renderDesp();
+  toast(id?'Despesa atualizada':'Despesa registrada com sucesso','ok');
+}
+
+function dlDesp(id){
+  if(confirm('Excluir esta despesa?')){
+    DB.despesas = (DB.despesas||[]).filter(function(d){return d.id!=id;});
+    sDB(); fdel('despesas', id); renderDesp();
+    toast('Despesa excluida','ok');
+  }
+}
+
+function exportDespesas(){
+  var cols=[
+    {label:'Data',fn:function(d){return fd(d.data);}},
+    {label:'Fornecedor',key:'fornecedor'},
+    {label:'Proprietario',key:'proprietario'},
+    {label:'Veiculo',key:'veiculo'},
+    {label:'Placa',key:'placa'},
+    {label:'Valor',fn:function(d){return brl(d.valor);}},
+    {label:'Descricao',key:'descricao'},
+  ];
+  var fl = filtrarDespesas();
+  exportCSV(fl,'despesas-automais-'+Date.now()+'.csv',cols);
+}
+
+
+</script>
+<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+</body></html>
