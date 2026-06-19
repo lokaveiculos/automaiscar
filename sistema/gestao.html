@@ -228,7 +228,7 @@ function buildMntRows(list){
       '<td>'+sbM(m.status)+'</td>' +
       '<td><div class="acts">' +
       '<button class="btn bg2 bsm" onclick="fmMnt('+m.id+')">&#9999;</button>' +
-      +(isAdmin()?'<button class="btn bd bsm" onclick="dlMnt('+m.id+')">&#128465;</button>':'') +
+      (isAdmin()?'<button class="btn bd bsm" onclick="dlMnt('+m.id+')">&#128465;</button>':'') +
       '</div></td></tr>';
   }).join('');
   return '<div class="tw"><table>' +
@@ -385,7 +385,7 @@ function renderUsr(){
       '<td><span class="badge '+sBadge+'">'+u.status+'</span></td>' +
       '<td><div class="acts">' +
       '<button class="btn bg2 bsm" onclick="fmUsr('+u.id+')">&#9999;</button>' +
-      +(isAdmin()?'<button class="btn bd bsm" onclick="dlUsr('+u.id+')">&#128465;</button>':'') +
+      (isAdmin()?'<button class="btn bd bsm" onclick="dlUsr('+u.id+')">&#128465;</button>':'') +
       '</div></td></tr>';
   }).join('');
   document.getElementById('main').innerHTML =
