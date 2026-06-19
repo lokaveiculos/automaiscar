@@ -217,7 +217,7 @@ function renderVeic(){
     '<tr><td><div style="font-weight:700">'+v.marca+' '+v.modelo+' <span style="color:var(--t3);font-weight:400">'+(v.versao||'')+'</span></div>'+
     '<div style="font-size:11px;color:var(--t3)">'+v.cor+' &bull; '+v.combustivel+'</div></td>'+
     '<td><div style="font-family:monospace;font-weight:700">'+v.placa+'</div><div style="font-size:10px;color:var(--t3)">'+(v.chassi||'-')+'</div></td>'+
-    '<td>'+v.ano+'<div style="font-size:11px;color:var(--t3)">'+Number(v.km||0).toLocaleString('pt-BR')+' km</div></td>'+
+    '<td><span style="font-weight:700">'+(v.ano_modelo?v.ano+'/'+v.ano_modelo:v.ano)+'</span><div style="font-size:11px;color:var(--t3)">'+Number(v.km||0).toLocaleString('pt-BR')+' km</div></td>'+
     '<td>'+(v.tipo_est==='consignado'?'<span class="badge bg-y">Consig.</span><div style="font-size:11px;color:var(--t3);margin-top:2px">'+(fNome(v.proprietario_id)||'-')+'</div>':'<span class="badge bg-gr">Proprio</span>')+'</td>'+
     '<td style="font-weight:800;color:var(--accent)">R$ '+brl(v.preco)+'</td>'+
     '<td>'+sbV(v.status)+'</td>'+
@@ -291,7 +291,7 @@ function fmVeic(id){
   '<div class="fg"><label>Status</label><select id="vs">'+
   ['disponivel','consignado','manutencao','vendido'].map(s=>'<option value="'+s+'" '+(v.status===s?'selected':'')+'>'+s+'</option>').join('')+'</select></div></div>'+
   '<div class="fr"><div class="fg"><label>Marca *</label><input id="vmarca" value="'+v.marca+'"></div><div class="fg"><label>Modelo *</label><input id="vmod" value="'+v.modelo+'"></div></div>'+
-  '<div class="fr"><div class="fg"><label>Versao</label><input id="vver" value="'+(v.versao||'')+'"></div><div class="fg"><label>Ano</label><input id="vano" value="'+v.ano+'" maxlength="4"></div></div>'+
+  '<div class="fr"><div class="fg"><label>Versão</label><input id="vver" value="'+(v.versao||'')+'"></div><div class="fg"><label>Ano Fab. *</label><input id="vano" value="'+v.ano+'" maxlength="4" placeholder="2020"></div><div class="fg"><label>Ano Mod. *</label><input id="vanomod" value="'+(v.ano_modelo||v.ano)+'" maxlength="4" placeholder="2021"></div></div>'+
   '<div class="fr"><div class="fg"><label>Cor</label><input id="vcor" value="'+v.cor+'"></div><div class="fg"><label>Combustivel</label><select id="vcomb">'+
   ['Flex','Gasolina','Diesel','Eletrico','Hibrido','GNV'].map(c=>'<option '+(v.combustivel===c?'selected':'')+'>'+c+'</option>').join('')+'</select></div></div>'+
   '<div class="fr"><div class="fg"><label>KM</label><input id="vkm" value="'+v.km+'" type="number"></div><div class="fg"><label>Preco (R$) *</label><input id="vpreco" value="'+v.preco+'" type="number"></div></div>'+
@@ -326,6 +326,7 @@ function svVeic(id){
   const obj={id:id||nid(DB.veiculos),placa,marca,modelo,
     versao:document.getElementById('vver').value,
     ano:document.getElementById('vano').value,
+    ano_modelo:(document.getElementById('vanomod')||{value:''}).value||(document.getElementById('vano')||{value:''}).value,
     cor:document.getElementById('vcor').value,
     km:document.getElementById('vkm').value,
     preco,
