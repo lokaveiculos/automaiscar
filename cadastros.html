@@ -201,6 +201,8 @@ checkAuth(function(){
 });
 
 function renderTab(){ cadTab==='forn'?renderForn():renderCli(); }
+let pagC = 1;
+let pagF = 1;
 
 function renderCli(){
   const fl=DB.clientes.filter(c=>{const m=cSrch.toLowerCase();return !m||c.nome.toLowerCase().includes(m)||c.cpf.includes(m)||c.telefone.includes(m);});
