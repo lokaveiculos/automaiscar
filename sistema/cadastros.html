@@ -28,8 +28,8 @@
 <script src="firebase-shared.js"></script>
 <script async src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js" onload="if(typeof renderIcons==='function')renderIcons()"></script>
 <script>
-
-// ── Theme toggle ─────────────────────────────────────────────
+let pagC = 1;
+let pagF = 1;
 function toggleTheme() {
   var current = document.documentElement.getAttribute('data-theme') || 'light';
   var next = current === 'light' ? 'dark' : 'light';
@@ -193,8 +193,6 @@ checkAuth(function() {
   }).catch(function(e){ console.error('[cadastros.html]', e); });
 });
 function renderTab(){ cadTab==='forn'?renderForn():renderCli(); }
-let pagC = 1;
-let pagF = 1;
 
 function renderCli(){
   const fl=DB.clientes.filter(c=>{const m=cSrch.toLowerCase();return !m||c.nome.toLowerCase().includes(m)||c.cpf.includes(m)||c.telefone.includes(m);});
