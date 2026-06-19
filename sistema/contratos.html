@@ -679,14 +679,156 @@ function render(){
   '</tbody></table>'+pagCT+'</div>';
 }
 
+
+// ── Seletor de Documentos ─────────────────────────────────────
 function vizCt(id){
-  const c=DB.contratos.find(x=>x.id==id);if(!c)return;
-  const txt=c.tipo==='venda'?gerarCV(c):c.tipo==='compra'?gerarCompra(c):gerarConsig(c);
-  const extraBtn=c.tipo==='venda'?'<button class="btn bw" onclick="impVendaDocsPorCt('+c.id+')">&#128438; Todos os Docs</button>':'';
-  om('<div class="mt2"><span>&#128196; '+c.numero+'</span><button class="btn bg2 bsm" onclick="cm()">X</button></div>'+
-  '<div class="ct" id="ctxt">'+txt+'</div>'+
-  '<div class="mf"><button class="btn bg2" onclick="cm()">Fechar</button>'+extraBtn+'<button class="btn bp" onclick="impWin(document.getElementById(\'ctxt\').innerText)">&#128438; Imprimir</button></div>',true);
+  var c=DB.contratos.find(function(x){return x.id==id;});
+  if(!c) return;
+  var eh_venda = c.tipo==='venda';
+
+  var docs_venda = eh_venda ? [
+    {id:'cv',    label:'Contrato de Compra e Venda', icon:'&#128196;', checked:true,  admin:false},
+    {id:'ciencia',label:'Termo de Ci\u00eancia e Responsabilidade', icon:'&#128203;', checked:true,  admin:false},
+    {id:'checklist',label:'Checklist do Ve\u00edculo', icon:'&#9989;', checked:true,  admin:false},
+    {id:'uber',  label:'Anexo I \u2013 Termo de Garantia (Uber/Aplicativo)', icon:'&#128663;', checked:false, admin:false}
+  ] : [
+    {id:'contrato',label:'Contrato', icon:'&#128196;', checked:true, admin:false}
+  ];
+
+  var rows = docs_venda.map(function(d){
+    return '<label style="display:flex;align-items:center;gap:12px;padding:14px 16px;border:1px solid var(--border);border-radius:var(--r);cursor:pointer;transition:background .12s;background:var(--surface)"'+
+      ' onmouseover="this.style.background=\'var(--surface-2)\'" onmouseout="this.style.background=\'var(--surface)\'"'+
+      ' onclick="this.querySelector(\'input\').click()">'+ // label click fix
+      '<input type="checkbox" id="doc_'+d.id+'" '+(d.checked?'checked':'')+
+      ' style="width:18px;height:18px;accent-color:var(--brand);cursor:pointer" onclick="event.stopPropagation()">'+
+      '<span style="font-size:22px">'+d.icon+'</span>'+
+      '<div><div style="font-size:14px;font-weight:600;color:var(--text)">'+d.label+'</div>'+
+      (d.id==='uber'?'<div style="font-size:12px;color:var(--text-muted)">Preencher apenas para motoristas de aplicativo</div>':'')+
+      (d.id==='checklist'?'<div style="font-size:12px;color:var(--text-muted)">Vistoria de entrega do ve\u00edculo</div>':'')+
+      '</div></label>';
+  }).join('');
+
+  om(
+    '<div class="mt2">'+
+      '<div style="display:flex;align-items:center;gap:10px">'+
+        '<span style="font-size:20px">&#128196;</span>'+
+        '<span>Contrato N\u00ba '+c.numero+'</span>'+
+      '</div>'+
+      '<button class="btn bg2 bsm" onclick="cm()">&#10005;</button>'+
+    '</div>'+
+    '<div class="mb">'+
+      '<div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:14px">'+
+        'Selecione os documentos para imprimir:'+
+      '</div>'+
+      '<div style="display:flex;flex-direction:column;gap:10px">'+rows+'</div>'+
+    '</div>'+
+    '<div class="mf" style="flex-wrap:wrap;gap:8px">'+
+      '<button class="btn bg2" onclick="cm()">Cancelar</button>'+
+      '<button class="btn bs" onclick="vizCtDoc('+id+',\'preview\')" title="Visualizar no sistema">&#128065; Visualizar</button>'+
+      '<button class="btn bp" onclick="vizCtDoc('+id+',\'print\')">&#128438; Imprimir Selecionados</button>'+
+    '</div>',
+    true
+  );
 }
+
+// ── Executar após seleção ──────────────────────────────────────
+function vizCtDoc(id, action){
+  var c=DB.contratos.find(function(x){return x.id==id;});
+  if(!c) return;
+
+  function docSel(key){ var el=document.getElementById('doc_'+key); return el&&el.checked; }
+
+  var partes = [];
+
+  if(c.tipo==='venda'){
+    if(docSel('cv'))       partes.push({titulo:'CONTRATO DE COMPRA E VENDA N\u00ba '+c.numero, conteudo:gerarCV_simples(c)});
+    if(docSel('ciencia'))  partes.push({titulo:'TERMO DE CI\u00caNCIA E RESPONSABILIDADE', conteudo:gerarTermoCiencia(c, cObj(c.cliente_id)||{}, vObj(c.veiculo_id)||{})});
+    if(docSel('checklist'))partes.push({titulo:'CHECKLIST DE ENTREGA DO VE\u00cdCULO', conteudo:gerarChecklist(c)});
+    if(docSel('uber'))     partes.push({titulo:'ANEXO I \u2013 TERMO DE GARANTIA (UBER/APLICATIVO)', conteudo:gerarTermoUber(c)});
+  } else {
+    if(docSel('contrato')) partes.push({titulo:'CONTRATO N\u00ba '+c.numero, conteudo:c.tipo==='compra'?gerarCompra(c):gerarConsig(c)});
+  }
+
+  if(!partes.length){ toast('Selecione ao menos um documento','warn'); return; }
+
+  var texto_completo = partes.map(function(p){
+    return '='.repeat(70)+'\n'+p.titulo+'\n'+'='.repeat(70)+'\n\n'+p.conteudo;
+  }).join('\n\n'+'\u2500'.repeat(70)+'\n\n');
+
+  if(action==='print'){
+    cm();
+    impWin(texto_completo);
+  } else {
+    // preview inline
+    cm();
+    om(
+      '<div class="mt2"><span>&#128196; Contrato '+c.numero+'</span>'+
+      '<button class="btn bg2 bsm" onclick="cm()">&#10005;</button></div>'+
+      '<div id="ctxt" style="font-family:monospace;font-size:11.5px;white-space:pre-wrap;padding:20px;'+
+      'max-height:72vh;overflow-y:auto;background:var(--surface-2);border-top:1px solid var(--border)">'+
+      texto_completo+'</div>'+
+      '<div class="mf">'+
+        '<button class="btn bg2" onclick="cm()">Fechar</button>'+
+        '<button class="btn bp" onclick="vizCtDoc('+id+',\'print\')">&#128438; Imprimir</button>'+
+      '</div>',
+      true
+    );
+  }
+}
+
+// ── gerarCV sem o Anexo (puro contrato) ──────────────────────
+function gerarCV_simples(c){
+  var e=DB.empresa||{}, cl=cObj(c.cliente_id)||{}, v=vObj(c.veiculo_id)||{};
+  var dt=c.data?new Date(c.data+'T12:00').toLocaleDateString('pt-BR'):new Date().toLocaleDateString('pt-BR');
+  var nasc=cl.nasc?new Date(cl.nasc+'T12:00').toLocaleDateString('pt-BR'):'';
+  var saldo=brl(Number(c.valor||0)-Number(c.entrada||0));
+  var LS='\u2500'.repeat(70);
+  var txt='';
+  txt+='VENDEDOR\n';
+  txt+='  '+(e.nome||'AUTO MAIS COMERCIO E CORRETORA DE VE\u00cdCULOS LTDA')+'\n';
+  txt+='  CNPJ: '+(e.cnpj||'05.622.137/0001-00')+'  Tel: '+(e.telefone||'')+'\n';
+  txt+='  '+(e.endereco||'Rua Juarez T\u00e1vora, 346')+', '+(e.bairro||'S\u00e3o Jo\u00e3o')+' \u2013 '+(e.cidade||'Feira de Santana')+'/'+(e.uf||'BA')+'\n\n';
+  txt+='COMPRADOR\n';
+  txt+='  Nome: '+(cl.nome||'')+'\n';
+  txt+='  CPF: '+(cl.cpf||'')+(cl.rg?'    RG: '+cl.rg:'')+'\n';
+  txt+='  '+(nasc?'Nasc: '+nasc+'    ':'')+' Est. Civil: '+(cl.estado_civil||'\u2014')+'    Prof: '+(cl.profissao||'\u2014')+'\n';
+  txt+='  End: '+(cl.endereco||'')+' \u2013 '+(cl.cidade||'')+'/'+(cl.uf||'')+(cl.cep?'    CEP: '+cl.cep:'')+'\n';
+  txt+='  Tel: '+(cl.telefone||'')+(cl.email?'    Email: '+cl.email:'')+'\n\n';
+  txt+=LS+'\n';
+  txt+='VE\u00cdCULO\n';
+  txt+='  '+(v.marca||'')+' '+(v.modelo||'')+(v.versao?' '+v.versao:'')+' | Ano: '+(v.ano||'')+' | Cor: '+(v.cor||'')+' | Comb: '+(v.combustivel||'')+'\n';
+  txt+='  Placa: '+(v.placa||'')+'    RENAVAM: '+(v.renavam||'_____________')+'    KM: '+Number(v.km||0).toLocaleString('pt-BR')+' km\n';
+  txt+='  Chassi: '+(v.chassi||'_______________________')+'\n';
+  if(c.obs) txt+='  Obs: '+c.obs+'\n';
+  txt+='\n'+LS+'\n';
+  txt+='CONDI\u00c7\u00d5ES DE PAGAMENTO\n';
+  txt+='  Valor Total:  R$ '+brl(c.valor||'0')+'\n';
+  txt+='  Entrada:      R$ '+brl(c.entrada||'0')+'\n';
+  txt+='  Saldo:        R$ '+saldo+'\n';
+  txt+='  Forma:        '+(c.pagamento||'')+'\n';
+  if(c.financeira) txt+='  Financeira:   '+c.financeira+'\n';
+  if(Number(c.num_parcelas||0)>0) txt+='  Parcelamento: '+c.num_parcelas+'x de R$ '+brl(c.valor_parcela||'0')+'\n';
+  txt+='\n'+LS+'\n';
+  txt+='CL\u00c1USULAS\n\n';
+  txt+='1. GARANTIA: 90 dias contra v\u00edcios ocultos (CDC, Lei 8.078/90, art. 26).\n';
+  txt+='   Excluem-se desgastes naturais, pe\u00e7as de reposi\u00e7\u00e3o e danos por uso indevido.\n\n';
+  txt+='2. VENDEDOR: Entrega o ve\u00edculo livre de multas, IPVA e grav\u00e3mes at\u00e9 esta data\n';
+  txt+='   e fornece documenta\u00e7\u00e3o para transfer\u00eancia em at\u00e9 30 dias.\n\n';
+  txt+='3. COMPRADOR: Paga nas condi\u00e7\u00f5es acordadas; transfere em at\u00e9 30 dias;\n';
+  txt+='   respons\u00e1vel por multas e encargos a partir da entrega. Uso em aplicativos\n';
+  txt+='   (Uber, 99 etc.) deve ser informado e sujeita ao Anexo I.\n\n';
+  txt+='4. PROPRIEDADE: Transfere-se ap\u00f3s quita\u00e7\u00e3o integral.\n\n';
+  txt+='5. PENALIDADES: Inadimpl\u00eancia: reten\u00e7\u00e3o de 20% dos valores pagos.\n\n';
+  txt+='6. FORO: Comarca de '+(e.cidade||'Feira de Santana')+'/'+(e.uf||'BA')+'.\n\n\n';
+  txt+='Feira de Santana \u2013 BA, '+dt+'\n\n\n';
+  txt+='___________________________________________\n';
+  txt+=(e.nome||'AUTO MAIS VE\u00cdCULOS')+'\nVENDEDOR\n\n\n';
+  txt+='___________________________________________\n';
+  txt+=(cl.nome||'')+' \u2013 CPF: '+(cl.cpf||'')+'\nCOMPRADOR\n\n\n';
+  txt+='TESTEMUNHAS:\n_______________________    _______________________\nNome:                      Nome:\nCPF:                       CPF:\n';
+  return txt;
+}
+
 
 function fmCt(id){
   const c=id?DB.contratos.find(x=>x.id==id):{tipo:'venda',numero:'',data:'',cliente_id:'',fornecedor_id:'',veiculo_id:'',valor:'',entrada:'',pagamento:'A vista',financeira:'',num_parcelas:'',valor_parcela:'',prazo:'90',tipo_comissao:'percentual',comissao:'5',valor_minimo:'',condicao:'',debitos:'Nenhum',status:'ativo',obs:''};
