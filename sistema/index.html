@@ -160,8 +160,20 @@ function fObj(id){return DB.fornecedores.find(x=>x.id==id)||{};}
 function sbV(s){const m={disponivel:'bg-g',vendido:'bg-b',consignado:'bg-y',manutencao:'bg-r',reservado:'bg-o'};return'<span class="badge '+(m[s]||'bg-gr')+'">'+s+'</span>';}
 function sbC(s){const m={ativo:'bg-g',assinado:'bg-b',cancelado:'bg-r',concluido:'bg-gr'};return'<span class="badge '+(m[s]||'bg-gr')+'">'+s+'</span>';}
 function sbM(s){const m={concluida:'bg-g',andamento:'bg-y',pendente:'bg-gr'};return'<span class="badge '+(m[s]||'bg-gr')+'">'+s+'</span>';}
-function om(h,lg){const md=document.getElementById('mdc');md.className='md'+(lg?' md-lg':'');md.innerHTML=h;document.getElementById('modal').classList.remove('hidden');}
-function cm(){document.getElementById('modal').classList.add('hidden');}
+function om(h,lg){
+  var md=document.getElementById('mdc');
+  if(!md){console.error('Modal #mdc não encontrado');return;}
+  md.className='md'+(lg?' md-lg':'');
+  md.innerHTML=h;
+  var mo=document.getElementById('modal');
+  if(!mo){console.error('Modal #modal não encontrado');return;}
+  mo.style.display='flex';
+  mo.style.alignItems='center';
+  mo.style.justifyContent='center';
+  // Fechar ao clicar fora
+  mo.onclick=function(e){if(e.target===mo)cm();};
+}
+function cm(){var mo=document.getElementById('modal');if(mo)mo.style.display='none';}
 document.getElementById('modal').addEventListener('click',function(e){if(e.target===this)cm();});
 function tsb(){document.getElementById('sb').classList.toggle('open');document.getElementById('ov').classList.toggle('show');}
 function csb(){document.getElementById('sb').classList.remove('open');document.getElementById('ov').classList.remove('show');}

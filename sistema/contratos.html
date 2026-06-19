@@ -160,98 +160,186 @@ function fObj(id){return DB.fornecedores.find(x=>x.id==id)||{};}
 function sbV(s){const m={disponivel:'bg-g',vendido:'bg-b',consignado:'bg-y',manutencao:'bg-r',reservado:'bg-o'};return'<span class="badge '+(m[s]||'bg-gr')+'">'+s+'</span>';}
 function sbC(s){const m={ativo:'bg-g',assinado:'bg-b',cancelado:'bg-r',concluido:'bg-gr'};return'<span class="badge '+(m[s]||'bg-gr')+'">'+s+'</span>';}
 function sbM(s){const m={concluida:'bg-g',andamento:'bg-y',pendente:'bg-gr'};return'<span class="badge '+(m[s]||'bg-gr')+'">'+s+'</span>';}
-function om(h,lg){const md=document.getElementById('mdc');md.className='md'+(lg?' md-lg':'');md.innerHTML=h;document.getElementById('modal').classList.remove('hidden');}
-function cm(){document.getElementById('modal').classList.add('hidden');}
+function om(h,lg){
+  var md=document.getElementById('mdc');
+  if(!md){console.error('Modal #mdc não encontrado');return;}
+  md.className='md'+(lg?' md-lg':'');
+  md.innerHTML=h;
+  var mo=document.getElementById('modal');
+  if(!mo){console.error('Modal #modal não encontrado');return;}
+  mo.style.display='flex';
+  mo.style.alignItems='center';
+  mo.style.justifyContent='center';
+  // Fechar ao clicar fora
+  mo.onclick=function(e){if(e.target===mo)cm();};
+}
+function cm(){var mo=document.getElementById('modal');if(mo)mo.style.display='none';}
 document.getElementById('modal').addEventListener('click',function(e){if(e.target===this)cm();});
 function tsb(){document.getElementById('sb').classList.toggle('open');document.getElementById('ov').classList.toggle('show');}
 function csb(){document.getElementById('sb').classList.remove('open');document.getElementById('ov').classList.remove('show');}
 function impWin(txt){const w=window.open('','_blank');w.document.write('<!DOCTYPE html><html><head><meta charset=UTF-8><style>body{font-family:Courier New,monospace;font-size:12px;padding:28px;line-height:1.8;color:#000;white-space:pre-wrap}</style></head><body>'+txt+'</body></html>');w.document.close();w.print();}
 
 
+
+// ── Contrato de Compra e Venda (compacto, 1 página) ──────────
 function gerarCV(c){
-  const e=DB.empresa,cl=cObj(c.cliente_id),v=vObj(c.veiculo_id);
-  const dt=c.data?new Date(c.data+'T12:00').toLocaleDateString('pt-BR'):new Date().toLocaleDateString('pt-BR');
-  const nasc=cl.nasc?new Date(cl.nasc+'T12:00').toLocaleDateString('pt-BR'):'';
-  const saldo=brl(Number(c.valor||0)-Number(c.entrada||0));
-  const ln='='.repeat(62);const ls=String.fromCharCode(9472).repeat(62);
-  return 'CONTRATO PARTICULAR DE COMPRA E VENDA DE VEICULO USADO\n'+ln+
-'\nNumero: '+c.numero+'                          Data: '+dt+
-'\n\nVENDEDOR:\n  '+e.nome+' | CNPJ: '+e.cnpj+
-'\n  '+e.endereco+', '+e.bairro+' - '+e.cidade+'/'+e.uf+
-'\n  Tel: '+e.telefone+' | '+e.email+
-'\n\nCOMPRADOR:\n  Nome: '+cl.nome+
-'\n  CPF: '+cl.cpf+(cl.rg?'   RG: '+cl.rg:'')+
-'\n  '+(nasc?'Nasc: '+nasc+'   ':'')+' Estado Civil: '+(cl.estado_civil||'-')+'   Profissao: '+(cl.profissao||'-')+
-'\n  End: '+cl.endereco+' - '+(cl.cidade||'')+'/'+(cl.uf||'')+'   CEP: '+(cl.cep||'')+
-'\n  Tel: '+cl.telefone+(cl.email?'   Email: '+cl.email:'')+
-'\n\n'+ls+
-'\nCLAUSULA 1 - DO OBJETO\n\n'+
-'  O VENDEDOR, como legitimo proprietario, vende ao COMPRADOR:\n\n'+
-'  Marca/Modelo: '+v.marca+' '+v.modelo+' '+(v.versao||'')+
-'\n  Ano: '+v.ano+'   Cor: '+v.cor+'   Combustivel: '+v.combustivel+
-'\n  Placa: '+v.placa+'   RENAVAM: '+(v.renavam||'________________')+
-'\n  Chassi: '+(v.chassi||'_______________________')+
-'\n  KM: '+Number(v.km||0).toLocaleString('pt-BR')+' km'+
-'\n  Opcionais: '+(v.opcionais||'Conforme vistoria')+
-(c.obs?'\n  Obs: '+c.obs:'')+
-'\n\n'+ls+
-'\nCLAUSULA 2 - DO PRECO E CONDICOES DE PAGAMENTO\n\n'+
-'  Valor total:   R$ '+brl(c.valor)+'\n'+
-'  Entrada:       R$ '+brl(c.entrada||'0')+'\n'+
-'  Saldo:         R$ '+saldo+'\n'+
-'  Pagamento:     '+c.pagamento+'\n'+
-(c.financeira?'  Financeira:    '+c.financeira+'\n':'')+
-(Number(c.num_parcelas||0)>0?'  Parcelamento:  '+c.num_parcelas+'x de R$ '+brl(c.valor_parcela||'0')+'\n':'')+
-'\n'+ls+
-'\nCLAUSULA 3 - DA GARANTIA\n\n'+
-'  3.1 Conforme o CDC (Lei 8.078/90, art. 26), garantia de\n'+
-'  90 (noventa) dias contra vicios ocultos.\n\n'+
-'  3.2 A garantia cobre defeitos mecanicos ocultos nao\n'+
-'  aparentes na data da venda e nao informados acima.\n\n'+
-'  3.3 EXCLUIDOS da garantia:\n'+
-'    a) Desgastes naturais (pneus, pastilhas, filtros);\n'+
-'    b) Danos por uso indevido ou acidente;\n'+
-'    c) Defeitos preexistentes informados ao COMPRADOR;\n'+
-'    d) Itens de manutencao de rotina.\n\n'+
-'  3.4 Para acionamento, comunicar por escrito no prazo legal\n'+
-'  e apresentar o veiculo ao VENDEDOR.\n\n'+ls+
-'\nCLAUSULA 4 - OBRIGACOES DO VENDEDOR\n\n'+
-'  4.1 Entregar o veiculo livre de multas, IPVA e DPVAT\n'+
-'  ate a data desta assinatura.\n\n'+
-'  4.2 Fornecer documentacao para transferencia em ate\n'+
-'  30 (trinta) dias apos a assinatura.\n\n'+
-'  4.3 O veiculo esta LIVRE de onus, gravames, alienacao\n'+
-'  fiduciaria ou penhora, sob pena de rescisao e devolucao\n'+
-'  integral dos valores pagos.\n\n'+
-'  4.4 Nao se responsabiliza por multas apos a entrega.\n\n'+ls+
-'\nCLAUSULA 5 - OBRIGACOES DO COMPRADOR\n\n'+
-'  5.1 Efetuar o pagamento nas condicoes acordadas, sob\n'+
-'  pena de multa de 2% ao mes sobre o valor em atraso.\n\n'+
-'  5.2 Transferir o veiculo em ate 30 dias, arcando com\n'+
-'  todas as despesas de transferencia no DETRAN.\n\n'+
-'  5.3 Responsabilizar-se por multas e encargos a partir\n'+
-'  da data de entrega.\n\n'+ls+
-'\nCLAUSULA 6 - TRANSFERENCIA DE PROPRIEDADE\n\n'+
-'  A propriedade se transfere somente apos quitacao\n'+
-'  integral. Em caso de financiamento, o veiculo permanece\n'+
-'  alienado ate a liquidacao total do debito.\n\n'+ls+
-'\nCLAUSULA 7 - PENALIDADES\n\n'+
-'  7.1 Rescisao por inadimplemento do COMPRADOR: retencao\n'+
-'  de 20% do valor pago; restante devolvido em 30 dias.\n\n'+
-'  7.2 Descumprimento pelo VENDEDOR: devolucao integral\n'+
-'  acrescida de multa de 10% (dez por cento).\n\n'+ls+
-'\nCLAUSULA 8 - FORO\n\n'+
-'  Fica eleito o foro da Comarca de '+e.cidade+'/'+e.uf+'.\n'+
-'  Firmado em 02 (duas) vias de igual teor e forma.\n\n\n'+
-e.cidade+' - '+e.uf+', '+dt+'\n\n\n'+
-'___________________________________________\n'+
-e.nome+' | CNPJ: '+e.cnpj+'\nVENDEDOR\n\n\n'+
-'___________________________________________\n'+
-cl.nome+' | CPF: '+cl.cpf+'\nCOMPRADOR\n\n\n'+
-'TESTEMUNHAS:\n'+
-'_______________________    _______________________\n'+
-'Nome:                      Nome:\nCPF:                       CPF:';
+  var e=DB.empresa||{}, cl=cObj(c.cliente_id)||{}, v=vObj(c.veiculo_id)||{};
+  var dt=c.data?new Date(c.data+'T12:00').toLocaleDateString('pt-BR'):new Date().toLocaleDateString('pt-BR');
+  var nasc=cl.nasc?new Date(cl.nasc+'T12:00').toLocaleDateString('pt-BR'):'';
+  var entrada=Number(c.entrada||0);
+  var saldo=brl(Number(c.valor||0)-entrada);
+  var LN='='.repeat(70);
+  var LS='\u2500'.repeat(70);
+
+  var txt='';
+  txt+='CONTRATO PARTICULAR DE COMPRA E VENDA DE VE\u00cdCULO USADO N\u00ba '+c.numero+'\n';
+  txt+=LN+'\n\n';
+
+  txt+='VENDEDOR\n';
+  txt+='  '+(e.nome||'AUTO MAIS COMERCIO E CORRETORA DE VE\u00cdCULOS LTDA')+'\n';
+  txt+='  CNPJ: '+(e.cnpj||'05.622.137/0001-00')+'  Tel: '+(e.telefone||'')+'\n';
+  txt+='  '+(e.endereco||'Rua Juarez T\u00e1vora, 346')+', '+(e.bairro||'S\u00e3o Jo\u00e3o')+' \u2013 '+(e.cidade||'Feira de Santana')+'/'+(e.uf||'BA')+'\n\n';
+
+  txt+='COMPRADOR\n';
+  txt+='  Nome: '+cl.nome+'    CPF: '+cl.cpf+(cl.rg?'    RG: '+cl.rg:'')+'\n';
+  txt+='  '+(nasc?'Nasc: '+nasc+'    ':'')+' Est. Civil: '+(cl.estado_civil||'\u2014')+'    Prof: '+(cl.profissao||'\u2014')+'\n';
+  txt+='  End: '+(cl.endereco||'')+' \u2013 '+(cl.cidade||'')+'/'+(cl.uf||'')+'    CEP: '+(cl.cep||'')+'\n';
+  txt+='  Tel: '+(cl.telefone||'')+(cl.email?'    Email: '+cl.email:'')+'\n\n';
+
+  txt+=LS+'\n';
+  txt+='VE\u00cdCULO\n';
+  txt+='  '+v.marca+' '+v.modelo+(v.versao?' '+v.versao:'')+' | Ano: '+v.ano+' | Cor: '+v.cor+' | Comb: '+(v.combustivel||'')+'\n';
+  txt+='  Placa: '+v.placa+'    RENAVAM: '+(v.renavam||'_____________')+'    KM: '+Number(v.km||0).toLocaleString('pt-BR')+' km\n';
+  txt+='  Chassi: '+(v.chassi||'_______________________')+'\n';
+  if(c.obs) txt+='  Obs: '+c.obs+'\n';
+  txt+='\n';
+
+  txt+=LS+'\n';
+  txt+='CONDI\u00c7\u00d5ES DE PAGAMENTO\n';
+  txt+='  Valor Total:  R$ '+brl(c.valor)+'\n';
+  txt+='  Entrada:      R$ '+brl(c.entrada||'0')+'\n';
+  txt+='  Saldo:        R$ '+saldo+'\n';
+  txt+='  Forma:        '+(c.pagamento||'')+'\n';
+  if(c.financeira) txt+='  Financeira:   '+c.financeira+'\n';
+  if(Number(c.num_parcelas||0)>0) txt+='  Parcelamento: '+c.num_parcelas+'x de R$ '+brl(c.valor_parcela||'0')+'\n';
+  txt+='\n';
+
+  txt+=LS+'\n';
+  txt+='CL\u00c1USULAS\n\n';
+  txt+='1. GARANTIA: 90 (noventa) dias contra v\u00edcios ocultos, nos termos do CDC\n';
+  txt+='   (Lei 8.078/90, art. 26). N\u00e3o cobre desgastes naturais, manuten\u00e7\u00e3o\n';
+  txt+='   rotineira (pneus, pastilhas, filtros, velas, fluidos) nem danos por\n';
+  txt+='   uso indevido, acidente ou modifica\u00e7\u00f5es n\u00e3o autorizadas.\n\n';
+  txt+='2. VENDEDOR: Entrega o ve\u00edculo livre de multas, IPVA e grav\u00e3mes at\u00e9 a\n';
+  txt+='   data desta assinatura e fornece documenta\u00e7\u00e3o para transfer\u00eancia em\n';
+  txt+='   at\u00e9 30 (trinta) dias.\n\n';
+  txt+='3. COMPRADOR: Efetua o pagamento conforme acordado; transfere o ve\u00edculo\n';
+  txt+='   em at\u00e9 30 dias arcando com todas as despesas no DETRAN; responsabiliza-\n';
+  txt+='   se por multas e encargos a partir da entrega. Uso para transporte por\n';
+  txt+='   aplicativos (Uber, 99 etc.) deve ser informado, sujeitando-se ao\n';
+  txt+='   Termo de Garantia espec\u00edfico para esta modalidade.\n\n';
+  txt+='4. PROPRIEDADE: Transfere-se somente ap\u00f3s quita\u00e7\u00e3o integral. Em\n';
+  txt+='   financiamento, o ve\u00edculo permanece alienado at\u00e9 liquida\u00e7\u00e3o do d\u00e9bito.\n\n';
+  txt+='5. PENALIDADES: Inadimplemento do COMPRADOR \u2192 reten\u00e7\u00e3o de 20% do valor\n';
+  txt+='   pago. Descumprimento pelo VENDEDOR \u2192 devolu\u00e7\u00e3o + multa de 10%.\n\n';
+  txt+='6. FORO: Comarca de '+(e.cidade||'Feira de Santana')+'/'+(e.uf||'BA')+'.\n\n';
+  txt+='Firmado em 02 (duas) vias de igual teor e validade.\n\n\n';
+  txt+=(e.cidade||'Feira de Santana')+' \u2013 '+(e.uf||'BA')+', '+dt+'\n\n\n';
+  txt+='___________________________________________\n';
+  txt+=(e.nome||'AUTO MAIS VE\u00cdCULOS LTDA')+'\nVENDEDOR\n\n\n';
+  txt+='___________________________________________\n';
+  txt+=cl.nome+' \u2013 CPF: '+cl.cpf+'\nCOMPRADOR\n\n\n';
+  txt+='TESTEMUNHAS:\n';
+  txt+='_______________________    _______________________\n';
+  txt+='Nome:                      Nome:\nCPF:                       CPF:\n';
+
+  // Anexo I — sempre incluso
+  txt+='\n\n'+LN+'\n';
+  txt+='ANEXO I \u2013 TERMO DE CI\u00caNCIA E DE RESPONSABILIDADE\n';
+  txt+=LN+'\n\n';
+  txt+=gerarTermoCiencia(c, cl, v);
+
+  return txt;
 }
+
+// ── Termo de Ciência e Responsabilidade (Anexo I) ────────────
+function gerarTermoCiencia(c, cl, v){
+  var dt=c.data?new Date(c.data+'T12:00').toLocaleDateString('pt-BR'):new Date().toLocaleDateString('pt-BR');
+  var e=DB.empresa||{};
+  var txt='';
+  txt+='O(A) abaixo-assinado(a), COMPRADOR(A) '+(cl.nome||'')+', CPF '+(cl.cpf||'')+',\n';
+  txt+='adquirente do ve\u00edculo '+(v.marca||'')+' '+(v.modelo||'')+', placa '+(v.placa||'')+',\n';
+  txt+='conforme Contrato de Compra e Venda N\u00ba '+c.numero+', declara estar ciente:\n\n';
+  txt+='1) O ve\u00edculo \u00e9 semin\u00f3vo, com desgaste natural; foi visto e inspecionado por\n';
+  txt+='   mim, tomando ci\u00eancia de seu estado e condi\u00e7\u00f5es de conserva\u00e7\u00e3o.\n\n';
+  txt+='2) A partir do recebimento passo a ser o \u00fanico respons\u00e1vel pela manuten\u00e7\u00e3o;\n';
+  txt+='   a garantia \u00e9 exercida conforme o contrato e somente por defeito manifestado\n';
+  txt+='   no curso do prazo legal, n\u00e3o decorrente de neglig\u00eancia de manuten\u00e7\u00e3o.\n\n';
+  txt+='3) Pe\u00e7as sujeitas a desgaste (filtros, \u00f3leos, pneus, baterias, juntas, velas\n';
+  txt+='   etc.) t\u00eam vida \u00fatil compat\u00edvel com o estado e KM do ve\u00edculo; sua futura\n';
+  txt+='   substitui\u00e7\u00e3o \u00e9 de minha inteira e exclusiva responsabilidade.\n\n';
+  txt+='4) Uso para transporte por aplicativos (Uber, 99 etc.) acelera o desgaste\n';
+  txt+='   de componentes, exigindo manuten\u00e7\u00e3o mais frequente. A omiss\u00e3o desta\n';
+  txt+='   informa\u00e7\u00e3o acarretar\u00e1 negativa de garantia.\n\n';
+  txt+='5) A loja n\u00e3o se responsabiliza por defeitos decorrentes de desgaste\n';
+  txt+='   prematuro, aus\u00eancia de manuten\u00e7\u00e3o ou inobserv\u00e2ncia dos avisos do ve\u00edculo.\n\n';
+  txt+='6) Qualquer servi\u00e7o na garantia deve ser comunicado e autorizado previamente\n';
+  txt+='   pela loja. O comprador adquire o ve\u00edculo em '+(e.cidade||'Feira de Santana')+'/'+(e.uf||'BA')+'\n';
+  txt+='   onde s\u00e3o prestados os servi\u00e7os de garantia, sendo o deslocamento por sua\n';
+  txt+='   conta. Servi\u00e7os em oficinas externas dependem de autoriza\u00e7\u00e3o pr\u00e9via.\n\n\n';
+  txt+=e.cidade+' \u2013 '+(e.uf||'BA')+', '+dt+'\n\n\n';
+  txt+='___________________________________________\n';
+  txt+=cl.nome+'    CPF: '+(cl.cpf||'')+'\nCOMPRADOR(A)\n';
+  return txt;
+}
+
+// ── Termo de Garantia para Uber (opcional, Anexo II) ─────────
+function gerarTermoUber(c){
+  var e=DB.empresa||{}, cl=cObj(c.cliente_id)||{}, v=vObj(c.veiculo_id)||{};
+  var dt=c.data?new Date(c.data+'T12:00').toLocaleDateString('pt-BR'):new Date().toLocaleDateString('pt-BR');
+  var LN='='.repeat(70);
+  var txt='';
+  txt+='TERMO DE GARANTIA \u2013 VE\u00cdCULO PARA TRANSPORTE POR APLICATIVO\n';
+  txt+=LN+'\n\n';
+  txt+='COMPRADOR: '+cl.nome+'\n';
+  txt+='CPF: '+(cl.cpf||'')+'\n';
+  txt+='Ve\u00edculo: '+v.marca+' '+v.modelo+(v.versao?' '+v.versao:'')+' | Ano: '+v.ano+'\n';
+  txt+='Placa: '+v.placa+' | Chassi: '+(v.chassi||'')+' | KM: '+Number(v.km||0).toLocaleString('pt-BR')+' km\n\n';
+
+  txt+='Por meio deste instrumento, o COMPRADOR declara ci\u00eancia dos termos da\n';
+  txt+='GARANTIA sobre o ve\u00edculo acima, adquirido para fins de transporte de\n';
+  txt+='particulares por aplicativos (Uber, 99 e afins).\n\n';
+
+  txt+='1. PRAZO: 90 (noventa) dias OU at\u00e9 5.000 (cinco mil) km rodados \u2013\n';
+  txt+='   prevalecendo a condi\u00e7\u00e3o que primeiro ocorrer, a contar desta data.\n';
+  txt+='   Cobertura: eventuais v\u00edcios ocultos em motor e c\u00e2mbio.\n\n';
+  txt+='2. EL\u00c9TRICOS/ELETR\u00d4NICOS: 7 (sete) dias para rel\u00eas, m\u00f3dulos, sensores,\n';
+  txt+='   alternador, motor de partida, l\u00e2mpadas, chicotes e acionamentos.\n\n';
+  txt+='3. EXCLU\u00cdDOS DA GARANTIA: acabamentos, estofamentos, pintura, para-choques,\n';
+  txt+='   pneus, pe\u00e7as de desgaste natural (embreagem, pastilhas, velas, correias,\n';
+  txt+='   amortecedores, filtros, \u00f3leos, fluidos e similares).\n\n';
+  txt+='4. O COMPRADOR compromete-se a: (a) comunicar qualquer defeito \u00e0 loja em\n';
+  txt+='   at\u00e9 24h ap\u00f3s detect\u00e1-lo, por escrito; (b) encaminhar o ve\u00edculo \u00e0 loja\n';
+  txt+='   ou oficina por ela indicada, arcando com custos de transporte/guincho;\n';
+  txt+='   (c) n\u00e3o realizar servi\u00e7os em oficinas externas sem autoriza\u00e7\u00e3o pr\u00e9via.\n\n';
+  txt+='5. PERDA DA GARANTIA: uso inadequado ou imprudente; competi\u00e7\u00f5es ou rachas;\n';
+  txt+='   altera\u00e7\u00f5es originais; combust\u00edvel errado ou de m\u00e1 qualidade; reparos\n';
+  txt+='   n\u00e3o autorizados.\n\n';
+  txt+='6. A loja poder\u00e1 recusar cobertura se identificar que o defeito decorreu de\n';
+  txt+='   desgaste prematuro por alta rotatividade do uso como aplicativo, e n\u00e3o\n';
+  txt+='   de v\u00edcio oculto.\n\n';
+  txt+='7. A presente garantia n\u00e3o cobre compensa\u00e7\u00e3o por danos diretos ou indiretos\n';
+  txt+='   a pessoas ou bens.\n\n\n';
+  txt+=(e.cidade||'Feira de Santana')+' \u2013 '+(e.uf||'BA')+', '+dt+'\n\n\n';
+  txt+='___________________________________________\n';
+  txt+=(e.nome||'AUTO MAIS VE\u00cdCULOS LTDA')+'\n\n\n';
+  txt+='___________________________________________\n';
+  txt+=cl.nome+' \u2013 CPF: '+(cl.cpf||'')+'\nCOMPRADOR\n';
+  return txt;
+}
+
+// ── vizCt() atualizado com botão Uber ────────────────────────
+
 
 function gerarCompra(c){
   const e=DB.empresa,f=fObj(c.fornecedor_id),v=vObj(c.veiculo_id);
