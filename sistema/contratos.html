@@ -200,6 +200,231 @@ function impWin(html_content, titulo){
   w.onload=function(){ setTimeout(function(){ w.print(); },500); };
 }
 
+
+var ctPag=1;
+function render(){
+  const fl=DB.contratos.filter(c=>{const m=ctSrch.toLowerCase();return !m||c.numero.toLowerCase().includes(m)||(cNome(c.cliente_id)||'').toLowerCase().includes(m)||(fNome(c.fornecedor_id)||'').toLowerCase().includes(m);});
+  const tl={venda:'Compra e Venda',compra:'Compra',consignacao:'Consignacao'};
+  document.getElementById('main').innerHTML=
+  '<div class="ph"><div><div class="pt">Contratos</div><div class="ps">'+DB.contratos.length+' contratos</div></div>'+
+  '<button class="btn bp" onclick="fmCt(null)">+ Novo Contrato</button></div>'+
+  '<div class="sb2"><div class="sw"><span class="sico">&#128269;</span><input value="'+ctSrch+'" oninput="ctSrch=this.value;ctPag=1;render()" placeholder="Numero, cliente ou fornecedor..."></div></div>'+
+  '<div class="tw"><table><thead><tr><th>Numero</th><th>Tipo</th><th>Data</th><th>Parte</th><th>Veiculo</th><th>Valor</th><th>Status</th><th>Acoes</th></tr></thead><tbody>'+
+  (fl.length===0?'<tr><td colspan="8"><div class="empty"><span class="ei">&#128196;</span>Nenhum contrato</div></td></tr>':'')+
+  fl.slice().reverse().map(c=>
+    '<tr><td style="font-family:monospace;font-weight:700">'+c.numero+'</td>'+
+    '<td><span class="badge '+(c.tipo==='venda'?'bg-b':c.tipo==='compra'?'bg-g':'bg-y')+'">'+(tl[c.tipo]||c.tipo)+'</span></td>'+
+    '<td style="font-size:12px">'+fd(c.data)+'</td>'+
+    '<td style="font-size:12px">'+(c.tipo==='consignacao'?fNome(c.fornecedor_id)||'-':cNome(c.cliente_id)||fNome(c.fornecedor_id)||'-')+'</td>'+
+    '<td style="font-size:12px;color:var(--t3)">'+vNome(c.veiculo_id)+'</td>'+
+    '<td style="font-weight:800;color:var(--accent)">R$ '+brl(c.valor)+'</td>'+
+    '<td>'+sbC(c.status)+'</td>'+
+    '<td><div class="acts">'+
+    '<button class="btn bi bsm" onclick="vizCt('+c.id+')" title="Ver">&#128196;</button>'+
+    '<button class="btn bg2 bsm" onclick="fmCt('+c.id+')" title="Editar">&#9999;</button>'+
+    (isAdmin()?'<button class="btn bd bsm" onclick="dlCt('+c.id+')" title="Excluir">&#128465;</button>':'')+
+    '</div></td></tr>'
+  ).join('')+
+  '</tbody></table>'+pagCT+'</div>';
+}
+
+function vizCt(id){
+  const c=DB.contratos.find(x=>x.id==id);if(!c)return;
+  const txt=c.tipo==='venda'?gerarCV(c):c.tipo==='compra'?gerarCompra(c):gerarConsig(c);
+  const extraBtn=c.tipo==='venda'?'<button class="btn bw" onclick="impVendaDocsPorCt('+c.id+')">&#128438; Todos os Docs</button>':'';
+  om('<div class="mt2"><span>&#128196; '+c.numero+'</span><button class="btn bg2 bsm" onclick="cm()">X</button></div>'+
+  '<div class="ct" id="ctxt">'+txt+'</div>'+
+  '<div class="mf"><button class="btn bg2" onclick="cm()">Fechar</button>'+extraBtn+'<button class="btn bp" onclick="impWin(document.getElementById(\'ctxt\').innerText)">&#128438; Imprimir</button></div>',true);
+}
+
+function fmCt(id){
+  const c=id?DB.contratos.find(x=>x.id==id):{tipo:'venda',numero:'',data:'',cliente_id:'',fornecedor_id:'',veiculo_id:'',valor:'',entrada:'',pagamento:'A vista',financeira:'',num_parcelas:'',valor_parcela:'',prazo:'90',tipo_comissao:'percentual',comissao:'5',valor_minimo:'',condicao:'',debitos:'Nenhum',status:'ativo',obs:''};
+  const optsCli='<option value="">Selecione...</option>'+DB.clientes.map(x=>'<option value="'+x.id+'" '+(x.id==c.cliente_id?'selected':'')+'>'+x.nome+'</option>').join('');
+  const optsForn='<option value="">Selecione...</option>'+DB.fornecedores.map(x=>'<option value="'+x.id+'" '+(x.id==c.fornecedor_id?'selected':'')+'>'+x.nome+'</option>').join('');
+  const optsVeic='<option value="">Selecione...</option>'+DB.veiculos.map(x=>'<option value="'+x.id+'" '+(x.id==c.veiculo_id?'selected':'')+'>'+x.marca+' '+x.modelo+' '+x.placa+'</option>').join('');
+  om('<div class="mt2"><span>'+(id?'Editar Contrato':'Novo Contrato')+'</span><button class="btn bg2 bsm" onclick="cm()">X</button></div>'+
+  '<div class="fr"><div class="fg"><label>Tipo</label><select id="ctt" onchange="tgCt()">'+
+  ['venda','compra','consignacao'].map(t=>'<option value="'+t+'" '+(c.tipo===t?'selected':'')+'>'+{venda:'Compra e Venda',compra:'Compra de Veiculo',consignacao:'Consignacao'}[t]+'</option>').join('')+'</select></div>'+
+  '<div class="fg"><label>Numero</label><input id="ctn" value="'+c.numero+'" placeholder="CV-2024-001"></div></div>'+
+  '<div class="fr"><div class="fg"><label>Data</label><input id="ctd" type="date" value="'+c.data+'"></div>'+
+  '<div class="fg"><label>Status</label><select id="cts">'+['ativo','assinado','cancelado','concluido'].map(s=>'<option value="'+s+'" '+(c.status===s?'selected':'')+'>'+s+'</option>').join('')+'</select></div></div>'+
+  '<div id="f_cli" style="'+(c.tipo==='consignacao'?'display:none':'')+'"><div class="fr"><div class="fg full"><label>Cliente</label><select id="ctcli">'+optsCli+'</select></div></div></div>'+
+  '<div id="f_forn" style="'+(c.tipo!=='consignacao'&&c.tipo!=='compra'?'display:none':'')+'"><div class="fr"><div class="fg full"><label>Fornecedor / Proprietario</label><select id="ctforn">'+optsForn+'</select></div></div></div>'+
+  '<div class="fr"><div class="fg full"><label>Veiculo</label><select id="ctv">'+optsVeic+'</select></div></div>'+
+  '<div class="fr"><div class="fg"><label>Valor (R$)</label><input id="ctval" type="number" value="'+c.valor+'" placeholder="85000"></div>'+
+  '<div class="fg"><label>Pagamento</label><select id="ctpag">'+['A vista','Financiamento','Consorcio','Entrada + Parcelas'].map(p=>'<option '+(c.pagamento===p?'selected':'')+'>'+p+'</option>').join('')+'</select></div></div>'+
+  '<div id="f_vex" style="'+(c.tipo!=='venda'?'display:none':'')+'">'+
+  '<div class="fr"><div class="fg"><label>Entrada (R$)</label><input id="ctent" type="number" value="'+(c.entrada||'')+'"></div>'+
+  '<div class="fg"><label>Financeira</label><input id="ctfin" value="'+(c.financeira||'')+'"></div></div>'+
+  '<div class="fr"><div class="fg"><label>N. Parcelas</label><input id="ctnp" type="number" value="'+(c.num_parcelas||'')+'"></div>'+
+  '<div class="fg"><label>Valor Parcela</label><input id="ctvp" type="number" value="'+(c.valor_parcela||'')+'"></div></div></div>'+
+  '<div id="f_cons" style="'+(c.tipo!=='consignacao'?'display:none':'')+'">'+
+  '<div class="fr"><div class="fg"><label>Prazo (dias)</label><input id="ctpz" type="number" value="'+(c.prazo||90)+'"></div>'+
+  '<div class="fg"><label>Valor Minimo (R$)</label><input id="ctvm" type="number" value="'+(c.valor_minimo||'')+'"></div></div>'+
+  '<div class="fr"><div class="fg"><label>Tipo Comissao</label><select id="cttc" onchange="document.getElementById(\'lcom\').textContent=this.value===\'fixo\'?\'Comissao (R$)\':\'Comissao (%)\'">'+
+  '<option value="percentual" '+(c.tipo_comissao==='percentual'?'selected':'')+'>Percentual (%)</option>'+
+  '<option value="fixo" '+(c.tipo_comissao==='fixo'?'selected':'')+'>Valor Fixo (R$)</option></select></div>'+
+  '<div class="fg"><label id="lcom">Comissao '+(c.tipo_comissao==='fixo'?'(R$)':'(%)')+'</label><input id="ctcom" type="number" value="'+(c.comissao||5)+'"></div></div>'+
+  '<div class="fr"><div class="fg"><label>Condicao do Veiculo</label><input id="ctcond" value="'+(c.condicao||'')+'"></div>'+
+  '<div class="fg"><label>Debitos Informados</label><input id="ctdeb" value="'+(c.debitos||'Nenhum')+'"></div></div></div>'+
+  '<div class="fr"><div class="fg full"><label>Observacoes</label><textarea id="ctobs">'+(c.obs||'')+'</textarea></div></div>'+
+  '<div class="mf"><button class="btn bg2" onclick="cm()">Cancelar</button><button class="btn bp" onclick="svCt('+(id||'null')+')">Salvar</button></div>',true);
+}
+function tgCt(){
+  var t=document.getElementById('ctt').value;
+  var cli=document.getElementById('f_cli');
+  var forn=document.getElementById('f_forn');
+  var vex=document.getElementById('f_vex');
+  var cons=document.getElementById('f_cons');
+  if(cli) cli.style.display=t==='consignacao'?'none':'';
+  if(forn) forn.style.display=(t==='consignacao'||t==='compra')?'':'none';
+  if(vex) vex.style.display=t==='venda'?'':'none';
+  if(cons) cons.style.display=t==='consignacao'?'':'none';
+}
+function svCt(id){
+  var tipo = document.getElementById('ctt').value;
+  var num  = document.getElementById('ctn').value.trim();
+  var val  = document.getElementById('ctval').value;
+  var cliEl  = document.getElementById('ctcli');
+  var fornEl = document.getElementById('ctforn');
+  var veicEl = document.getElementById('ctv');
+  if(!num){toast('Informe o numero do contrato','err');return;}
+  if(!val||Number(val)<=0){toast('Informe um valor valido','err');return;}
+  if(tipo==='venda'&&(!cliEl||!Number(cliEl.value))){toast('Selecione o cliente','err');return;}
+  if((tipo==='compra'||tipo==='consignacao')&&(!fornEl||!Number(fornEl.value))){toast('Selecione o fornecedor/proprietario','err');return;}
+  if(!veicEl||!Number(veicEl.value)){toast('Selecione o veiculo','err');return;}
+  const obj={id:id||nid(DB.contratos),tipo,numero:num,data:document.getElementById('ctd').value,
+    cliente_id:Number(document.getElementById('ctcli')?.value)||'',
+    fornecedor_id:Number(document.getElementById('ctforn')?.value)||'',
+    veiculo_id:Number(document.getElementById('ctv').value)||'',
+    valor:val,status:document.getElementById('cts').value,
+    pagamento:document.getElementById('ctpag').value,
+    entrada:document.getElementById('ctent')?.value||'',
+    financeira:document.getElementById('ctfin')?.value||'',
+    num_parcelas:document.getElementById('ctnp')?.value||'',
+    valor_parcela:document.getElementById('ctvp')?.value||'',
+    prazo:document.getElementById('ctpz')?.value||'90',
+    tipo_comissao:document.getElementById('cttc')?.value||'percentual',
+    comissao:document.getElementById('ctcom')?.value||'5',
+    valor_minimo:document.getElementById('ctvm')?.value||'',
+    condicao:document.getElementById('ctcond')?.value||'',
+    debitos:document.getElementById('ctdeb')?.value||'Nenhum',
+    obs:document.getElementById('ctobs').value};
+  if(id)DB.contratos=DB.contratos.map(c=>c.id==id?obj:c);else DB.contratos.push(obj);
+  sDB();fsave("contratos",obj);cm();render();
+  toast(id?'Contrato atualizado':'Contrato gerado com sucesso','ok');
+  toast(id?'Contrato atualizado':'Contrato gerado com sucesso','ok');
+}
+function impVendaDocsPorCt(ctId){
+  const ct=DB.contratos.find(x=>x.id==ctId);
+  if(!ct)return;
+  const venda=DB.vendas.find(x=>x.contrato_id==ctId);
+  if(!venda){toast('Nenhuma venda vinculada a este contrato','warn');return;}
+  impTermoChecklist(venda.id);
+}
+
+function dlCt(id){
+  if(!confirm('Excluir este contrato? Esta acao nao pode ser desfeita.')) return;
+  DB.contratos=DB.contratos.filter(function(c){return c.id!=id;});
+  sDB();fdel('contratos',id);render();
+  toast('Contrato excluido','ok');
+}
+
+
+function gerarCompra(c){
+  const e=DB.empresa,f=fObj(c.fornecedor_id),v=vObj(c.veiculo_id);
+  const dt=c.data?new Date(c.data+'T12:00').toLocaleDateString('pt-BR'):new Date().toLocaleDateString('pt-BR');
+  const ln='='.repeat(62);
+  return 'CONTRATO DE COMPRA DE VEICULO\n'+ln+
+'\nNumero: '+c.numero+'    Data: '+dt+
+'\n\nCOMPRADOR: '+e.nome+' | CNPJ: '+e.cnpj+
+'\n  '+e.endereco+', '+e.bairro+' - '+e.cidade+'/'+e.uf+
+'\n\nVENDEDOR: '+(f.nome||'')+' | CPF/CNPJ: '+(f.cpf||'')+
+'\n  '+(f.rg?'RG: '+f.rg+'   ':'')+' Tel: '+(f.telefone||'')+
+'\n  '+(f.endereco||'')+' - '+(f.cidade||'')+'/'+(f.uf||'')+
+'\n\nVEICULO:\n  '+v.marca+' '+v.modelo+' '+(v.versao||'')+
+'\n  Ano: '+v.ano+'   Cor: '+v.cor+'   Placa: '+v.placa+
+'\n  Chassi: '+(v.chassi||'-')+'   RENAVAM: '+(v.renavam||'-')+
+'\n  KM: '+Number(v.km||0).toLocaleString('pt-BR')+
+'\n\nVALOR: R$ '+brl(c.valor)+'   Pagamento: '+c.pagamento+
+'\n\nO VENDEDOR declara ser legitimo proprietario, sem onus\nou impedimentos, respondendo por debitos anteriores.\n'+
+(c.obs?'\nObs: '+c.obs:'')+
+'\n\n\n'+e.cidade+' - '+e.uf+', '+dt+'\n\n\n'+
+'___________________________________________\n'+(f.nome||'')+' | CPF: '+(f.cpf||'')+'\nVENDEDOR\n\n\n'+
+'___________________________________________\n'+e.nome+'\nCOMPRADOR';
+}
+function gerarConsig(c){
+  const e=DB.empresa,f=fObj(c.fornecedor_id),v=vObj(c.veiculo_id);
+  const dt=c.data?new Date(c.data+'T12:00').toLocaleDateString('pt-BR'):new Date().toLocaleDateString('pt-BR');
+  const venc=c.data?new Date(new Date(c.data+'T12:00').getTime()+Number(c.prazo||90)*86400000).toLocaleDateString('pt-BR'):'___/___/______';
+  const comTxt=c.tipo_comissao==='fixo'?'R$ '+brl(c.comissao)+' (valor fixo)':(c.comissao||5)+'% sobre o valor de venda';
+  const vlLiq=c.tipo_comissao==='fixo'?brl(Number(c.valor||0)-Number(c.comissao||0)):brl(Number(c.valor||0)*(1-Number(c.comissao||5)/100));
+  const ln='='.repeat(62);const ls=String.fromCharCode(9472).repeat(62);
+  return 'CONTRATO DE CONSIGNACAO DE VEICULO\n'+ln+
+'\nNumero: '+c.numero+'    Data: '+dt+
+'\n\nCONSIGNANTE (PROPRIETARIO):\n  '+(f.nome||'')+' | CPF/CNPJ: '+(f.cpf||'')+
+'\n  '+(f.rg?'RG: '+f.rg:'')+'   Tel: '+(f.telefone||'')+
+'\n  '+(f.endereco||'')+' - '+(f.cidade||'')+'/'+(f.uf||'')+
+'\n  '+(f.banco?'Banco: '+f.banco+' Ag: '+f.agencia+' CC: '+f.conta:'')+
+'\n\nCONSIGNATARIO (LOJA):\n  '+e.nome+' | CNPJ: '+e.cnpj+
+'\n  '+e.endereco+', '+e.bairro+' - '+e.cidade+'/'+e.uf+
+'\n  Tel: '+e.telefone+
+'\n\n'+ls+
+'\nCLAUSULA 1 - DO OBJETO\n\n'+
+'  '+v.marca+' '+v.modelo+' '+(v.versao||'')+
+'\n  Ano: '+v.ano+'   Cor: '+v.cor+'   Placa: '+v.placa+
+'\n  Chassi: '+(v.chassi||'-')+'   KM: '+Number(v.km||0).toLocaleString('pt-BR')+
+'\n  Condicao: '+(c.condicao||'Conforme vistoria')+
+'\n\n  PRECO DE VENDA:  R$ '+brl(c.valor)+
+'\n  PRECO MINIMO:    R$ '+brl(c.valor_minimo||c.valor)+
+'\n\n'+ls+
+'\nCLAUSULA 2 - DO PRAZO\n\n'+
+'  Prazo: '+( c.prazo||90)+' dias | Vencimento: '+venc+
+'\n  Findo o prazo, o veiculo sera devolvido em 5 dias uteis.\n\n'+ls+
+'\nCLAUSULA 3 - DA REMUNERACAO\n\n'+
+'  Comissao do CONSIGNATARIO: '+comTxt+
+'\n  Valor liquido ao CONSIGNANTE: R$ '+vlLiq+
+'\n  Repasse em ate 5 dias uteis apos a venda.\n\n'+ls+
+'\nCLAUSULA 4 - GARANTIAS E OBRIGACOES DO CONSIGNANTE\n\n'+
+'  O CONSIGNANTE declara e garante:\n\n'+
+'  4.1 E o UNICO e LEGITIMO proprietario, sem restricoes.\n\n'+
+'  4.2 O veiculo esta LIVRE de onus, gravames, alienacao\n'+
+'  fiduciaria, hipoteca ou penhora.\n\n'+
+'  4.3 Nao existem debitos de IPVA, DPVAT, multas ou\n'+
+'  licenciamento alem de: "'+(c.debitos||'Nenhum informado')+'"\n\n'+
+'  4.4 O veiculo nao esta envolvido em sinistros, furtos\n'+
+'  ou irregularidades perante as autoridades.\n\n'+
+'  4.5 Todas as informacoes sao verdadeiras, sob pena de\n'+
+'  responsabilidade civil e criminal.\n\n'+
+'  4.6 Onus surgido posteriormente: CONSIGNANTE responde\n'+
+'  por todas as perdas, danos e honorarios.\n\n'+ls+
+'\nCLAUSULA 5 - OBRIGACOES DO CONSIGNATARIO\n\n'+
+'  5.1 Zelar pela guarda e conservacao do veiculo.\n\n'+
+'  5.2 NAO realizar reparos sem autorizacao escrita.\n\n'+
+'  5.3 Comunicar propostas abaixo do preco minimo.\n\n'+
+'  5.4 Test drives apenas com id. do comprador.\n\n'+
+'  5.5 NAO sub-consignar a terceiros.\n\n'+ls+
+'\nCLAUSULA 6 - DEVOLUCAO E RESCISAO\n\n'+
+'  6.1 CONSIGNANTE pode solicitar devolucao com 48h de aviso.\n\n'+
+'  6.2 Rescisao por declaracao falsa: multa de R$ '+brl(Number(c.valor||0)*0.10)+'.\n\n'+ls+
+'\nCLAUSULA 7 - FORO\n\n'+
+'  Comarca de '+e.cidade+'/'+e.uf+'.\n\n\n'+
+e.cidade+' - '+e.uf+', '+dt+'\n\n\n'+
+'___________________________________________\n'+(f.nome||'')+' | CPF: '+(f.cpf||'')+'\nCONSIGNANTE\n\n\n'+
+'___________________________________________\n'+e.nome+'\nCONSIGNATARIO\n\n\n'+
+'TESTEMUNHAS:\n_______________________    _______________________\nNome:                      Nome:\nCPF:                       CPF:';
+}
+checkAuth(function() {
+  applyProfile();
+  if (DB && DB.contratos && DB.contratos.length > 0) {
+    render();
+  } else {
+    showLoading('Carregando contratos...');
+  }
+  loadFromFirestore().then(function() {
+    render();
+  }).catch(function(e){ console.error('[contratos]', e); });
+});
 </script>
 <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
 </body></html>

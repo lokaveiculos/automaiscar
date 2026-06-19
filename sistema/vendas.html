@@ -200,6 +200,373 @@ function impWin(html_content, titulo){
   w.onload=function(){ setTimeout(function(){ w.print(); },500); };
 }
 
+
+var vdPag=1;
+function render(){
+  const total=DB.vendas.reduce((s,v)=>s+Number(v.valor||0),0);
+  document.getElementById('main').innerHTML=
+  '<div class="ph"><div><div class="pt">Vendas</div><div class="ps">'+DB.vendas.length+' vendas &bull; Total: R$ '+brl(total)+'</div></div>'+
+  '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
+  '<button class="btn bp" onclick="novaVenda(null)">+ Nova Venda</button>'+
+  '<button class="btn bg2" onclick="exportVendas()">&#128229; Exportar CSV</button>'+
+  '</div></div>'+
+  '<div class="tw"><table><thead><tr><th>Numero</th><th>Data</th><th>Veiculo</th><th>Cliente</th><th>Valor</th><th>Pagamento</th><th>Acoes</th></tr></thead><tbody>'+
+  (DB.vendas.length===0?'<tr><td colspan="7"><div class="empty"><span class="ei">&#128176;</span>Nenhuma venda registrada</div></td></tr>':'')+
+  DB.vendas.slice().reverse().map(v=>
+    '<tr><td style="font-family:monospace;font-weight:700">'+v.numero+'</td>'+
+    '<td style="font-size:12px">'+fd(v.data)+'</td>'+
+    '<td style="font-weight:700">'+vNome(v.veiculo_id)+'</td>'+
+    '<td>'+cNome(v.cliente_id)+'</td>'+
+    '<td style="font-weight:800;color:var(--ok)">R$ '+brl(v.valor)+'</td>'+
+    '<td style="font-size:12px"><div>'+v.pagamento+'</div>'+
+    (v.permuta_placa?'<div style="font-size:11px;color:var(--warn)">&#8646; '+v.permuta_placa+'</div>':'')+
+    (v.vendedor_id?'<div style="font-size:11px;color:var(--t3)">'+cNome(v.vendedor_id)+'</div>':'')+
+    '</td>'+
+    '<td><div class="acts">'+
+    '<button class="btn bi bsm" onclick="modalContratosVenda('+v.id+')" title="Ver Documentos">&#128196;</button>'+
+    (isAdmin()?'<button class="btn bd bsm" onclick="dlVanda('+v.id+')" title="Excluir">&#128465;</button>':'')+
+    '</div></td></tr>'
+  ).join('')+'</tbody></table>'+pagVD+'</div>';
+}
+
+function novaVenda(preVid){
+  const disp=DB.veiculos.filter(v=>v.status==='disponivel');
+  const hoje=new Date().toISOString().split('T')[0];
+  const num='VD-'+new Date().getFullYear()+'-'+String(nid(DB.vendas)).padStart(3,'0');
+  const vPre=preVid?DB.veiculos.find(x=>x.id==preVid):null;
+  om('<div class="mt2"><span>Nova Venda</span><button class="btn bg2 bsm" onclick="cm()">X</button></div>'+
+  '<div class="ib">&#128161; Ao confirmar, o veiculo sera marcado como <b>Vendido</b> e o contrato sera gerado automaticamente.</div>'+
+  '<div class="fr"><div class="fg"><label>Numero</label><input id="vdnum" value="'+num+'" readonly></div>'+
+  '<div class="fg"><label>Data *</label><input id="vddata" type="date" value="'+hoje+'"></div></div>'+
+  '<div class="fr">'+
+  '<div class="fg"><label>Veiculo *</label><select id="vdveic" onchange="autoPreco()">'+
+  '<option value="">Selecione...</option>'+disp.map(v=>'<option value="'+v.id+'" '+(v.id==preVid?'selected':'')+'>'+v.marca+' '+v.modelo+' '+v.placa+' - R$'+brl(v.preco)+'</option>').join('')+'</select></div>'+
+  '<div class="fg"><label>Cliente *</label><select id="vdcli"><option value="">Selecione...</option>'+DB.clientes.map(c=>'<option value="'+c.id+'">'+c.nome+'</option>').join('')+'</select></div></div>'+
+  '<div class="fr"><div class="fg"><label>Valor de Venda (R$) *</label><input id="vdval" type="number" value="'+(vPre?vPre.preco:'')+'" placeholder="85000"></div>'+
+  '<div class="fg"><label>Entrada (R$)</label><input id="vdent" type="number" placeholder="0"></div></div>'+
+  '<div class="fr"><div class="fg"><label>Forma de Pagamento</label><select id="vdpag">'+
+  ['A vista','Financiamento','Consorcio','Permuta','Entrada + Parcelas'].map(p=>'<option>'+p+'</option>').join('')+'</select></div>'+
+  '<div class="fg"><label>Financeira / Banco</label><input id="vdfin" placeholder="(se houver)"></div></div>'+
+  '<div class="fr"><div class="fg"><label>N. Parcelas</label><input id="vdnp" type="number" placeholder="0"></div>'+
+  '<div class="fg"><label>Valor da Parcela</label><input id="vdvp" type="number" placeholder="0"></div></div>'+
+  '<div style="margin:14px 0 8px;font-size:10px;font-weight:800;color:var(--t3);text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--border);padding-bottom:8px">Dados Comerciais</div>'+
+  '<div class="fr">'+
+  '<div class="fg"><label>Vendedor Responsavel</label>'+
+  '<select id="vdvendedor"><option value="">Selecione...</option>'+
+  DB.usuarios.map(function(u){return '<option value="'+u.id+'">'+u.nome+'</option>';}).join('')+
+  '</select></div>'+
+  '<div class="fg"><label>Comissao do Vendedor (%)</label>'+
+  '<input id="vdcom" type="number" step="0.5" placeholder="Ex: 2.5"></div></div>'+
+  '<div class="fr">'+
+  '<div class="fg"><label>Custo de Preparacao (R$)</label>'+
+  '<input id="vdprep" type="number" placeholder="Pintura, limpeza, revisao..."></div>'+
+  '<div class="fg"></div></div>'+
+  '<div style="margin:14px 0 8px;font-size:10px;font-weight:800;color:var(--t3);text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--border);padding-bottom:8px">Permuta (Veiculo Recebido em Troca)</div>'+
+  '<div class="fr">'+
+  '<div class="fg"><label>Placa do Veiculo em Troca</label>'+
+  '<input id="vdperm_placa" placeholder="ABC-1234" oninput="this.value=maskPlate(this.value)" style="font-family:monospace;font-weight:700;text-transform:uppercase"></div>'+
+  '<div class="fg"><label>Valor Atribuido (R$)</label>'+
+  '<input id="vdperm_val" type="number" placeholder="0"></div></div>'+
+  '<div class="fr"><div class="fg full"><label>Observacoes</label><textarea id="vdobs"></textarea></div></div>'+
+  '<div class="mf"><button class="btn bg2" onclick="cm()">Cancelar</button>'+
+  '<button class="btn bp" onclick="svVenda()">&#10004; Confirmar Venda</button></div>',true);
+  if(preVid)autoPreco();
+}
+function autoPreco(){
+  var sel=document.getElementById('vdveic');if(!sel)return;
+  var v=DB.veiculos.find(function(x){return x.id==Number(sel.value);});
+  if(v){var f=document.getElementById('vdval');if(f&&!f.value)f.value=v.preco;}
+}
+function svVenda(){
+  const vid=Number(document.getElementById('vdveic').value);
+  const cid=Number(document.getElementById('vdcli').value);
+  const val=document.getElementById('vdval').value;
+  const pag=document.getElementById('vdpag').value;
+  const data=document.getElementById('vddata').value;
+  if(!vid||!cid||!val){toast('Selecione Veiculo, Cliente e informe o Valor','err');return;}
+  const num=document.getElementById('vdnum').value;
+  const ent=document.getElementById('vdent').value||'0';
+  const fin=document.getElementById('vdfin').value;
+  const np=document.getElementById('vdnp').value||'0';
+  const vp=document.getElementById('vdvp').value||'0';
+  const obs=document.getElementById('vdobs').value;
+  const ct={id:nid(DB.contratos),tipo:'venda',numero:num.replace('VD','CV'),data,cliente_id:cid,fornecedor_id:'',veiculo_id:vid,valor:val,entrada:ent,saldo:String(Number(val)-Number(ent)),pagamento:pag,financeira:fin,num_parcelas:np,valor_parcela:vp,prazo:'',tipo_comissao:'percentual',comissao:'',valor_minimo:'',condicao:'',debitos:'',status:'ativo',obs};
+  DB.contratos.push(ct);
+  const venda={id:nid(DB.vendas),numero:num,data,cliente_id:cid,veiculo_id:vid,valor:val,pagamento:pag,contrato_id:ct.id,obs};
+  DB.vendas.push(venda);
+  DB.veiculos=DB.veiculos.map(v=>v.id==vid?Object.assign({},v,{status:'vendido'}):v);
+  sDB();
+  fsave("contratos",ct);
+  fsave("vendas",venda);
+  var vVendido=DB.veiculos.find(function(x){return x.id==vid;});
+  if(vVendido) fsave("veiculos",vVendido);
+  cm();typeof history!=='undefined'&&window.location.protocol!=='file:'?history.replaceState(null,'','vendas.html'):null;render();
+  toast('Venda registrada com sucesso! Contrato gerado.','ok');
+  setTimeout(()=>verChecklist(venda.id),200);
+}
+
+function gerarTermo(venda){
+  const v=vObj(venda.veiculo_id), cl=cObj(venda.cliente_id), e=DB.empresa;
+  const dt=venda.data?new Date(venda.data+'T12:00').toLocaleDateString('pt-BR'):new Date().toLocaleDateString('pt-BR');
+  return `TERMO DE CIÊNCIA E DE RESPONSABILIDADE
+
+${'─'.repeat(62)}
+
+O(A) abaixo-assinado(a), COMPRADOR(A) do veículo referido no
+CONTRATO DE COMPRA E VENDA firmado com esta empresa:
+
+  Veículo: ${v.marca} ${v.modelo} ${v.versao||''} ${v.ano}
+  Placa: ${v.placa}   Chassi: ${v.chassi||'_________________'}
+  KM: ${Number(v.km||0).toLocaleString('pt-BR')}
+
+  Comprador(a): ${cl.nome}
+  CPF: ${cl.cpf}
+
+Por meio do presente instrumento, vem DECLARAR ser ciente das
+seguintes responsabilidades:
+
+${'─'.repeat(62)}
+
+1) Tenho ciência de que o veículo objeto deste contrato é
+   SEMINOVO, apresentando desgaste natural decorrente do tempo,
+   e confirmo que já foi visto e inspecionado por mim, tendo
+   tomado ciência de suas condições e estado de conservação.
+
+2) Tenho ciência de que, a partir do recebimento do veículo,
+   passo a ser o ÚNICO RESPONSÁVEL por sua manutenção e
+   conservação, bem como que meu direito à garantia do bem
+   deverá ser exercido em conformidade com o que se encontra
+   estipulado no contrato de compra e venda, portanto, apenas
+   por força de defeito manifestado no curso da garantia e NÃO
+   decorrente de falta ou negligência de manutenção.
+
+3) Tenho ciência de que, por haver adquirido um veículo
+   seminovo, diversas peças que o compõem (peças que se
+   desgastam ao longo do uso) têm tempo de vida útil compatível
+   com o estado de conservação do carro e com os quilômetros
+   rodados; portanto, que, futuramente, com o acréscimo de
+   certa quilometragem ao automóvel decorrente de seu uso,
+   porquanto necessária a manutenção preventiva, será de minha
+   INTEIRA E EXCLUSIVA RESPONSABILIDADE a substituição das
+   peças de reposição e acessórias, tais como filtros, óleos,
+   pneus, juntas, fluidos, bateria, velas, dentre outros.
+
+4) Tenho ciência de que cabe a mim, EXCLUSIVAMENTE, a
+   realização de revisões periódicas no automóvel — e com
+   MAIOR FREQUÊNCIA se eu decidir fazer uso do mesmo para
+   fins profissionais/comerciais, a exemplo de uso para
+   transporte de particulares via aplicativos (Uber, 99, etc.)
+   — pois sou ciente de que isso acarretará a aceleração do
+   desgaste de várias peças e componentes acessórios.
+
+5) Declaro ainda, por fim, ter sido esclarecido(a) de que esta
+   loja NÃO SE RESPONSABILIZARÁ pelo reparo de quaisquer
+   defeitos e/ou substituições de peças, se, porventura, tal
+   necessidade for originada da abreviação da vida útil
+   (desgaste prematuro) de peças de reposição/acessórias, bem
+   como em razão da AUSÊNCIA DE MANUTENÇÃO do automóvel.
+
+${'─'.repeat(62)}
+
+Feira de Santana - BA, ${dt}
+
+
+___________________________________________
+${cl.nome}
+CPF: ${cl.cpf}
+COMPRADOR(A)
+
+
+___________________________________________
+${e.nome}
+CNPJ: ${e.cnpj}
+VENDEDOR`;
+}
+
+function gerarChecklist(venda){
+  const v=vObj(venda.veiculo_id), cl=cObj(venda.cliente_id), e=DB.empresa;
+  const dt=venda.data?new Date(venda.data+'T12:00').toLocaleDateString('pt-BR'):new Date().toLocaleDateString('pt-BR');
+  return `CHECKLIST DE ENTREGA DE VEÍCULO
+
+${'─'.repeat(62)}
+${e.nome}  |  CNPJ: ${e.cnpj}
+${e.endereco}, ${e.bairro} - ${e.cidade}/${e.uf}
+Tel: ${e.telefone}  |  ${e.email}
+${'─'.repeat(62)}
+
+Veículo: ${v.marca} ${v.modelo} ${v.versao||''} ${v.ano}
+Placa: ${v.placa}   Chassi: ${v.chassi||'_________________'}
+Cor: ${v.cor}   Combustível: ${v.combustivel}
+KM na entrega: ${Number(v.km||0).toLocaleString('pt-BR')} km
+Nível de combustível: ____________________________
+
+Comprador(a): ${cl.nome}   CPF: ${cl.cpf}
+Data de entrega: ${dt}
+
+${'─'.repeat(62)}
+DOCUMENTAÇÃO                               SIM    NÃO
+${'─'.repeat(62)}
+CRLV / DUT em mãos                        (  )   (  )
+Manual do proprietário                    (  )   (  )
+Chave reserva                             (  )   (  )
+Nota fiscal / Recibo assinado             (  )   (  )
+Contrato de compra e venda assinado       (  )   (  )
+Termo de ciência assinado                 (  )   (  )
+
+${'─'.repeat(62)}
+ITENS DE SEGURANÇA                         SIM    NÃO
+${'─'.repeat(62)}
+Estepe em boas condições                  (  )   (  )
+Macaco e chave de roda                    (  )   (  )
+Triângulo de sinalização                  (  )   (  )
+Extintor de incêndio (dentro da validade) (  )   (  )
+
+${'─'.repeat(62)}
+VISTORIA EXTERIOR                          SIM    NÃO
+${'─'.repeat(62)}
+Lataria sem avarias não informadas        (  )   (  )
+Vidros e retrovisores íntegros            (  )   (  )
+Pneus com bom estado de conservação       (  )   (  )
+Faróis, lanternas e luzes funcionando     (  )   (  )
+
+${'─'.repeat(62)}
+VISTORIA INTERIOR                          SIM    NÃO
+${'─'.repeat(62)}
+Bancos e estofados em bom estado          (  )   (  )
+Painel sem alertas ou falhas              (  )   (  )
+Ar condicionado funcionando               (  )   (  )
+Sistema de som / multimídia               (  )   (  )
+Travas e vidros elétricos funcionando     (  )   (  )
+
+${'─'.repeat(62)}
+OBSERVAÇÕES GERAIS:
+________________________________________________________________
+________________________________________________________________
+________________________________________________________________
+
+${'─'.repeat(62)}
+
+Declaro que recebi o veículo acima descrito nas condições
+assinaladas neste checklist, estando de acordo com o estado
+do bem no momento da entrega.
+
+Feira de Santana - BA, ${dt}
+
+
+___________________________________________        ______________
+${cl.nome}                                         Hora: ________
+CPF: ${cl.cpf}
+COMPRADOR(A)
+
+
+___________________________________________
+${e.nome}
+VENDEDOR / ENTREGADOR`;
+}
+
+function impTermoChecklist(vid){
+  const venda=DB.vendas.find(x=>x.id==vid);
+  if(!venda){alert('Venda nao encontrada.');return;}
+  const ct=DB.contratos.find(x=>x.id==venda.contrato_id);
+  if(!ct){alert('Contrato nao encontrado.');return;}
+  const txtCV=gerarCV(ct);
+  const txtTermo=gerarTermo(venda);
+  const txtCheck=gerarChecklist(venda);
+  const full=`${txtCV}\n\n${'═'.repeat(62)}\n\n${txtTermo}\n\n${'═'.repeat(62)}\n\n${txtCheck}`;
+  const w=window.open('','_blank');
+  w.document.write('<!DOCTYPE html><html><head><meta charset=UTF-8><title>Contrato - '+vNome(venda.veiculo_id)+'</title><style>body{font-family:Courier New,monospace;font-size:11.5px;padding:24px 36px;line-height:1.85;color:#000;white-space:pre-wrap}@media print{body{padding:20px}}</style></head><body>'+full+'</body></html>');
+  w.document.close();w.print();
+}
+
+function modalContratosVenda(vid){
+  const venda=DB.vendas.find(x=>x.id==vid);
+  if(!venda){alert('Venda nao encontrada.');return;}
+  const ct=DB.contratos.find(x=>x.id==venda.contrato_id);
+  const txtCV=ct?gerarCV(ct):'Contrato nao encontrado.';
+  const txtTermo=gerarTermo(venda);
+  const txtCheck=gerarChecklist(venda);
+  om('<div class="mt2"><span>&#128196; Documentos da Venda</span><button class="btn bg2 bsm" onclick="cm()">X</button></div>'+
+  '<div class="tabs" style="margin-bottom:16px">'+
+  '<div class="tab active" id="t1" onclick="showDoc(1)">Contrato C&V</div>'+
+  '<div class="tab" id="t2" onclick="showDoc(2)">Termo de Ciencia</div>'+
+  '<div class="tab" id="t3" onclick="showDoc(3)">Checklist Entrega</div>'+
+  '</div>'+
+  '<div id="doc1" class="ct">'+txtCV+'</div>'+
+  '<div id="doc2" class="ct hidden">'+txtTermo+'</div>'+
+  '<div id="doc3" class="ct hidden">'+txtCheck+'</div>'+
+  '<div class="mf">'+
+  '<button class="btn bg2" onclick="cm()">Fechar</button>'+
+  '<button class="btn bw" onclick="impSingle()">&#128438; Imprimir Este</button>'+
+  '<button class="btn bp" onclick="impTermoChecklist('+vid+')">&#128438; Imprimir Tudo (3 docs)</button>'+
+  '</div>',true);
+}
+let _docAtivo=1;
+function showDoc(n){
+  [1,2,3].forEach(i=>{
+    document.getElementById('doc'+i).classList.add('hidden');
+    document.getElementById('t'+i).classList.remove('active');
+  });
+  document.getElementById('doc'+n).classList.remove('hidden');
+  document.getElementById('t'+n).classList.add('active');
+  _docAtivo=n;
+}
+function impSingle(){
+  const txt=document.getElementById('doc'+_docAtivo).innerText;
+  impWin(txt);
+}
+
+function verCont(vid){
+  const venda=DB.vendas.find(x=>x.id==vid);if(!venda)return;
+  const ct=DB.contratos.find(x=>x.id==venda.contrato_id);if(!ct){alert('Contrato nao encontrado.');return;}
+  const txt=gerarCV(ct);
+  om('<div class="mt2"><span>&#128196; Contrato de Compra e Venda</span><button class="btn bg2 bsm" onclick="cm()">X</button></div>'+
+  '<div class="ct" id="ctxt">'+txt+'</div>'+
+  '<div class="mf"><button class="btn bg2" onclick="cm()">Fechar</button><button class="btn bp" onclick="impWin(document.getElementById(\'ctxt\').innerText)">&#128438; Imprimir</button></div>',true);
+}
+function dlVenda(id){
+  if(confirm('Excluir venda? O veiculo voltara para disponivel.')){
+    const v=DB.vendas.find(x=>x.id==id);
+    if(v)DB.veiculos=DB.veiculos.map(x=>x.id==v.veiculo_id?Object.assign({},x,{status:'disponivel'}):x);
+    DB.vendas=DB.vendas.filter(x=>x.id!=id);
+    sDB();fdel("vendas",id);
+    if(v)fsave("veiculos",DB.veiculos.find(function(x){return x.id==v.veiculo_id;})||{id:0});
+    render();
+  }
+}
+
+
+function exportVendas(){
+  var cols=[
+    {label:'Numero',key:'numero'},
+    {label:'Data',fn:function(v){return fd(v.data);}},
+    {label:'Veiculo',fn:function(v){return vNome(v.veiculo_id);}},
+    {label:'Cliente',fn:function(v){return cNome(v.cliente_id);}},
+    {label:'Valor Venda',fn:function(v){return brl(v.valor);}},
+    {label:'Pagamento',key:'pagamento'},
+    {label:'Vendedor',fn:function(v){return v.vendedor_id?cNome(v.vendedor_id):'-';}},
+    {label:'Comissao Pct',key:'comissao_pct'},
+    {label:'Custo Prep',fn:function(v){return brl(v.custo_preparacao);}},
+    {label:'Permuta Placa',key:'permuta_placa'},
+    {label:'Permuta Valor',fn:function(v){return brl(v.permuta_valor);}},
+  ];
+  exportCSV(DB.vendas,'vendas-automais-'+Date.now()+'.csv',cols);
+}
+
+
+checkAuth(function() {
+  applyProfile();
+  if (DB && DB.veiculos && DB.veiculos.length > 0) {
+    render();
+  } else {
+    showLoading('Carregando vendas...');
+  }
+  loadFromFirestore().then(function() {
+    var params = new URLSearchParams(window.location.search);
+    var preVid = Number(params.get('vid')) || null;
+    if (preVid) { setTimeout(function(){ novaVenda(preVid); }, 100); }
+    else { render(); }
+  }).catch(function(e){ console.error('[vendas]', e); });
+});
 </script>
 <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
 </body></html>
