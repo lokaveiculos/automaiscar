@@ -201,7 +201,7 @@ function impWin(html_content, titulo){
 }
 
 
-var ctPag=1;
+var ctSrch='', ctPag=1;
 function render(){
   const fl=DB.contratos.filter(c=>{const m=ctSrch.toLowerCase();return !m||c.numero.toLowerCase().includes(m)||(cNome(c.cliente_id)||'').toLowerCase().includes(m)||(fNome(c.fornecedor_id)||'').toLowerCase().includes(m);});
   const tl={venda:'Compra e Venda',compra:'Compra',consignacao:'Consignacao'};

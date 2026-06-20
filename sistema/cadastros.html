@@ -218,7 +218,7 @@ function renderCli(){
     '<td style="font-size:12px;color:var(--t3)">'+(c.cidade||'-')+(c.uf?' / '+c.uf:'')+'</td>'+
     '<td><div class="acts"><button class="btn bg2 bsm" onclick="fmCli('+c.id+')">&#9999;</button>'+(isAdmin()?'<button class="btn bd bsm" onclick="dlCli('+c.id+')">&#128465;</button>':'')+' </div></td></tr>'
   ).join('')+
-  '</tbody></table>'+pagC+'</div>';
+  '</tbody></table>'+pagCli+'</div>';
 }
 
 function fmCli(id){
@@ -288,7 +288,7 @@ function renderForn(){
     '<td>'+(veics.length?veics.map(v=>'<span class="badge bg-o" style="margin:1px">'+v.placa+'</span>').join(''):'-')+'</td>'+
     '<td><div class="acts"><button class="btn bg2 bsm" onclick="fmForn('+f.id+')">&#9999;</button><button class="btn bd bsm" onclick="dlForn('+f.id+')">&#128465;</button></div></td></tr>';
   }).join('')+
-  '</tbody></table>'+pagF+'</div>';
+  '</tbody></table>'+pagForn+'</div>';
 }
 function fmForn(id){
   const f=id?DB.fornecedores.find(x=>x.id==id):{nome:'',cpf:'',rg:'',telefone:'',email:'',endereco:'',cidade:'',uf:'BA',cep:'',tipo:'pessoa_fisica',banco:'',agencia:'',conta:'',obs:''};
