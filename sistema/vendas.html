@@ -185,9 +185,7 @@ var CSS_A4='<style>@page{size:A4;margin:12mm 18mm}*{box-sizing:border-box;margin
 function impWin(html_content, titulo){
   var w=window.open('','_blank','width=820,height=1000');
   if(!w){ toast('Permita pop-ups para imprimir','err'); return; }
-  var wm=(typeof LOGO_WM!=='undefined')
-    ?'<img class="wm" src="'+LOGO_WM+'" alt="">'
-    :'';
+  var wm='<img src="logo-wm.png" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-25deg);opacity:.07;pointer-events:none;z-index:0;width:260px;max-width:60%" alt="">';
   var html='<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">'
     +'<title>'+(titulo||'Auto Mais Veiculos')+'</title>'
     +CSS_A4
@@ -199,6 +197,7 @@ function impWin(html_content, titulo){
   w.document.close();
   w.onload=function(){ setTimeout(function(){ w.print(); },500); };
 }
+
 
 
 var vdPag=1;
@@ -482,28 +481,19 @@ function impTermoChecklist(vid){
   w.document.close();w.print();
 }
 
+
 function modalContratosVenda(vid){
-  const venda=DB.vendas.find(x=>x.id==vid);
-  if(!venda){alert('Venda nao encontrada.');return;}
-  const ct=DB.contratos.find(x=>x.id==venda.contrato_id);
-  const txtCV=ct?gerarCV(ct):'Contrato nao encontrado.';
-  const txtTermo=gerarTermo(venda);
-  const txtCheck=gerarChecklist(venda);
-  om('<div class="mt2"><span>&#128196; Documentos da Venda</span><button class="btn bg2 bsm" onclick="cm()">X</button></div>'+
-  '<div class="tabs" style="margin-bottom:16px">'+
-  '<div class="tab active" id="t1" onclick="showDoc(1)">Contrato C&V</div>'+
-  '<div class="tab" id="t2" onclick="showDoc(2)">Termo de Ciencia</div>'+
-  '<div class="tab" id="t3" onclick="showDoc(3)">Checklist Entrega</div>'+
-  '</div>'+
-  '<div id="doc1" class="ct">'+txtCV+'</div>'+
-  '<div id="doc2" class="ct hidden">'+txtTermo+'</div>'+
-  '<div id="doc3" class="ct hidden">'+txtCheck+'</div>'+
-  '<div class="mf">'+
-  '<button class="btn bg2" onclick="cm()">Fechar</button>'+
-  '<button class="btn bw" onclick="impSingle()">&#128438; Imprimir Este</button>'+
-  '<button class="btn bp" onclick="impTermoChecklist('+vid+')">&#128438; Imprimir Tudo (3 docs)</button>'+
-  '</div>',true);
+  var venda = DB.vendas.find(function(x){ return x.id==vid; });
+  if(!venda){ alert('Venda nao encontrada.'); return; }
+  var ct = DB.contratos.find(function(x){ return x.veiculo_id==venda.veiculo_id || x.id==venda.contrato_id; });
+  if(!ct){
+    toast('Contrato nao encontrado para esta venda','warn');
+    return;
+  }
+  vizCt(ct.id);
 }
+
+
 let _docAtivo=1;
 function showDoc(n){
   [1,2,3].forEach(i=>{
@@ -571,6 +561,86 @@ checkAuth(function() {
     else { render(); }
   }).catch(function(e){ console.error('[vendas]', e); });
 });
+
+
+function vizCt(id){
+  var c=DB.contratos.find(function(x){return x.id==id;});
+  if(!c) return;
+  var eh_venda = c.tipo==='venda';
+
+  var docs = eh_venda ? [
+    {id:'cv',      label:'Contrato de Compra e Venda', icon:'&#128196;', checked:true},
+    {id:'ciencia', label:'Termo de Ci\u00eancia e Responsabilidade', icon:'&#128203;', checked:true},
+    {id:'checklist',label:'Checklist do Ve\u00edculo', icon:'&#9989;',  checked:true},
+    {id:'uber',    label:'Anexo I \u2013 Termo de Garantia (Uber/Aplicativo)', icon:'&#128663;', checked:false}
+  ] : [
+    {id:'contrato',label:'Contrato', icon:'&#128196;', checked:true}
+  ];
+
+  var rows = docs.map(function(d){
+    return '<label style="display:flex;align-items:center;gap:12px;padding:12px 16px;border:1px solid var(--border);border-radius:var(--r);cursor:pointer;background:var(--surface);margin-bottom:8px">'+
+      '<input type="checkbox" id="doc_'+d.id+'" '+(d.checked?'checked':'')+' onclick="event.stopPropagation()" style="width:18px;height:18px;accent-color:var(--brand);cursor:pointer">'+
+      '<span style="font-size:20px">'+d.icon+'</span>'+
+      '<div><div style="font-size:14px;font-weight:600;color:var(--text)">'+d.label+'</div>'+
+      (d.id==='uber'?'<div style="font-size:12px;color:var(--text-muted)">Apenas para motoristas de aplicativo</div>':'')+
+      '</div></label>';
+  }).join('');
+
+  om(
+    '<div class="mt2">'+
+      '<span>&#128196; Contrato N\u00ba '+c.numero+'</span>'+
+      '<button class="btn bg2 bsm" onclick="cm()">&#10005;</button>'+
+    '</div>'+
+    '<div class="mb">'+
+      '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:12px">Selecione os documentos:</div>'+
+      rows+
+    '</div>'+
+    '<div class="mf">'+
+      '<button class="btn bg2" onclick="cm()">Cancelar</button>'+
+      '<button class="btn bs" onclick="vizCtDoc('+id+',\'preview\')">&#128065; Visualizar</button>'+
+      '<button class="btn bp" onclick="vizCtDoc('+id+',\'print\')">&#128438; Imprimir</button>'+
+    '</div>',
+    true
+  );
+}
+
+function vizCtDoc(id, action){
+  var c=DB.contratos.find(function(x){return x.id==id;});if(!c)return;
+  function sel(k){ var el=document.getElementById('doc_'+k); return el&&el.checked; }
+  var partes=[];
+  if(c.tipo==='venda'){
+    if(sel('cv'))        partes.push(gerarCV_simples(c));
+    if(sel('ciencia'))   partes.push(gerarTermoCiencia(c));
+    if(sel('checklist')) partes.push(gerarChecklist_html ? gerarChecklist_html(c) : gerarChecklist(c));
+    if(sel('uber'))      partes.push(gerarTermoUber(c));
+  } else {
+    partes.push('<div class="page"><pre style="font-family:monospace;font-size:9pt;white-space:pre-wrap">'+
+      (c.tipo==='compra'?gerarCompra(c):gerarConsig(c))+'</pre></div>');
+  }
+  if(!partes.length){ toast('Selecione ao menos um documento','warn'); return; }
+  var html_full=partes.join('\n');
+  if(action==='print'){ cm(); impWin(html_full,'Contrato '+c.numero); }
+  else {
+    cm();
+    om(
+      '<div class="mt2"><span>&#128196; Preview '+c.numero+'</span>'+
+      '<button class="btn bg2 bsm" onclick="cm()">&#10005;</button></div>'+
+      '<div style="padding:12px;max-height:65vh;overflow-y:auto;background:#f5f5f5">'+
+        '<div style="transform:scale(.62);transform-origin:top left;width:161%;pointer-events:none">'+html_full+'</div>'+
+      '</div>'+
+      '<div class="mf">'+
+        '<button class="btn bg2" onclick="cm()">Fechar</button>'+
+        '<button class="btn bp" onclick="vizCtDoc('+id+',\'print\')">&#128438; Imprimir</button>'+
+      '</div>',
+      true
+    );
+  }
+}
+
+function impUber(id){
+  var c=DB.contratos.find(function(x){return x.id==id;});if(!c)return;
+  impWin(gerarTermoUber(c),'Termo Uber '+c.numero);
+}
 </script>
 <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
 </body></html>

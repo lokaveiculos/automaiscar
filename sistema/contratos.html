@@ -185,9 +185,7 @@ var CSS_A4='<style>@page{size:A4;margin:12mm 18mm}*{box-sizing:border-box;margin
 function impWin(html_content, titulo){
   var w=window.open('','_blank','width=820,height=1000');
   if(!w){ toast('Permita pop-ups para imprimir','err'); return; }
-  var wm=(typeof LOGO_WM!=='undefined')
-    ?'<img class="wm" src="'+LOGO_WM+'" alt="">'
-    :'';
+  var wm='<img src="logo-wm.png" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-25deg);opacity:.07;pointer-events:none;z-index:0;width:260px;max-width:60%" alt="">';
   var html='<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">'
     +'<title>'+(titulo||'Auto Mais Veiculos')+'</title>'
     +CSS_A4
@@ -199,6 +197,7 @@ function impWin(html_content, titulo){
   w.document.close();
   w.onload=function(){ setTimeout(function(){ w.print(); },500); };
 }
+
 
 
 var ctSrch='', ctPag=1;
@@ -232,14 +231,55 @@ document.getElementById('main').innerHTML=
   '</tbody></table>'+pagCT+'</div>';
 }
 
+
 function vizCt(id){
-  const c=DB.contratos.find(x=>x.id==id);if(!c)return;
-  const txt=c.tipo==='venda'?gerarCV(c):c.tipo==='compra'?gerarCompra(c):gerarConsig(c);
-  const extraBtn=c.tipo==='venda'?'<button class="btn bw" onclick="impVendaDocsPorCt('+c.id+')">&#128438; Todos os Docs</button>':'';
-  om('<div class="mt2"><span>&#128196; '+c.numero+'</span><button class="btn bg2 bsm" onclick="cm()">X</button></div>'+
-  '<div class="ct" id="ctxt">'+txt+'</div>'+
-  '<div class="mf"><button class="btn bg2" onclick="cm()">Fechar</button>'+extraBtn+'<button class="btn bp" onclick="impWin(document.getElementById(\'ctxt\').innerText)">&#128438; Imprimir</button></div>',true);
+  var c=DB.contratos.find(function(x){return x.id==id;});
+  if(!c) return;
+  var eh_venda = c.tipo==='venda';
+
+  var docs = eh_venda ? [
+    {id:'cv',      label:'Contrato de Compra e Venda', icon:'&#128196;', checked:true},
+    {id:'ciencia', label:'Termo de Ci\u00eancia e Responsabilidade', icon:'&#128203;', checked:true},
+    {id:'checklist',label:'Checklist do Ve\u00edculo', icon:'&#9989;',  checked:true},
+    {id:'uber',    label:'Anexo I \u2013 Termo de Garantia (Uber/Aplicativo)', icon:'&#128663;', checked:false}
+  ] : [
+    {id:'contrato',label:'Contrato', icon:'&#128196;', checked:true}
+  ];
+
+  var rows = docs.map(function(d){
+    return '<label style="display:flex;align-items:center;gap:12px;padding:12px 16px;border:1px solid var(--border);border-radius:var(--r);cursor:pointer;background:var(--surface);margin-bottom:8px">'+
+      '<input type="checkbox" id="doc_'+d.id+'" '+(d.checked?'checked':'')+' onclick="event.stopPropagation()" style="width:18px;height:18px;accent-color:var(--brand);cursor:pointer">'+
+      '<span style="font-size:20px">'+d.icon+'</span>'+
+      '<div><div style="font-size:14px;font-weight:600;color:var(--text)">'+d.label+'</div>'+
+      (d.id==='uber'?'<div style="font-size:12px;color:var(--text-muted)">Apenas para motoristas de aplicativo</div>':'')+
+      '</div></label>';
+  }).join('');
+
+  om(
+    '<div class="mt2">'+
+      '<span>&#128196; Contrato N\u00ba '+c.numero+'</span>'+
+      '<button class="btn bg2 bsm" onclick="cm()">&#10005;</button>'+
+    '</div>'+
+    '<div class="mb">'+
+      '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:12px">Selecione os documentos:</div>'+
+      rows+
+    '</div>'+
+    '<div class="mf">'+
+      '<button class="btn bg2" onclick="cm()">Cancelar</button>'+
+      '<button class="btn bs" onclick="vizCtDoc('+id+',\'preview\')">&#128065; Visualizar</button>'+
+      '<button class="btn bp" onclick="vizCtDoc('+id+',\'print\')">&#128438; Imprimir</button>'+
+    '</div>',
+    true
+  );
 }
+
+
+
+
+
+
+
+
 
 function fmCt(id){
   const c=id?DB.contratos.find(x=>x.id==id):{tipo:'venda',numero:'',data:'',cliente_id:'',fornecedor_id:'',veiculo_id:'',valor:'',entrada:'',pagamento:'A vista',financeira:'',num_parcelas:'',valor_parcela:'',prazo:'90',tipo_comissao:'percentual',comissao:'5',valor_minimo:'',condicao:'',debitos:'Nenhum',status:'ativo',obs:''};
