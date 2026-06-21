@@ -692,26 +692,38 @@ function gerarTermoCiencia(c, cl2, v2){
   var e=DB.empresa||{};
   cl2=cl2||cObj(c.cliente_id)||{}; v2=v2||vObj(c.veiculo_id)||{};
   var dt=c.data?new Date(c.data+'T12:00').toLocaleDateString('pt-BR'):new Date().toLocaleDateString('pt-BR');
-  var html='<div class="page">';
-  html+=docHeader('TERMO DE CIENCIA E DE RESPONSABILIDADE',c.numero,dt);
-  html+='<p class="j" style="margin-bottom:6pt">O(A) abaixo-assinado(a) <strong>'+cl2.nome+'</strong>, CPF <strong>'+cl2.cpf+'</strong>, adquirente do veiculo <strong>'+v2.marca+' '+v2.modelo+(v2.versao?' '+v2.versao:'')+', placa '+v2.placa+'</strong>, Contrato N&ordm; <strong>'+c.numero+'</strong>, declara ciente:</p>';
-  html+='<p class="j num"><strong>1)</strong> O veiculo e seminovo com desgaste natural; foi visto e inspecionado por mim, tomando ciencia de seu estado e conservacao.</p>';
-  html+='<p class="j num"><strong>2)</strong> A partir do recebimento, sou o unico responsavel pela manutencao. A garantia aplica-se somente a defeitos manifestados no prazo legal, nao decorrentes de negligencia de manutencao.</p>';
-  html+='<p class="j num"><strong>3)</strong> Pecas sujeitas a desgaste (filtros, oleos, pneus, baterias, juntas, velas etc.) tem vida util compativel com o estado e KM do veiculo; substituicoes futuras sao de minha exclusiva responsabilidade.</p>';
-  html+='<p class="j num"><strong>4)</strong> Uso para aplicativos (Uber, 99 etc.) acelera o desgaste e exige manutencao mais frequente. A omissao desta informacao acarretara negativa de garantia.</p>';
-  html+='<p class="j num"><strong>5)</strong> A loja nao se responsabiliza por defeitos decorrentes de desgaste prematuro, ausencia de manutencao ou inobservancia dos avisos do veiculo.</p>';
-  html+='<p class="j num"><strong>6)</strong> Qualquer servico na garantia deve ser comunicado e autorizado previamente pela loja. Servicos em oficinas nao credenciadas dependem de autorizacao previa e aprovacao de orcamento.</p>';
-  html+='<div class="local">'+(e.cidade||'Feira de Santana')+' - '+(e.uf||'BA')+', '+dt+'.</div>';
-  html+='<div class="assinaturas"><div class="assin"><div class="assin-linha"></div><div class="assin-nome">'+cl2.nome+'</div><div class="assin-cargo">COMPRADOR(A) - CPF: '+cl2.cpf+'</div></div>';
-  html+='<div class="assin"><div class="assin-linha"></div><div class="assin-nome">'+(e.nome||'AUTO MAIS VEICULOS LTDA')+'</div><div class="assin-cargo">VENDEDOR</div></div></div></div>';
+  var html='<div class="page" style="page-break-after:auto">';
+  html+=docHeader('TERMO DE CI\u00caNCIA E DE RESPONSABILIDADE',c.numero,dt);
+  html+='<p class="j" style="margin-bottom:6pt">O(A) abaixo-assinado(a) <strong>'+cl2.nome+'</strong>, CPF <strong>'+cl2.cpf+'</strong>, adquirente do ve\u00edculo <strong>'+v2.marca+' '+v2.modelo+(v2.versao?' '+v2.versao:'')+', placa '+v2.placa+'</strong>, Contrato N&ordm;\u00a0<strong>'+c.numero+'</strong>, firmado com <strong>'+(e.nome||'AUTO MAIS COM\u00c9RCIO E CORRETORA DE VE\u00cdCULOS LTDA')+'</strong>, declara-se ciente do seguinte:</p>';
+
+  html+='<p class="j num"><strong>1)</strong> Tenho ci\u00eancia de que o ve\u00edculo objeto deste contrato \u00e9 seminovo, apresentando desgaste natural decorrente do tempo de uso, e confirmo que foi visto e inspecionado por mim, tendo tomado plena ci\u00eancia de suas condi\u00e7\u00f5es e estado de conserva\u00e7\u00e3o.</p>';
+
+  html+='<p class="j num"><strong>2)</strong> A partir do recebimento do ve\u00edculo, sou o \u00fanico respons\u00e1vel pela sua conserva\u00e7\u00e3o e manuten\u00e7\u00e3o. A garantia aplica-se a defeitos apresentados dentro do prazo legal, estando passível de perda da garantia: o uso indevido ou inadequado, uso em competi\u00e7\u00f5es, altera\u00e7\u00f5es nas fun\u00e7\u00f5es originais, defeitos provenientes de instala\u00e7\u00e3o de acess\u00f3rios, combust\u00edvel errado, reparos feitos em oficinas n\u00e3o autorizadas, bem como o desgaste prematuro proveniente do uso do ve\u00edculo em atividades profissionais e de transporte por aplicativo.</p>';
+
+  html+='<p class="j num"><strong>3)</strong> Tenho ci\u00eancia de que diversas pe\u00e7as do ve\u00edculo t\u00eam vida \u00fatil compat\u00edvel com seu estado de conserva\u00e7\u00e3o e quilometragem, sendo de minha inteira responsabilidade a futura substitui\u00e7\u00e3o de pe\u00e7as de reposi\u00e7\u00e3o e acess\u00f3rias, tais como filtros, \u00f3leos, pneus, juntas, flu\u00eddos, bateria, velas, entre outros.</p>';
+
+  html+='<p class="j num"><strong>4)</strong> A loja n\u00e3o se responsabilizar\u00e1 por desgastes decorrentes de uso severo, assim como n\u00e3o se responsabilizar\u00e1 por avarias mec\u00e2nicas causadas por displic\u00eancia ou neglig\u00eancia com os sinais de alerta e avisos emitidos no painel de instrumentos do ve\u00edculo, tais como aviso de \u00f3leo, temperatura e outros que exijam parada imediata para manuten\u00e7\u00e3o.</p>';
+
+  html+='<p class="j num"><strong>5)</strong> A realiza\u00e7\u00e3o de revis\u00f5es peri\u00f3dicas \u00e9 de minha exclusiva responsabilidade, especialmente se o ve\u00edculo for utilizado para fins profissionais ou de transporte por aplicativo (Uber, 99 etc.), modalidade que acelera o desgaste de pe\u00e7as e componentes.</p>';
+
+  html+='<p class="j num"><strong>6)</strong> Qualquer servi\u00e7o de manuten\u00e7\u00e3o deve ser comunicado imediatamente \u00e0 loja para que sejam tomadas as devidas provid\u00eancias. Servi\u00e7os em oficinas n\u00e3o credenciadas devem ser autorizados previamente, eximindo a loja de qualquer responsabilidade sobre a execu\u00e7\u00e3o e garantia do servi\u00e7o realizado.</p>';
+
+  html+='<p class="j num"><strong>7)</strong> O COMPRADOR tem ci\u00eancia de que est\u00e1 adquirindo o ve\u00edculo na cidade de '+(e.cidade||'Feira de Santana')+'\u2013'+(e.uf||'BA')+', e que a loja poder\u00e1 solicitar a remo\u00e7\u00e3o do ve\u00edculo para suas oficinas credenciadas nesta cidade, sendo os custos de transporte de responsabilidade do comprador.</p>';
+
+  html+='<div class="local">'+(e.cidade||'Feira de Santana')+'\u00a0\u2013\u00a0'+(e.uf||'BA')+', '+dt+'.</div>';
+  html+='<div class="assinaturas">';
+  html+='<div class="assin"><div class="assin-linha"></div><div class="assin-nome">'+cl2.nome+'</div><div class="assin-cargo">COMPRADOR(A) \u2013 CPF: '+cl2.cpf+'</div></div>';
+  html+='<div class="assin"><div class="assin-linha"></div><div class="assin-nome">'+(e.nome||'AUTO MAIS VE\u00cdCULOS LTDA')+'</div><div class="assin-cargo">VENDEDOR</div></div>';
+  html+='</div></div>';
   return html;
 }
+
 
 // ── Termo de Garantia Uber (Anexo I) ─────────────────────────
 function gerarTermoUber(c){
   var e=DB.empresa||{}, cl=cObj(c.cliente_id)||{}, v=vObj(c.veiculo_id)||{};
   var dt=c.data?new Date(c.data+'T12:00').toLocaleDateString('pt-BR'):new Date().toLocaleDateString('pt-BR');
-  var html='<div class="page">';
+  var html='<div class="page" style="page-break-after:auto">';
   html+=docHeader('ANEXO I &ndash; TERMO DE GARANTIA PARA TRANSPORTE POR APLICATIVO',c.numero,dt);
   html+='<p class="j" style="margin-bottom:5pt">O <strong>COMPRADOR '+cl.nome+'</strong>, CPF <strong>'+cl.cpf+'</strong>, adquirente do veiculo <strong>'+v.marca+' '+v.modelo+(v.versao?' '+v.versao:'')+', placa '+v.placa+', ano '+v.ano+'</strong>, manifesta ciencia dos termos da GARANTIA para uso em transporte por aplicativos.</p>';
   html+='<p class="j num"><strong>1. PRAZO:</strong> 90 (noventa) dias OU 5.000 km rodados - prevalece o que ocorrer primeiro. Cobertura: vicios ocultos em motor e cambio comprovados.</p>';
@@ -742,7 +754,7 @@ function gerarChecklist_html(c){
     return '<div style="margin-bottom:4pt"><table class="ck"><thead><tr><th colspan="4">'+g[0]+'</th></tr>'+
       '<tr><th style="width:44%">Item</th><th style="width:10%">OK</th><th style="width:14%">Atencao</th><th>Obs</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
   }).join('');
-  var html='<div class="page">';
+  var html='<div class="page" style="page-break-after:auto">';
   html+=docHeader('CHECKLIST DE ENTREGA DO VEICULO',c.numero,dt);
   html+='<div class="grid2" style="margin-bottom:5pt">';
   html+='<div><div class="campo"><label>Comprador(a)</label><span>'+cl.nome+'</span></div>';

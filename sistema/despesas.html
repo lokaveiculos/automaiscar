@@ -273,6 +273,12 @@ function renderDesp(){
   '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:10px;align-items:end;flex-wrap:wrap">'+
   '<div class="fg"><label>De</label><input id="fde" type="date" value="'+dFiltDe+'" oninput="dFiltDe=this.value;dPag=1;renderDesp()"></div>'+
   '<div class="fg"><label>Ate</label><input id="fate" type="date" value="'+dFiltAte+'" oninput="dFiltAte=this.value;dPag=1;renderDesp()"></div>'+
+  '<div class="fg"><label>Tipo</label>'+
+  '<select onchange="dFiltTipo=this.value;dPag=1;renderDesp()" style="padding:8px 10px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);color:var(--text)">'+
+  '<option value="">Todos os tipos</option>'+
+  '<option value="Administrativa"'+(dFiltTipo==="Administrativa"?' selected':'')+'>&#128197; Administrativas</option>'+
+  '<option value="Operacional"'+(dFiltTipo==="Operacional"?' selected':'')+'>&#128663; Operacionais</option>'+
+  '</select></div>'+
   '<div class="fg"><label>Placa</label>'+
   '<select id="fplaca" onchange="dFiltPlaca=this.value;dPag=1;renderDesp()">'+
   '<option value="">Todas as placas</option>'+placasDisp+'</select></div>'+
@@ -312,9 +318,10 @@ function filtrarDespesas(){
                     (d.descricao||'').toLowerCase().includes(q) ||
                     (d.proprietario||'').toLowerCase().includes(q);
     var matchPlaca = !dFiltPlaca || d.placa===dFiltPlaca;
-    var matchDe  = !dFiltDe  || (d.data||'') >= dFiltDe;
-    var matchAte = !dFiltAte || (d.data||'') <= dFiltAte;
-    return matchSrch && matchPlaca && matchDe && matchAte;
+    var matchTipo  = !dFiltTipo  || (d.tipo||'').toLowerCase()===dFiltTipo.toLowerCase();
+    var matchDe    = !dFiltDe    || (d.data||'') >= dFiltDe;
+    var matchAte   = !dFiltAte   || (d.data||'') <= dFiltAte;
+    return matchSrch && matchPlaca && matchTipo && matchDe && matchAte;
   });
 }
 
