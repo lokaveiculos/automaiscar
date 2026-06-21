@@ -349,11 +349,13 @@ function resumoPorVeiculo(fl){
 
 function fmDesp(id){
   var d = id ? (DB.despesas||[]).find(function(x){return x.id==id;}) :
-    {data:'', fornecedor:'', proprietario:'', veiculo:'', placa:'', valor:'', descricao:''};
-  if(!d) d = {data:'',fornecedor:'',proprietario:'',veiculo:'',placa:'',valor:'',descricao:''};
+    {data:'',fornecedor:'',proprietario:'',veiculo:'',placa:'',valor:'',descricao:'',tipo:'Operacional'};
+  if(!d) d={data:'',fornecedor:'',proprietario:'',veiculo:'',placa:'',valor:'',descricao:'',tipo:'Operacional'};
 
   var hoje = new Date().toISOString().split('T')[0];
-  var optsV = '<option value="">-- Selecione um veiculo --</option>'+
+  var tipoAtual = d.tipo || 'Operacional';
+
+  var optsV = '<option value="">-- Selecione --</option>'+
     DB.veiculos.map(function(v){
       return '<option value="'+v.placa+'" '+(v.placa===d.placa?'selected':'')+'>'+
         v.placa+' - '+v.marca+' '+v.modelo+' ('+v.ano+')</option>';
@@ -364,24 +366,29 @@ function fmDesp(id){
     '<button class="btn bg2 bsm" onclick="cm()">X</button></div>'+
 
     '<div class="fr">'+
+    '<div class="fg"><label>Tipo *</label>'+
+    '<select id="dtipo" style="padding:8px 12px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);color:var(--text);font-size:14px">'+
+    '<option value="Operacional"'+(tipoAtual==='Operacional'?' selected':'')+'>&#128663; Operacional</option>'+
+    '<option value="Administrativa"'+(tipoAtual==='Administrativa'?' selected':'')+'>&#128197; Administrativa</option>'+
+    '</select></div>'+
     '<div class="fg"><label>Data *</label>'+
     '<input id="dd" type="date" value="'+(d.data||hoje)+'"></div>'+
     '<div class="fg"><label>Valor (R$) *</label>'+
     '<input id="dval" type="number" step="0.01" value="'+(d.valor||'')+'" placeholder="0,00"></div></div>'+
 
-    '<div class="fr"><div class="fg full"><label>Veiculo (selecione para preencher placa automaticamente)</label>'+
+    '<div class="fr"><div class="fg full"><label>Ve\u00edculo (selecione para preencher a placa automaticamente)</label>'+
     '<select id="dveic" onchange="autoPlaca()">'+optsV+'</select></div></div>'+
 
     '<div class="fr">'+
     '<div class="fg"><label>Placa</label>'+
     '<input id="dplaca" value="'+(d.placa||'')+'" placeholder="ABC-1234" style="font-family:monospace;font-weight:700;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></div>'+
-    '<div class="fg"><label>Proprietario</label>'+
-    '<input id="dprop" value="'+(d.proprietario||'')+'" placeholder="Nome do proprietario"></div></div>'+
+    '<div class="fg"><label>Propriet\u00e1rio</label>'+
+    '<input id="dprop" value="'+(d.proprietario||'')+'" placeholder="Nome do propriet\u00e1rio"></div></div>'+
 
     '<div class="fr"><div class="fg full"><label>Fornecedor *</label>'+
     '<input id="dforn" value="'+(d.fornecedor||'')+'" placeholder="Nome da oficina, loja, prestador..."></div></div>'+
 
-    '<div class="fr"><div class="fg full"><label>Descricao do Servico</label>'+
+    '<div class="fr"><div class="fg full"><label>Descri\u00e7\u00e3o do Servi\u00e7o</label>'+
     '<textarea id="ddesc">'+(d.descricao||'')+'</textarea></div></div>'+
 
     '<div class="mf">'+
@@ -389,6 +396,7 @@ function fmDesp(id){
     '<button class="btn bp" onclick="svDesp('+(id||'null')+')">&#10004; Salvar</button></div>'
   );
 }
+
 
 function autoPlaca(){
   var sel = document.getElementById('dveic');
