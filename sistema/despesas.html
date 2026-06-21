@@ -288,10 +288,10 @@ function renderDesp(){
   '<button class="btn bg2" onclick="dSrch=\'\';dFiltDe=\'\';dFiltAte=\'\';dFiltPlaca=\'\';renderDesp()">Limpar</button>'+
   '</div></div>'+
   '<div class="tw"><table>'+
-  '<thead><tr><th>Data</th><th>Fornecedor</th><th>Proprietario</th><th>Veiculo</th><th>Placa</th><th>Valor</th><th>Descricao</th><th>Acoes</th></tr></thead>'+
+  '<thead><tr><th>Data</th><th>Fornecedor</th><th>Proprietario</th><th>Veiculo</th><th>Placa</th><th>Valor</th><th>Descrição</th><th>Tipo</th><th>Ações</th></tr></thead>'+
   '<tbody>'+
 
-  (fl.length===0?'<tr><td colspan="8"><div class="empty"><span class="ei">&#128181;</span>Nenhuma despesa encontrada</div></td></tr>':'')+
+  (fl.length===0?'<tr><td colspan="9"><div class="empty"><span class="ei">&#128181;</span>Nenhuma despesa encontrada</div></td></tr>':'')+
   dpP.map(function(d){
     return '<tr>'+
     '<td style="font-size:12px;white-space:nowrap">'+fd(d.data)+'</td>'+
@@ -300,7 +300,11 @@ function renderDesp(){
     '<td style="font-size:12px">'+(d.veiculo||'-')+'</td>'+
     '<td><span style="font-family:monospace;font-weight:700;color:var(--accent)">'+(d.placa||'-')+'</span></td>'+
     '<td style="font-weight:800;color:var(--ok)">R$ '+brl(d.valor)+'</td>'+
-    '<td style="font-size:12px;color:var(--t2);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+(d.descricao||'')+'">'+(d.descricao||'-')+'</td>'+
+    '<td style="font-size:12px;color:var(--t2);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+(d.descricao||'')+'">'+(d.descricao||'-')+'</td>'+
+    '<td>'+((d.tipo==='Operacional')
+      ?'<span class="badge bg-y" style="font-size:11px">Op</span>'
+      :'<span class="badge bg-b" style="font-size:11px">Adm</span>')
+    +'</td>'+
     '<td><div class="acts">'+
     '<button class="btn bg2 bsm" onclick="fmDesp('+d.id+')" title="Editar">&#9999;</button>'+
     +(isAdmin()?'<button class="btn bd bsm" onclick="dlDesp('+d.id+')">&#128465;</button>':'')+
