@@ -81,7 +81,7 @@ function toggleTheme(){
     document.getElementById('login-logo').src=s==='dark'?LOGO_DARK:LOGO_LIGHT;
 })();
 
-if(sessionStorage.getItem('am_user')) window.location.href='index.html';
+(function(){try{var r=localStorage.getItem('am_user');if(r){var u=JSON.parse(r);if(u&&(!u._ts||Date.now()-u._ts<8*60*60*1000))window.location.href='index.html';}}catch(e){}})();
 
 document.getElementById('pwd').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
 document.getElementById('usr').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('pwd').focus();});
@@ -105,7 +105,7 @@ function showError(){
 }
 
 function doLoginSuccess(user){
-  sessionStorage.setItem('am_user',JSON.stringify({login:user.login,nome:user.nome,perfil:user.perfil}));
+  localStorage.setItem('am_user',JSON.stringify({login:user.login,nome:user.nome,perfil:user.perfil,_ts:Date.now()}));
   window.location.href='index.html';
 }
 

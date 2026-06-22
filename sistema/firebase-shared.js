@@ -73,7 +73,16 @@ async function loadFromFirestore(){
 
 // ── Helpers de sessão ────────────────────────────────────────
 function getSession(){
-  try { return JSON.parse(sessionStorage.getItem('am_user')); } catch(e){ return null; }
+  try {
+    var raw = localStorage.getItem('am_user');
+    if(!raw) return null;
+    var obj = JSON.parse(raw);
+    // Expirar após 8 horas
+    if(obj && obj._ts && Date.now()-obj._ts > 8*60*60*1000){
+      localStorage.removeItem('am_user'); return null;
+    }
+    return obj;
+  } catch(e){ return null; }
 }
 
 function isAdmin(){
@@ -82,7 +91,7 @@ function isAdmin(){
 }
 
 function logout(){
-  sessionStorage.removeItem('am_user');
+  localStorage.removeItem('am_user');
   window.location.href = 'login.html';
 }
 

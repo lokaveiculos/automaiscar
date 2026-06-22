@@ -323,7 +323,8 @@ function filtrarDespesas(){
                     (d.descricao||'').toLowerCase().includes(q) ||
                     (d.proprietario||'').toLowerCase().includes(q);
     var matchPlaca = !dFiltPlaca || d.placa===dFiltPlaca;
-    var matchTipo  = !dFiltTipo  || (d.tipo||'').toLowerCase()===dFiltTipo.toLowerCase();
+    var dTipo = (d.tipo||'Operacional');
+    var matchTipo = !dFiltTipo || dTipo.toLowerCase()===dFiltTipo.toLowerCase();
     var matchDe    = !dFiltDe    || (d.data||'') >= dFiltDe;
     var matchAte   = !dFiltAte   || (d.data||'') <= dFiltAte;
     return matchSrch && matchPlaca && matchTipo && matchDe && matchAte;
@@ -421,6 +422,7 @@ function svDesp(id){
   if(!DB.despesas) DB.despesas = [];
   var obj = {
     id:       id || nid(DB.despesas),
+    tipo:     (document.getElementById('dtipo')||{value:'Operacional'}).value || 'Operacional',
     data:     data,
     fornecedor: forn,
     proprietario: document.getElementById('dprop').value,
