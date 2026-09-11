@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR" data-theme="light">
 <head>
-<!-- login sem senha no codigo: seguranca-20260826-1356 -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Auto+ Veículos — Acesso</title>
@@ -59,76 +58,15 @@ body::before{content:'';position:fixed;top:-20%;left:50%;transform:translateX(-5
     Entrar no Sistema
   </button>
   <div class="login-hint">Esqueceu a senha? Fale com o administrador.</div>
-
-  <!-- Primeiro acesso: só aparece enquanto NÃO existir nenhum administrador.
-       Assim que um for criado, este bloco some sozinho. -->
-  <div id="setup-admin" style="display:none;margin-top:18px;padding:14px;border:1px solid rgba(128,128,128,.35);border-radius:10px">
-    <div style="font-size:13px;font-weight:700;margin-bottom:4px">Nenhum administrador cadastrado</div>
-    <div style="font-size:11px;opacity:.75;margin-bottom:10px;line-height:1.45">
-      Crie o acesso de administrador para começar. A senha é gravada codificada —
-      não fica legível para ninguém, nem para quem abrir o banco.
-    </div>
-    <div class="login-field"><label>Usuário</label><div class="login-input-wrap">
-      <input class="login-input" id="su-login" type="text" placeholder="ex: rogel" autocomplete="off"></div></div>
-    <div class="login-field"><label>Nome</label><div class="login-input-wrap">
-      <input class="login-input" id="su-nome" type="text" placeholder="ex: Rogel Carneiro"></div></div>
-    <div class="login-field"><label>Senha (mínimo 8 caracteres)</label><div class="login-input-wrap">
-      <input class="login-input" id="su-senha" type="password" placeholder="••••••••" autocomplete="new-password"></div></div>
-    <div class="login-field"><label>Repita a senha</label><div class="login-input-wrap">
-      <input class="login-input" id="su-senha2" type="password" placeholder="••••••••" autocomplete="new-password"></div></div>
-    <div id="su-msg" style="font-size:11px;min-height:16px;margin-bottom:6px"></div>
-    <button class="login-btn" id="su-btn" onclick="criarAdmin()">Criar administrador</button>
-  </div>
 </div>
 <script>
 var LOGO_LIGHT = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnN2Zz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZlcnNpb249IjEuMSIgd2lkdGg9IjY2NC4zIiBoZWlnaHQ9IjI4MC4wIiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJ4TWlkWU1pZCBtZWV0IiB2aWV3Qm94PSIxNDYuNyA2NjIuOTIgNjY0LjMyIDI3OS45OCI+PGRlZnM+PGNsaXBQYXRoIGlkPSJjbGlwcGF0aDAiIHRyYW5zZm9ybT0iIj48cGF0aCBkPSJNIDAgMTA4MCBMIDE5MjAgMTA4MCBMIDE5MjAgMCBMIDAgMCBaIiBmaWxsPSJub25lIiBjbGlwLXJ1bGU9Im5vbnplcm8iPjwvcGF0aD48L2NsaXBQYXRoPjwvZGVmcz48ZyB0cmFuc2Zvcm09Im1hdHJpeCgxIDAgMCAtMSAwIDEwODApIj48ZyB0cmFuc2Zvcm09IiI+PC9nPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDc0Mi45OTkxIDg2MC41MTAzKSI+PC9nPjxnIHRyYW5zZm9ybT0iIj48L2c+PGcgY2xpcC1wYXRoPSJ1cmwoI2NsaXBwYXRoMCkiPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDU5OC45MjY0IDc4My42MzIzKSI+PC9nPjwvZz48ZyBjbGlwLXBhdGg9InVybCgjY2xpcHBhdGgwKSI+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMzg1LjIzOTMgNzI0LjMxODcpIj48L2c+PC9nPjxnIGNsaXAtcGF0aD0idXJsKCNjbGlwcGF0aDApIj48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSg0MDQuOTQ2NCA3MDQuNTQ2MykiPjwvZz48L2c+PGcgY2xpcC1wYXRoPSJ1cmwoI2NsaXBwYXRoMCkiPjxnIHRyYW5zZm9ybT0iIj48L2c+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNDYyLjEyMzEgNzAxLjEzNzEpIj48L2c+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNTAwLjQ2NzggNzAzLjc2NykiPjwvZz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSg1MTguMzU3NSA3MDEuNTkxMikiPjwvZz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSg1NTAuNTk5NyA3MDYuNTU5KSI+PC9nPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDU5MC40Njk4IDcwMS4xNjkzKSI+PC9nPjxnIHRyYW5zZm9ybT0iIj48L2c+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMTcwMy41MzQ3IDg2MC41MTAxKSI+PC9nPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDE1NTkuNDYyIDc4My42MzIxKSI+PC9nPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDEzNDUuNzc2NCA3MjQuMzE4NykiPjwvZz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxMzY1LjQ4MzQgNzA0LjU0NjMpIj48L2c+PGcgdHJhbnNmb3JtPSIiPjwvZz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxNDIyLjY2MDIgNzAxLjEzNzEpIj48L2c+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMTQ2MS4wMDQ5IDcwMy43NjcpIj48L2c+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMTQ3OC44OTQ1IDcwMS41OTEyKSI+PC9nPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDE1MTEuMTM2NyA3MDYuNTU5KSI+PC9nPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDE1NTEuMDA2OCA3MDEuMTY5MykiPjwvZz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxNzAzLjUzNDcgMzIwLjUwOTgpIj48L2c+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMTU1OS40NjIgMjQzLjYzMTgpIj48L2c+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMTM0NS43NzY0IDE4NC4zMTk3KSI+PC9nPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDEzNjUuNDgzNCAxNjQuNTQ3MykiPjwvZz48ZyB0cmFuc2Zvcm09IiI+PC9nPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDE0MjIuNjYwMiAxNjEuMTM4MSkiPjwvZz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxNDYxLjAwNDkgMTYzLjc2OCkiPjwvZz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxNDc4Ljg5NDUgMTYxLjU5MjIpIj48L2c+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMTUxMS4xMzY3IDE2Ni41NikiPjwvZz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxNTUxLjAwNjggMTYxLjE3MDMpIj48L2c+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNzQyLjk5OTEgMzIwLjUxMDQpIj48cGF0aCBkPSJNIDAgMCBMIDguNjQyIDQzLjg4MiBMIC0yOS4zMTMgNDMuODgyIEwgLTM3LjkyIDAgTCAtODEuOTA4IDAgTCAtODkuMzE1IC0zOC4wNjEgTCAtNDUuMzI4IC0zOC4wNjEgTCAtNTMuNzk0IC04Mi4wNDkgTCAtMTUuODc0IC04Mi4wNDkgTCAtNy4zNzIgLTM4LjA2MSBMIDM2LjYxNSAtMzguMDYxIEwgNDQuMDIzIDAgWiIgZmlsbD0iI2ZmYjEzMyIgZmlsbC1vcGFjaXR5PSIxIj48L3BhdGg+PC9nPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDU5OC45MjY0IDI0My42MzI0KSI+PHBhdGggZD0iTSAwIDAgTCAtMzQuNDYxIDAgTCAtMTEuOTY2IDExNS41ODkgTCAyMi40NjYgMTE1LjU4OSBaIE0gLTMyOS4xNzcgMzcuMjEzIEwgLTM0Ni44ODcgMzcuMjEzIEwgLTMyMi45MjUgMTE1LjM1IFogTSA1Ni4wMjkgMTQyLjI3MyBDIDUxLjY5MiAxNDcuMDU5IDQ1Ljg1OSAxNDkuNDUyIDM4LjU2IDE0OS40NTIgTCAtMTMuODIxIDE0OS40NTIgTCAtMTQuOTI3IDE0OS40NTIgTCAtMTU0LjQ3OCAxNDkuNDUyIEwgLTE2MC44NzkgMTQ5LjQ1MiBMIC0xOTAuOTczIDE0OS40NTIgTCAtMjE5Ljk2IDAgTCAtMjU0LjQyMSAwIEwgLTIyNS40MzUgMTQ5LjQ1MiBMIC0yNjEuODEgMTQ5LjQ1MiBMIC0yOTIuMDg0IC02Ljc5MSBMIC0yOTEuOTk0IDE0OS40NTIgTCAtMzQwLjM2NSAxNDkuNDUyIEwgLTQyOC4yMjQgMTQ5LjQ1MiBMIC00MjAuODM1IDEyMy4yNzcgTCAtMzUwLjUzNiAxMjMuMjc3IEwgLTM1OC4yMjQgMTAzLjQ3NCBMIC00MjAuNTA2IDEwMy40NzQgTCAtNDEzLjcxNSA4MC44ODggTCAtMzY2Ljk4OSA4MC44ODggTCAtMzc0LjY3NyA2MS4wODUgTCAtNDEzLjM4NiA2MS4wODUgTCAtNDA2LjYyNiAzOC41IEwgLTM4My40NzIgMzguNSBMIC0zOTEuMTYgMTguNjk2IEwgLTQwNi4yOTcgMTguNjk2IEwgLTM5OS45NzcgLTQuMDMzIEwgLTQwMS43MTkgLTguNTI1IEwgLTQxMS41NjIgLTMzLjg2MyBMIC0zNzQuNzA3IC0zMy44NjMgTCAtMzYwLjEwOSAzLjMyIEwgLTMyOS4wODggMy4zMiBMIC0zMjkuMDg4IC0zMy44NjMgTCAtMzA2LjY5NCAtMzMuODYzIEwgLTMwNi42OTkgLTMzLjg3NCBMIC0yNjYuOTA5IC0zMy44NzQgTCAtMjY2LjkyIC0zMy44NjMgTCAtMjE2Ljk5OSAtMzMuODYzIEMgLTIwOS42OTkgLTMzLjg2MyAtMjAyLjk2OSAtMzEuNDQgLTE5Ni44MDYgLTI2LjU2NCBDIC0xOTAuNDA1IC0yMS43MTggLTE4Ni41MTYgLTE1LjgyNSAtMTg1LjE3IC04Ljg4NSBMIC0xNjEuMDI5IDExNS41ODkgTCAtMTIwLjk0NCAxMTUuNTg5IEwgLTE1MC4wMjEgLTMzLjg2MyBMIC0xMTMuNzY0IC0zMy44NjMgTCAtODQuNjU4IDExNS41ODkgTCAtNDguNDAxIDExNS41ODkgTCAtNzIuNTQyIC04Ljg4NSBDIC03My45MTggLTE1LjgyNSAtNzIuNDUzIC0yMS43MTggLTY4LjExNSAtMjYuNTY0IEMgLTYzLjY4NyAtMzEuNDQgLTU3LjgyNCAtMzMuODYzIC01MC41MjUgLTMzLjg2MyBMIDIuOTYxIC0zMy44NjMgQyAxMC4yNjEgLTMzLjg2MyAxNi45OTEgLTMxLjQ0IDIzLjE1NCAtMjYuNTY0IEMgMjkuNTU1IC0yMS43MTggMzMuNDQ0IC0xNS44MjUgMzQuNzkgLTguODg1IEwgNDQuNjAyIDQxLjcwMSBMIDUwLjg4NCA3My45NzggTCA2MC42OTYgMTI0LjQ3MyBDIDYxLjk4MiAxMzEuMzg0IDYwLjQyNyAxMzcuMzM3IDU2LjAyOSAxNDIuMjczIiBmaWxsPSIjMWQxZDFiIiBmaWxsLW9wYWNpdHk9IjEiPjwvcGF0aD48L2c+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMzg1LjIzOTMgMTg0LjMxODcpIj48cGF0aCBkPSJNIDAgMCBMIDMuMzc2IDAgTCAtNi4wMDcgLTIyLjcyOCBMIC05LjQ0OCAtMjIuNzI4IEwgLTE4Ljg2NCAwIEwgLTE1LjQ4OCAwIEwgLTExLjMgLTEwLjI2IEwgLTcuNzI4IC0xOS4wOTEgWiIgZmlsbD0iIzlkOWQ5YyIgZmlsbC1vcGFjaXR5PSIxIj48L3BhdGg+PC9nPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDQwNC45NDY0IDE2NC41NDYzKSI+PHBhdGggZD0iTSAwIDAgTCAxMy41MDcgMCBMIDEzLjUwNyAtMi45NTUgTCAtMy4xNDkgLTIuOTU1IEwgLTMuMTQ5IDE5Ljc3MiBMIDEzLjMxMyAxOS43NzIgTCAxMy4zMTMgMTYuODUxIEwgMCAxNi44NTEgTCAwIDEwIEwgMTIuNzI4IDEwIEwgMTIuNzI4IDcuMTEgTCAwIDcuMTEgWiIgZmlsbD0iIzlkOWQ5YyIgZmlsbC1vcGFjaXR5PSIxIj48L3BhdGg+PC9nPjxnIHRyYW5zZm9ybT0iIj48cGF0aCBkPSJNIDQzMi45NjcgMTg0LjMxOSBMIDQzNi4xMTYgMTg0LjMxOSBMIDQzNi4xMTYgMTYxLjU5MSBMIDQzMi45NjcgMTYxLjU5MSBaIE0gNDMyLjk2NyAxNjEuNTkxIE0gNDMyLjkzNSAxODYuNTkyIEwgNDM1LjI3MyAxOTAuOTExIEwgNDM4Ljk3NCAxOTAuOTExIEwgNDM1LjcyNyAxODYuNTkyIFoiIGZpbGw9IiM5ZDlkOWMiIGZpbGwtb3BhY2l0eT0iMSI+PC9wYXRoPjwvZz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSg0NjIuMTIzMSAxNjEuMTM3MSkiPjxwYXRoIGQ9Ik0gMCAwIEMgLTMuNDY0IDAgLTYuMjk5IDEuMTA0IC04LjUwNyAzLjMxMiBDIC0xMC43MTUgNS41MiAtMTEuODE4IDguMzU0IC0xMS44MTggMTEuODE4IEMgLTExLjgxOCAxNS4yODEgLTEwLjcxNSAxOC4xMTcgLTguNTA3IDIwLjMyNSBDIC02LjI5OSAyMi41MzIgLTMuNDY0IDIzLjYzNyAwIDIzLjYzNyBDIDMuMzEyIDIzLjYzNyA2LjEwNCAyMi40NjggOC4zNzcgMjAuMTMgTCA2LjIwMSAxOC4xODIgQyA0LjYgMTkuODQ5IDIuNTY0IDIwLjY4MiAwLjA5OCAyMC42ODIgQyAtMi40NzkgMjAuNjgyIC00LjU3OCAxOS44NTkgLTYuMjAxIDE4LjIxNSBDIC03LjgyNSAxNi41NjkgLTguNjM3IDE0LjQzNyAtOC42MzcgMTEuODE4IEMgLTguNjM3IDkuMTk5IC03LjgyNSA3LjA2NiAtNi4yMDEgNS40MjIgQyAtNC41NzggMy43NzYgLTIuNDc5IDIuOTU0IDAuMDk4IDIuOTU0IEMgMi41ODYgMi45NTQgNC42OTYgMy43OTkgNi40MjkgNS40ODYgTCA4LjUwNyAzLjM3NiBDIDYuMjEyIDEuMTI1IDMuMzc3IDAgMCAwIiBmaWxsPSIjOWQ5ZDljIiBmaWxsLW9wYWNpdHk9IjEiPjwvcGF0aD48L2c+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNTAwLjQ2NzggMTYzLjc2NykiPjxwYXRoIGQ9Ik0gMCAwIEMgLTEuNzMxIC0xLjc1NCAtNC4wMzcgLTIuNjMgLTYuOTE1IC0yLjYzIEMgLTkuNzk0IC0yLjYzIC0xMi4wOTQgLTEuNzU0IC0xMy44MTQgMCBDIC0xNS41MzYgMS43NTMgLTE2LjM5NiA0LjEwMiAtMTYuMzk2IDcuMDQ1IEwgLTE2LjM5NiAyMC41NTIgTCAtMTMuMjc5IDIwLjU1MiBMIC0xMy4yNzkgNy4xMSBDIC0xMy4yNzkgNS4wNzUgLTEyLjcgMy40NDEgLTExLjU0MiAyLjIwNyBDIC0xMC4zODUgMC45NzQgLTguODQyIDAuMzU2IC02LjkxNSAwLjM1NiBDIC00Ljk4OSAwLjM1NiAtMy40NDcgMC45NjggLTIuMjg5IDIuMTkxIEMgLTEuMTMxIDMuNDE0IC0wLjU1MiA1LjA1NCAtMC41NTIgNy4xMSBMIC0wLjU1MiAyMC41NTIgTCAyLjU5OCAyMC41NTIgTCAyLjU5OCA3LjA0NSBDIDIuNTk4IDQuMTAyIDEuNzMxIDEuNzUzIDAgMCIgZmlsbD0iIzlkOWQ5YyIgZmlsbC1vcGFjaXR5PSIxIj48L3BhdGg+PC9nPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDUxOC4zNTc1IDE2MS41OTEyKSI+PHBhdGggZD0iTSAwIDAgTCAwIDIyLjcyOCBMIDMuMTQ5IDIyLjcyOCBMIDMuMTQ5IDIuOTU1IEwgMTUuNDIzIDIuOTU1IEwgMTUuNDIzIDAgWiIgZmlsbD0iIzlkOWQ5YyIgZmlsbC1vcGFjaXR5PSIxIj48L3BhdGg+PC9nPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDU1MC41OTk3IDE2Ni41NTkpIj48cGF0aCBkPSJNIDAgMCBDIDEuNTU5IC0xLjY0NiAzLjU4MiAtMi40NjggNi4wNzEgLTIuNDY4IEMgOC41NjEgLTIuNDY4IDEwLjU4NSAtMS42NDYgMTIuMTQzIDAgQyAxMy43MDEgMS42NDUgMTQuNDggMy43NzcgMTQuNDggNi4zOTYgQyAxNC40OCA5LjAxNSAxMy43MDEgMTEuMTQ3IDEyLjE0MyAxMi43OTMgQyAxMC41ODUgMTQuNDM4IDguNTYxIDE1LjI2IDYuMDcxIDE1LjI2IEMgMy41ODIgMTUuMjYgMS41NTkgMTQuNDM4IDAgMTIuNzkzIEMgLTEuNTU5IDExLjE0NyAtMi4zMzggOS4wMTUgLTIuMzM4IDYuMzk2IEMgLTIuMzM4IDMuNzc3IC0xLjU1OSAxLjY0NSAwIDAgTSAxNC40NDggLTIuMTU5IEMgMTIuMzA2IC00LjM1NiA5LjUxMyAtNS40NTUgNi4wNzEgLTUuNDU1IEMgMi42MyAtNS40NTUgLTAuMTYyIC00LjM1NiAtMi4zMDYgLTIuMTU5IEMgLTQuNDQ4IDAuMDM3IC01LjUyIDIuODkgLTUuNTIgNi4zOTYgQyAtNS41MiA5LjkwMiAtNC40NDggMTIuNzU1IC0yLjMwNiAxNC45NTEgQyAtMC4xNjIgMTcuMTQ4IDIuNjMgMTguMjQ3IDYuMDcxIDE4LjI0NyBDIDkuNTEzIDE4LjI0NyAxMi4zMDYgMTcuMTQ4IDE0LjQ0OCAxNC45NTEgQyAxNi41OTEgMTIuNzU1IDE3LjY2MyA5LjkwMiAxNy42NjMgNi4zOTYgQyAxNy42NjMgMi44OSAxNi41OTEgMC4wMzcgMTQuNDQ4IC0yLjE1OSIgZmlsbD0iIzlkOWQ5YyIgZmlsbC1vcGFjaXR5PSIxIj48L3BhdGg+PC9nPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDU5MC40Njk4IDE2MS4xNjkzKSI+PHBhdGggZD0iTSAwIDAgQyAtMy42OCAwIC02Ljg0IDEuMTE0IC05LjQ4IDMuMzQ0IEwgLTcuNzkyIDUuNzQ3IEMgLTYuODgzIDQuODgxIC01LjcyNiA0LjE5MyAtNC4zMTcgMy42ODUgQyAtMi45MTEgMy4xNzYgLTEuNDcyIDIuOTIyIDAgMi45MjIgQyAxLjgxOCAyLjkyMiAzLjI2OSAzLjI2MyA0LjM1MiAzLjk0NCBDIDUuNDM0IDQuNjI3IDUuOTc1IDUuNTMgNS45NzUgNi42NTYgQyA1Ljk3NSA3LjY5NCA1LjQ4NyA4LjUxMiA0LjUxNCA5LjEwNyBDIDMuNTM5IDkuNzAyIDEuOTU5IDEwLjE2MiAtMC4yMjcgMTAuNDg3IEMgLTMuMzIyIDEwLjk0MSAtNS41NTIgMTEuNjk5IC02LjkxNSAxMi43NiBDIC04LjI3OSAxMy44MiAtOC45NjEgMTUuMzI1IC04Ljk2MSAxNy4yNzMgQyAtOC45NjEgMTkuMTEyIC04LjE0OSAyMC42MjIgLTYuNTI1IDIxLjgwMyBDIC00LjkwMiAyMi45ODEgLTIuODI0IDIzLjU3MiAtMC4yOTIgMjMuNTcyIEMgMi44NjggMjMuNTcyIDUuNjUgMjIuNTk4IDguMDUzIDIwLjY0OSBMIDYuMzk2IDE4LjQwOSBDIDQuNDcgMTkuOTg5IDIuMjUxIDIwLjc3OSAtMC4yNTkgMjAuNzc5IEMgLTEuODgzIDIwLjc3OSAtMy4yMTQgMjAuNDQzIC00LjI1MyAxOS43NzMgQyAtNS4yOTIgMTkuMTAyIC01LjgxMiAxOC4yNDcgLTUuODEyIDE3LjIwOCBDIC01LjgxMiAxNi4xOSAtNS4zNTIgMTUuMzkgLTQuNDMyIDE0LjgwNiBDIC0zLjUxMiAxNC4yMjEgLTIuMDAyIDEzLjc1NSAwLjA5OCAxMy40MDkgQyAzLjM2NiAxMi44OSA1LjY5MyAxMi4xMjEgNy4wNzggMTEuMTA0IEMgOC40NjQgMTAuMDg2IDkuMTU2IDguNjM3IDkuMTU2IDYuNzUzIEMgOS4xNTYgNC42OTYgOC4zMjMgMy4wNTcgNi42NTYgMS44MzQgQyA0Ljk4OSAwLjYxMSAyLjc3MSAwIDAgMCIgZmlsbD0iIzlkOWQ5YyIgZmlsbC1vcGFjaXR5PSIxIj48L3BhdGg+PC9nPjwvZz48L2c+PC9zdmc+';
 var LOGO_DARK  = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnN2Zz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZlcnNpb249IjEuMSIgd2lkdGg9IjY2NC4zIiBoZWlnaHQ9IjI4MC4wIiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJ4TWlkWU1pZCBtZWV0IiB2aWV3Qm94PSIxNDYuNyAxMjIuOTIgNjY0LjMyIDI3OS45OCI+PGRlZnM+PGNsaXBQYXRoIGlkPSJjbGlwcGF0aDAiIHRyYW5zZm9ybT0iIj48cGF0aCBkPSJNIDAgMTA4MCBMIDE5MjAgMTA4MCBMIDE5MjAgMCBMIDAgMCBaIiBmaWxsPSJub25lIiBjbGlwLXJ1bGU9Im5vbnplcm8iPjwvcGF0aD48L2NsaXBQYXRoPjwvZGVmcz48ZyB0cmFuc2Zvcm09Im1hdHJpeCgxIDAgMCAtMSAwIDEwODApIj48ZyB0cmFuc2Zvcm09IiI+PC9nPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDc0Mi45OTkxIDg2MC41MTAzKSI+PHBhdGggZD0iTSAwIDAgTCA4LjY0MiA0My44ODIgTCAtMjkuMzEzIDQzLjg4MiBMIC0zNy45MiAwIEwgLTgxLjkwOCAwIEwgLTg5LjMxNSAtMzguMDYxIEwgLTQ1LjMyOCAtMzguMDYxIEwgLTUzLjc5NCAtODIuMDQ5IEwgLTE1Ljg3NCAtODIuMDQ5IEwgLTcuMzcyIC0zOC4wNjEgTCAzNi42MTUgLTM4LjA2MSBMIDQ0LjAyMyAwIFoiIGZpbGw9IiNmZmIxMzMiIGZpbGwtb3BhY2l0eT0iMSI+PC9wYXRoPjwvZz48ZyB0cmFuc2Zvcm09IiI+PC9nPjxnIGNsaXAtcGF0aD0idXJsKCNjbGlwcGF0aDApIj48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSg1OTguOTI2NCA3ODMuNjMyMykiPjxwYXRoIGQ9Ik0gMCAwIEwgLTM0LjQ2MSAwIEwgLTExLjk2NiAxMTUuNTg5IEwgMjIuNDY2IDExNS41ODkgWiBNIC0zMjkuMTc3IDM3LjIxNCBMIC0zNDYuODg3IDM3LjIxNCBMIC0zMjIuOTI1IDExNS4zNSBaIE0gNTYuMDI5IDE0Mi4yNzMgQyA1MS42OTIgMTQ3LjA1OSA0NS44NTkgMTQ5LjQ1MiAzOC41NiAxNDkuNDUyIEwgLTEzLjgyMSAxNDkuNDUyIEwgLTE0LjkyNyAxNDkuNDUyIEwgLTE1NC40NzggMTQ5LjQ1MiBMIC0xNjAuODc5IDE0OS40NTIgTCAtMTkwLjk3MyAxNDkuNDUyIEwgLTIxOS45NiAwIEwgLTI1NC40MjEgMCBMIC0yMjUuNDM1IDE0OS40NTIgTCAtMjYxLjgxIDE0OS40NTIgTCAtMjkyLjA4NCAtNi43OTEgTCAtMjkxLjk5NCAxNDkuNDUyIEwgLTM0MC4zNjUgMTQ5LjQ1MiBMIC00MjguMjI0IDE0OS40NTIgTCAtNDIwLjgzNSAxMjMuMjc3IEwgLTM1MC41MzYgMTIzLjI3NyBMIC0zNTguMjI0IDEwMy40NzQgTCAtNDIwLjUwNiAxMDMuNDc0IEwgLTQxMy43MTUgODAuODg4IEwgLTM2Ni45ODkgODAuODg4IEwgLTM3NC42NzcgNjEuMDg1IEwgLTQxMy4zODYgNjEuMDg1IEwgLTQwNi42MjYgMzguNSBMIC0zODMuNDcyIDM4LjUgTCAtMzkxLjE2IDE4LjY5NiBMIC00MDYuMjk3IDE4LjY5NiBMIC0zOTkuOTc3IC00LjAzMyBMIC00MDEuNzE5IC04LjUyNSBMIC00MTEuNTYyIC0zMy44NjMgTCAtMzc0LjcwNyAtMzMuODYzIEwgLTM2MC4xMDkgMy4zMiBMIC0zMjkuMDg4IDMuMzIgTCAtMzI5LjA4OCAtMzMuODYzIEwgLTMwNi42OTQgLTMzLjg2MyBMIC0zMDYuNjk5IC0zMy44NzQgTCAtMjY2LjkwOSAtMzMuODc0IEwgLTI2Ni45MiAtMzMuODYzIEwgLTIxNi45OTkgLTMzLjg2MyBDIC0yMDkuNjk5IC0zMy44NjMgLTIwMi45NjkgLTMxLjQ0IC0xOTYuODA2IC0yNi41NjQgQyAtMTkwLjQwNSAtMjEuNzE4IC0xODYuNTE2IC0xNS44MjUgLTE4NS4xNyAtOC44ODUgTCAtMTYxLjAyOSAxMTUuNTg5IEwgLTEyMC45NDQgMTE1LjU4OSBMIC0xNTAuMDIxIC0zMy44NjMgTCAtMTEzLjc2NCAtMzMuODYzIEwgLTg0LjY1OCAxMTUuNTg5IEwgLTQ4LjQwMSAxMTUuNTg5IEwgLTcyLjU0MiAtOC44ODUgQyAtNzMuOTE4IC0xNS44MjUgLTcyLjQ1MyAtMjEuNzE4IC02OC4xMTUgLTI2LjU2NCBDIC02My42ODcgLTMxLjQ0IC01Ny44MjQgLTMzLjg2MyAtNTAuNTI1IC0zMy44NjMgTCAyLjk2MSAtMzMuODYzIEMgMTAuMjYxIC0zMy44NjMgMTYuOTkxIC0zMS40NCAyMy4xNTQgLTI2LjU2NCBDIDI5LjU1NSAtMjEuNzE4IDMzLjQ0NCAtMTUuODI1IDM0Ljc5IC04Ljg4NSBMIDQ0LjYwMiA0MS43MDEgTCA1MC44ODQgNzMuOTc4IEwgNjAuNjk2IDEyNC40NzQgQyA2MS45ODIgMTMxLjM4NCA2MC40MjcgMTM3LjMzNyA1Ni4wMjkgMTQyLjI3MyIgZmlsbD0iI2VkZWRlZCIgZmlsbC1vcGFjaXR5PSIxIj48L3BhdGg+PC9nPjwvZz48ZyBjbGlwLXBhdGg9InVybCgjY2xpcHBhdGgwKSI+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMzg1LjIzOTMgNzI0LjMxODcpIj48cGF0aCBkPSJNIDAgMCBMIDMuMzc2IDAgTCAtNi4wMDcgLTIyLjcyOCBMIC05LjQ0OCAtMjIuNzI4IEwgLTE4Ljg2NCAwIEwgLTE1LjQ4OCAwIEwgLTExLjMgLTEwLjI2IEwgLTcuNzI4IC0xOS4wOTEgWiIgZmlsbD0iIzg3ODc4NyIgZmlsbC1vcGFjaXR5PSIxIj48L3BhdGg+PC9nPjwvZz48ZyBjbGlwLXBhdGg9InVybCgjY2xpcHBhdGgwKSI+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNDA0Ljk0NjQgNzA0LjU0NjMpIj48cGF0aCBkPSJNIDAgMCBMIDEzLjUwNyAwIEwgMTMuNTA3IC0yLjk1NSBMIC0zLjE0OSAtMi45NTUgTCAtMy4xNDkgMTkuNzcyIEwgMTMuMzEzIDE5Ljc3MiBMIDEzLjMxMyAxNi44NTEgTCAwIDE2Ljg1MSBMIDAgMTAgTCAxMi43MjggMTAgTCAxMi43MjggNy4xMSBMIDAgNy4xMSBaIiBmaWxsPSIjODc4Nzg3IiBmaWxsLW9wYWNpdHk9IjEiPjwvcGF0aD48L2c+PC9nPjxnIGNsaXAtcGF0aD0idXJsKCNjbGlwcGF0aDApIj48ZyB0cmFuc2Zvcm09IiI+PHBhdGggZD0iTSA0MzIuOTY3IDcyNC4zMTkgTCA0MzYuMTE2IDcyNC4zMTkgTCA0MzYuMTE2IDcwMS41OTEgTCA0MzIuOTY3IDcwMS41OTEgWiBNIDQzMi45NjcgNzAxLjU5MSBNIDQzMi45MzUgNzI2LjU5MiBMIDQzNS4yNzMgNzMwLjkxMSBMIDQzOC45NzQgNzMwLjkxMSBMIDQzNS43MjcgNzI2LjU5MiBaIiBmaWxsPSIjODc4Nzg3IiBmaWxsLW9wYWNpdHk9IjEiPjwvcGF0aD48L2c+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNDYyLjEyMzEgNzAxLjEzNzEpIj48cGF0aCBkPSJNIDAgMCBDIC0zLjQ2NCAwIC02LjI5OSAxLjEwNCAtOC41MDcgMy4zMTIgQyAtMTAuNzE1IDUuNTIgLTExLjgxOCA4LjM1NCAtMTEuODE4IDExLjgxOCBDIC0xMS44MTggMTUuMjgxIC0xMC43MTUgMTguMTE3IC04LjUwNyAyMC4zMjUgQyAtNi4yOTkgMjIuNTMyIC0zLjQ2NCAyMy42MzcgMCAyMy42MzcgQyAzLjMxMiAyMy42MzcgNi4xMDQgMjIuNDY4IDguMzc3IDIwLjEzIEwgNi4yMDEgMTguMTgyIEMgNC42IDE5Ljg0OSAyLjU2NCAyMC42ODIgMC4wOTggMjAuNjgyIEMgLTIuNDc5IDIwLjY4MiAtNC41NzggMTkuODU5IC02LjIwMSAxOC4yMTUgQyAtNy44MjUgMTYuNTY5IC04LjYzNyAxNC40MzcgLTguNjM3IDExLjgxOCBDIC04LjYzNyA5LjE5OSAtNy44MjUgNy4wNjYgLTYuMjAxIDUuNDIyIEMgLTQuNTc4IDMuNzc2IC0yLjQ3OSAyLjk1NCAwLjA5OCAyLjk1NCBDIDIuNTg2IDIuOTU0IDQuNjk2IDMuNzk5IDYuNDI5IDUuNDg2IEwgOC41MDcgMy4zNzYgQyA2LjIxMiAxLjEyNSAzLjM3NyAwIDAgMCIgZmlsbD0iIzg3ODc4NyIgZmlsbC1vcGFjaXR5PSIxIj48L3BhdGg+PC9nPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDUwMC40Njc4IDcwMy43NjcpIj48cGF0aCBkPSJNIDAgMCBDIC0xLjczMSAtMS43NTQgLTQuMDM3IC0yLjYzIC02LjkxNSAtMi42MyBDIC05Ljc5NCAtMi42MyAtMTIuMDk0IC0xLjc1NCAtMTMuODE0IDAgQyAtMTUuNTM2IDEuNzUzIC0xNi4zOTYgNC4xMDIgLTE2LjM5NiA3LjA0NSBMIC0xNi4zOTYgMjAuNTUyIEwgLTEzLjI3OSAyMC41NTIgTCAtMTMuMjc5IDcuMTEgQyAtMTMuMjc5IDUuMDc1IC0xMi43IDMuNDQxIC0xMS41NDIgMi4yMDcgQyAtMTAuMzg1IDAuOTc0IC04Ljg0MiAwLjM1NiAtNi45MTUgMC4zNTYgQyAtNC45ODkgMC4zNTYgLTMuNDQ3IDAuOTY4IC0yLjI4OSAyLjE5MSBDIC0xLjEzMSAzLjQxNCAtMC41NTIgNS4wNTQgLTAuNTUyIDcuMTEgTCAtMC41NTIgMjAuNTUyIEwgMi41OTggMjAuNTUyIEwgMi41OTggNy4wNDUgQyAyLjU5OCA0LjEwMiAxLjczMSAxLjc1MyAwIDAiIGZpbGw9IiM4Nzg3ODciIGZpbGwtb3BhY2l0eT0iMSI+PC9wYXRoPjwvZz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSg1MTguMzU3NSA3MDEuNTkxMikiPjxwYXRoIGQ9Ik0gMCAwIEwgMCAyMi43MjggTCAzLjE0OSAyMi43MjggTCAzLjE0OSAyLjk1NSBMIDE1LjQyMyAyLjk1NSBMIDE1LjQyMyAwIFoiIGZpbGw9IiM4Nzg3ODciIGZpbGwtb3BhY2l0eT0iMSI+PC9wYXRoPjwvZz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSg1NTAuNTk5NyA3MDYuNTU5KSI+PHBhdGggZD0iTSAwIDAgQyAxLjU1OSAtMS42NDYgMy41ODIgLTIuNDY4IDYuMDcxIC0yLjQ2OCBDIDguNTYxIC0yLjQ2OCAxMC41ODUgLTEuNjQ2IDEyLjE0MyAwIEMgMTMuNzAxIDEuNjQ1IDE0LjQ4IDMuNzc3IDE0LjQ4IDYuMzk2IEMgMTQuNDggOS4wMTUgMTMuNzAxIDExLjE0NyAxMi4xNDMgMTIuNzkzIEMgMTAuNTg1IDE0LjQzOCA4LjU2MSAxNS4yNiA2LjA3MSAxNS4yNiBDIDMuNTgyIDE1LjI2IDEuNTU5IDE0LjQzOCAwIDEyLjc5MyBDIC0xLjU1OSAxMS4xNDcgLTIuMzM4IDkuMDE1IC0yLjMzOCA2LjM5NiBDIC0yLjMzOCAzLjc3NyAtMS41NTkgMS42NDUgMCAwIE0gMTQuNDQ4IC0yLjE1OSBDIDEyLjMwNiAtNC4zNTYgOS41MTMgLTUuNDU1IDYuMDcxIC01LjQ1NSBDIDIuNjMgLTUuNDU1IC0wLjE2MiAtNC4zNTYgLTIuMzA2IC0yLjE1OSBDIC00LjQ0OCAwLjAzNyAtNS41MiAyLjg5IC01LjUyIDYuMzk2IEMgLTUuNTIgOS45MDIgLTQuNDQ4IDEyLjc1NSAtMi4zMDYgMTQuOTUxIEMgLTAuMTYyIDE3LjE0OCAyLjYzIDE4LjI0NyA2LjA3MSAxOC4yNDcgQyA5LjUxMyAxOC4yNDcgMTIuMzA2IDE3LjE0OCAxNC40NDggMTQuOTUxIEMgMTYuNTkxIDEyLjc1NSAxNy42NjMgOS45MDIgMTcuNjYzIDYuMzk2IEMgMTcuNjYzIDIuODkgMTYuNTkxIDAuMDM3IDE0LjQ0OCAtMi4xNTkiIGZpbGw9IiM4Nzg3ODciIGZpbGwtb3BhY2l0eT0iMSI+PC9wYXRoPjwvZz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSg1OTAuNDY5OCA3MDEuMTY5MykiPjxwYXRoIGQ9Ik0gMCAwIEMgLTMuNjggMCAtNi44NCAxLjExNCAtOS40OCAzLjM0NCBMIC03Ljc5MiA1Ljc0NyBDIC02Ljg4MyA0Ljg4MSAtNS43MjYgNC4xOTMgLTQuMzE3IDMuNjg1IEMgLTIuOTExIDMuMTc2IC0xLjQ3MiAyLjkyMiAwIDIuOTIyIEMgMS44MTggMi45MjIgMy4yNjkgMy4yNjMgNC4zNTIgMy45NDQgQyA1LjQzNCA0LjYyNyA1Ljk3NSA1LjUzIDUuOTc1IDYuNjU2IEMgNS45NzUgNy42OTQgNS40ODcgOC41MTIgNC41MTQgOS4xMDcgQyAzLjUzOSA5LjcwMiAxLjk1OSAxMC4xNjIgLTAuMjI3IDEwLjQ4NyBDIC0zLjMyMiAxMC45NDEgLTUuNTUyIDExLjY5OSAtNi45MTUgMTIuNzYgQyAtOC4yNzkgMTMuODIgLTguOTYxIDE1LjMyNSAtOC45NjEgMTcuMjczIEMgLTguOTYxIDE5LjExMiAtOC4xNDkgMjAuNjIyIC02LjUyNSAyMS44MDMgQyAtNC45MDIgMjIuOTgxIC0yLjgyNCAyMy41NzIgLTAuMjkyIDIzLjU3MiBDIDIuODY4IDIzLjU3MiA1LjY1IDIyLjU5OCA4LjA1MyAyMC42NDkgTCA2LjM5NiAxOC40MDkgQyA0LjQ3IDE5Ljk4OSAyLjI1MSAyMC43NzkgLTAuMjU5IDIwLjc3OSBDIC0xLjg4MyAyMC43NzkgLTMuMjE0IDIwLjQ0MyAtNC4yNTMgMTkuNzczIEMgLTUuMjkyIDE5LjEwMiAtNS44MTIgMTguMjQ3IC01LjgxMiAxNy4yMDggQyAtNS44MTIgMTYuMTkgLTUuMzUyIDE1LjM5IC00LjQzMiAxNC44MDYgQyAtMy41MTIgMTQuMjIxIC0yLjAwMiAxMy43NTUgMC4wOTggMTMuNDA5IEMgMy4zNjYgMTIuODkgNS42OTMgMTIuMTIxIDcuMDc4IDExLjEwNCBDIDguNDY0IDEwLjA4NiA5LjE1NiA4LjYzNyA5LjE1NiA2Ljc1MyBDIDkuMTU2IDQuNjk2IDguMzIzIDMuMDU3IDYuNjU2IDEuODM0IEMgNC45ODkgMC42MTEgMi43NzEgMCAwIDAiIGZpbGw9IiM4Nzg3ODciIGZpbGwtb3BhY2l0eT0iMSI+PC9wYXRoPjwvZz48ZyB0cmFuc2Zvcm09IiI+PC9nPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDE3MDMuNTM0NyA4NjAuNTEwMSkiPjwvZz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxNTU5LjQ2MiA3ODMuNjMyMSkiPjwvZz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxMzQ1Ljc3NjQgNzI0LjMxODcpIj48L2c+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMTM2NS40ODM0IDcwNC41NDYzKSI+PC9nPjxnIHRyYW5zZm9ybT0iIj48L2c+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMTQyMi42NjAyIDcwMS4xMzcxKSI+PC9nPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDE0NjEuMDA0OSA3MDMuNzY3KSI+PC9nPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDE0NzguODk0NSA3MDEuNTkxMikiPjwvZz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxNTExLjEzNjcgNzA2LjU1OSkiPjwvZz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxNTUxLjAwNjggNzAxLjE2OTMpIj48L2c+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMTcwMy41MzQ3IDMyMC41MDk4KSI+PC9nPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDE1NTkuNDYyIDI0My42MzE4KSI+PC9nPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDEzNDUuNzc2NCAxODQuMzE5NykiPjwvZz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxMzY1LjQ4MzQgMTY0LjU0NzMpIj48L2c+PGcgdHJhbnNmb3JtPSIiPjwvZz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxNDIyLjY2MDIgMTYxLjEzODEpIj48L2c+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMTQ2MS4wMDQ5IDE2My43NjgpIj48L2c+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMTQ3OC44OTQ1IDE2MS41OTIyKSI+PC9nPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDE1MTEuMTM2NyAxNjYuNTYpIj48L2c+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMTU1MS4wMDY4IDE2MS4xNzAzKSI+PC9nPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDc0Mi45OTkxIDMyMC41MTA0KSI+PC9nPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDU5OC45MjY0IDI0My42MzI0KSI+PC9nPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDM4NS4yMzkzIDE4NC4zMTg3KSI+PC9nPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDQwNC45NDY0IDE2NC41NDYzKSI+PC9nPjxnIHRyYW5zZm9ybT0iIj48L2c+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNDYyLjEyMzEgMTYxLjEzNzEpIj48L2c+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNTAwLjQ2NzggMTYzLjc2NykiPjwvZz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSg1MTguMzU3NSAxNjEuNTkxMikiPjwvZz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSg1NTAuNTk5NyAxNjYuNTU5KSI+PC9nPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDU5MC40Njk4IDE2MS4xNjkzKSI+PC9nPjwvZz48L2c+PC9zdmc+';
 
-// ── SENHAS ────────────────────────────────────────────────────
-// Não existe mais usuário/senha escrito neste arquivo. O arquivo é servido
-// publicamente pelo site, então qualquer senha aqui seria legível por
-// qualquer pessoa. Os usuários ficam na coleção "usuarios" do Firestore.
-//
-// A senha é guardada como HASH (SHA-256 + salt aleatório), nunca em texto:
-// o que fica no banco não permite descobrir a senha original.
-// Registros antigos, gravados em texto puro, continuam funcionando e são
-// convertidos para hash automaticamente no primeiro login bem-sucedido.
-function _hex(buf){
-  return Array.prototype.map.call(new Uint8Array(buf), function(b){
-    return ('0'+b.toString(16)).slice(-2);
-  }).join('');
-}
-function _novoSalt(){
-  var a = new Uint8Array(16);
-  crypto.getRandomValues(a);
-  return _hex(a.buffer);
-}
-async function _hashSenha(senha, salt){
-  var dados = new TextEncoder().encode(String(salt) + '|' + String(senha));
-  return _hex(await crypto.subtle.digest('SHA-256', dados));
-}
-// Confere a senha digitada contra o registro do usuário (hash novo ou texto legado)
-async function _senhaConfere(reg, digitada){
-  if (!reg) return false;
-  if (reg.senhaHash && reg.salt) return (await _hashSenha(digitada, reg.salt)) === reg.senhaHash;
-  if (reg.senha) return reg.senha === digitada;   // legado em texto puro
-  return false;
-}
-// Converte um registro legado para hash, apagando a senha em texto do banco
-async function _migrarParaHash(fdb, docId, reg, digitada){
-  if (!fdb || !docId || reg.senhaHash || !reg.senha) return;
-  try {
-    var salt = _novoSalt();
-    var h = await _hashSenha(digitada, salt);
-    await fdb.collection('usuarios').doc(docId).update({
-      senhaHash: h, salt: salt,
-      senha: firebase.firestore.FieldValue.delete()
-    });
-    console.log('[login] senha de "'+reg.login+'" convertida para hash');
-  } catch(e) {
-    console.warn('[login] não consegui converter a senha para hash:', e.message);
-  }
-}
+// Usuários fixos (fallback / admin principal)
+var USERS_FIXOS = [
+  {login:'rogel', senha:'daniel01', nome:'Rogel (Admin)', perfil:'admin'},
+];
 
 function toggleTheme(){
   var t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';
@@ -178,36 +116,40 @@ async function doLogin(){
 
   setLoginBtn(true);
 
-  var found=null;
+  // 1. Verificar usuários fixos
+  var found=USERS_FIXOS.find(function(x){return x.login===u&&x.senha===p;});
 
-  // 1. Firestore — fonte da verdade
-  try{
-    var fdb=firebase.firestore();
-    var snap=await fdb.collection('usuarios').where('login','==',u).get();
-    for(var i=0;i<snap.docs.length && !found;i++){
-      var doc=snap.docs[i], d=doc.data();
-      if(d.status==='inativo') continue;
-      if(await _senhaConfere(d,p)){
-        found=d;
-        await _migrarParaHash(fdb, doc.id, d, p);
-      }
-    }
-  }catch(e){
-    console.warn('[login] Firestore indisponível:',e.message);
-  }
-
-  // 2. Cache local — só serve se o banco estiver fora do ar
+  // 2. Verificar cache localStorage
   if(!found){
     try{
       var raw=localStorage.getItem('automais_v3');
       if(raw){
-        var dbUsers=(JSON.parse(raw).usuarios)||[];
-        for(var k=0;k<dbUsers.length && !found;k++){
-          var x=dbUsers[k];
-          if(x && x.login===u && x.status!=='inativo' && await _senhaConfere(x,p)) found=x;
-        }
+        var db=JSON.parse(raw);
+        var dbUsers=db.usuarios||[];
+        found=dbUsers.find(function(x){
+          return x.login===u && x.senha===p && x.status!=='inativo';
+        });
       }
     }catch(e){}
+  }
+
+  // 3. Verificar no Firestore (para novos dispositivos sem cache)
+  if(!found){
+    try{
+      var fdb=firebase.firestore();
+      var snap=await fdb.collection('usuarios')
+        .where('login','==',u)
+        .where('status','==','ativo')
+        .get();
+      if(!snap.empty){
+        snap.docs.forEach(function(doc){
+          var d=doc.data();
+          if(!found && d.senha===p) found=d;
+        });
+      }
+    }catch(e){
+      console.warn('[login] Firestore indisponível:',e.message);
+    }
   }
 
   setLoginBtn(false);
@@ -216,61 +158,6 @@ async function doLogin(){
     doLoginSuccess(found);
   }else{
     showError();
-  }
-}
-
-// ── Primeiro acesso ───────────────────────────────────────────
-// Como não há mais admin escrito no código, a empresa pode ficar sem nenhum.
-// Enquanto isso, a tela oferece criar o primeiro. Depois disso, some.
-async function _checarPrimeiroAcesso(){
-  try{
-    var fdb=firebase.firestore();
-    var snap=await fdb.collection('usuarios').where('perfil','==','admin').get();
-    if(snap.empty){
-      var el=document.getElementById('setup-admin');
-      if(el) el.style.display='block';
-    }
-  }catch(e){
-    console.warn('[login] não consegui verificar se existe administrador:',e.message);
-  }
-}
-
-async function criarAdmin(){
-  var msg=document.getElementById('su-msg');
-  var btn=document.getElementById('su-btn');
-  function erro(t){ msg.style.color='#e05c5c'; msg.textContent=t; btn.disabled=false; }
-  var login=(document.getElementById('su-login').value||'').trim().toLowerCase();
-  var nome =(document.getElementById('su-nome').value||'').trim();
-  var s1=document.getElementById('su-senha').value;
-  var s2=document.getElementById('su-senha2').value;
-  msg.textContent='';
-  if(!login||!nome) return erro('Preencha usuário e nome.');
-  if(!s1||s1.length<8) return erro('A senha precisa ter pelo menos 8 caracteres.');
-  if(s1!==s2)         return erro('As senhas não conferem.');
-  btn.disabled=true;
-  try{
-    var fdb=firebase.firestore();
-    // Confere de novo na hora de gravar: evita criar um segundo admin se
-    // alguém tiver criado o primeiro enquanto esta tela estava aberta.
-    var ja=await fdb.collection('usuarios').where('perfil','==','admin').get();
-    if(!ja.empty) return erro('Já existe um administrador. Recarregue a página.');
-    var dup=await fdb.collection('usuarios').where('login','==',login).get();
-    if(!dup.empty) return erro('Já existe um usuário com esse login.');
-    var salt=_novoSalt();
-    var h=await _hashSenha(s1,salt);
-    var id='u'+Date.now();
-    await fdb.collection('usuarios').doc(id).set({
-      id:id, login:login, nome:nome, perfil:'admin', status:'ativo',
-      senhaHash:h, salt:salt, criadoEm:new Date().toISOString()
-    });
-    msg.style.color='#39b56a';
-    msg.textContent='Administrador criado. Agora entre com esse usuário e senha.';
-    document.getElementById('setup-admin').style.display='none';
-    document.getElementById('usr').value=login;
-    document.getElementById('pwd').value='';
-    document.getElementById('pwd').focus();
-  }catch(e){
-    erro('Não consegui criar: '+e.message);
   }
 }
 </script>
@@ -283,8 +170,6 @@ async function criarAdmin(){
       projectId:"automais-6afbb"
     });
   }
-  // só agora o Firestore existe — daqui é seguro consultar
-  if(typeof _checarPrimeiroAcesso==='function') _checarPrimeiroAcesso();
 </script>
 </body>
 </html>
