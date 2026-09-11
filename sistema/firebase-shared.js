@@ -14,7 +14,7 @@ var fdb = firebase.firestore();
 var PAG_SIZE = 20;
 var CACHE_KEY = 'automais_v3';
 var COLS = ['veiculos','clientes','fornecedores','contratos',
-            'vendas','manutencoes','usuarios','despesas'];
+            'vendas','manutencoes','usuarios','despesas','leads'];
 
 // ── Cache local ──────────────────────────────────────────────
 function loadDB(){
@@ -30,7 +30,7 @@ function loadDB(){
   } catch(e) {}
   return {
     veiculos:[],clientes:[],fornecedores:[],contratos:[],
-    vendas:[],manutencoes:[],usuarios:[],despesas:[],empresa:{},
+    vendas:[],manutencoes:[], leads:[],usuarios:[],despesas:[],empresa:{},
     config: {}
   };
 }

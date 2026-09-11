@@ -77,7 +77,7 @@ function badgeRetorno(dt){
 
 // ── Filtro de leads ───────────────────────────────────────────
 function filtrarLeads(){
-  var leads = DB.leads||[];
+  var leads = Array.isArray(DB.leads) ? DB.leads : [];
   var q = crmSrch.toLowerCase();
   return leads.filter(function(l){
     if(!crmMostrarPerdidos && l.status==='perdido') return false;
@@ -98,7 +98,7 @@ function render(){
   var hoje = new Date(); hoje.setHours(0,0,0,0);
 
   // Métricas
-  var todos   = DB.leads||[];
+  var todos   = Array.isArray(DB.leads) ? DB.leads : [];
   var ativos  = todos.filter(function(l){return l.status!=='ganho'&&l.status!=='perdido';});
   var ganhos  = todos.filter(function(l){return l.status==='ganho';});
   var vencidos = ativos.filter(function(l){
@@ -107,7 +107,7 @@ function render(){
   var totalValor = ganhos.reduce(function(s,l){return s+Number(l.valor_estimado||0);},0);
 
   // Responsáveis únicos para filtro
-  var resps = [...new Set(todos.map(function(l){return l.responsavel;}).filter(Boolean))];
+  var resps = Array.from(new Set(todos.map(function(l){return l.responsavel;}).filter(Boolean)));
   var fontesSel = FONTES;
 
   var html = '<div style="padding:20px 24px">';
