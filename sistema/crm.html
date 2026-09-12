@@ -22,7 +22,7 @@
 </nav><div class="sb-footer"><div class="sb-footer-label">Logado como</div><div class="sb-footer-user" id="lu">—</div><button class="btn-danger-full" onclick="logout()"><i data-lucide="log-out"></i> Sair</button></div></aside>
 <div class="layout-main">
   <header class="topbar"><button class="mbtn" id="mbtn" onclick="tsb()"><i data-lucide="menu"></i></button><div class="topbar-right"><button class="theme-toggle-btn" onclick="toggleTheme()"><i data-lucide="sun" id="theme-icon"></i><span id="theme-label">Aparência</span></button><button class="btn-icon"><i data-lucide="bell"></i></button><div class="avatar" id="avatar-initials">R</div></div></header>
-<div id="main-content"><!-- renderizado pelo JS --></div>
+<div id="main"></div>
 </div><!-- layout-main -->
 
 <!-- Modal padrão -->
@@ -153,7 +153,7 @@ function render(){
   html += '</div>'; // kanban
   html += '</div>'; // padding
 
-  document.getElementById('main-content').innerHTML = html;
+  document.getElementById('main').innerHTML = html;
 }
 
 function metricCard(label, val, cor, sub){
