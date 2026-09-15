@@ -278,7 +278,7 @@ function fmCli(id){
   const c=id?DB.clientes.find(x=>x.id==id):{nome:'',cpf:'',rg:'',nasc:'',estado_civil:'',profissao:'',telefone:'',email:'',endereco:'',cidade:'',uf:'BA',cep:'',obs:''};
   om('<div class="mt2"><span>'+(id?'Editar':'Novo Cliente')+'</span><button class="btn bg2 bsm" onclick="cm()">X</button></div>'+
   '<div class="fr"><div class="fg full"><label>Nome Completo *</label><input id="cn" value="'+c.nome+'"></div></div>'+
-  '<div class="fr"><div class="fg"><label>CPF *</label><input id="ccpf" value="'+c.cpf+'" placeholder="000.000.000-00" oninput="this.value=maskCPF(this.value)"></div>'+
+  '<div class="fr"><div class="fg"><label>CPF / CNPJ *</label><input id="ccpf" value="'+c.cpf+'" placeholder="CPF ou CNPJ" oninput="this.value=maskCPFCNPJ(this.value)"></div>'+
   '<div class="fg"><label>RG</label><input id="crg" value="'+(c.rg||'')+'"></div></div>'+
   '<div class="fr"><div class="fg"><label>Nascimento</label><input id="cnasc" type="date" value="'+(c.nasc||'')+'"></div>'+
   '<div class="fg"><label>Estado Civil</label><select id="cec">'+['','Solteiro(a)','Casado(a)','Divorciado(a)','Viuvo(a)','Uniao Estavel'].map(x=>'<option '+(c.estado_civil===x?'selected':'')+'>'+x+'</option>').join('')+'</select></div></div>'+
