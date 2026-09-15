@@ -59,6 +59,11 @@ var FONTES = ['WhatsApp','Instagram','Facebook','OLX','Indicação','Presencial'
 function etapa(id){ return ETAPAS.find(function(e){return e.id===id;})||ETAPAS[0]; }
 function corEtapa(id){ return etapa(id).cor; }
 function labelEtapa(id){ return etapa(id).label; }
+// Etapa efetiva de um lead. Sem status, ou com status que nao existe mais,
+// ele cai em 'Novo Lead' -- mesma regra que o etapa() ja usava. Antes o quadro
+// comparava l.status direto: um lead sem status nao entrava em coluna nenhuma
+// e sumia da tela, embora continuasse contando em 'Leads Ativos'.
+function etapaIdDoLead(l){ return etapa(l && l.status).id; }
 function iconFonte(f){
   var m={'WhatsApp':'&#128172;','Instagram':'&#128247;','Facebook':'&#128100;',
          'OLX':'&#128282;','Indicação':'&#128101;','Presencial':'&#127970;',
@@ -88,7 +93,7 @@ function filtrarLeads(){
   var q = crmSrch.toLowerCase();
   return leads.filter(function(l){
     if(!crmMostrarPerdidos && l.status==='perdido') return false;
-    if(crmStatus && l.status!==crmStatus) return false;
+    if(crmStatus && etapaIdDoLead(l)!==crmStatus) return false;
     if(crmFonte  && l.fonte!==crmFonte)   return false;
     if(crmResp   && l.responsavel!==crmResp) return false;
     if(!q) return true;
@@ -141,7 +146,7 @@ function render(){
   html += '<div style="display:flex;gap:14px;overflow-x:auto;padding-bottom:16px;align-items:flex-start">';
 
   etapasVisiveis.forEach(function(et){
-    var cols = leads.filter(function(l){return l.status===et.id;});
+    var cols = leads.filter(function(l){return etapaIdDoLead(l)===et.id;});
     html += '<div style="min-width:240px;max-width:280px;flex:0 0 260px">';
     // Cabeçalho da coluna
     html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:10px 14px;background:'+et.cor+'18;border-radius:8px;border-top:3px solid '+et.cor+'">';
