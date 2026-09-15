@@ -146,9 +146,12 @@ function fsave(col, obj, cb){
     .catch(function(e){ console.error('[fsave]', e); if(cb) cb(e); });
 }
 
-function fdel(col, id){
+// cb e opcional: os 10 usos que ja existiam continuam funcionando sem passar
+// nada. Sem ele nao havia como saber se a exclusao deu certo.
+function fdel(col, id, cb){
   fdb.collection(col).doc(String(id)).delete()
-    .catch(function(e){ console.error('[fdel]', e); });
+    .then(function(){ if(cb) cb(null); })
+    .catch(function(e){ console.error('[fdel]', e); if(cb) cb(e); });
 }
 
 // ── Paginação ────────────────────────────────────────────────

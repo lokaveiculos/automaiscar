@@ -212,11 +212,21 @@ function cardLead(l){
 function moverEtapa(id, idx){
   var l = (DB.leads||[]).find(function(x){return x.id==id;});
   if(!l) return;
+  var statusAntes = l.status, atualizacaoAntes = l.data_atualizacao;
   l.status = ETAPAS[idx].id;
   l.data_atualizacao = new Date().toISOString().split('T')[0];
-  sDB(); fsave('leads',l);
-  render();
-  toast('Lead movido para '+ETAPAS[idx].label,'ok');
+  render();   // a tela responde na hora
+  fsave('leads', l, function(err){
+    if(err){
+      l.status = statusAntes;              // desfaz: o quadro nao pode mostrar
+      l.data_atualizacao = atualizacaoAntes; // uma etapa que o banco nao tem
+      render();
+      toast(erroGravacao(err), 'err');
+      return;
+    }
+    sDB();
+    toast('Lead movido para '+ETAPAS[idx].label,'ok');
+  });
 }
 
 // ── Formulário de Lead ────────────────────────────────────────
@@ -268,21 +278,32 @@ function fmLead(id, statusInicial){
 
     '<div class="mf">'+
     '<button class="btn bg2" onclick="cm()">Cancelar</button>'+
-    (id?'<button class="btn bd" onclick="dlLead('+id+');cm()" style="margin-right:auto">&#128465; Excluir</button>':'')+
-    '<button class="btn bp" onclick="svLead('+(id||'null')+')">&#10004; Salvar</button>'+
+    (id?'<button class="btn bd" onclick="dlLead('+id+')" style="margin-right:auto">&#128465; Excluir</button>':'')+
+    '<button class="btn bp" id="lead-salvar" onclick="svLead('+(id||'null')+')">&#10004; Salvar</button>'+
     '</div>',
     true
   );
 }
 
+// Traduz a falha de gravacao para algo que a pessoa entenda.
+function erroGravacao(err){
+  var txt = String((err && (err.code || err.message)) || '').toLowerCase();
+  if(txt.indexOf('permission') >= 0 || txt.indexOf('insufficient') >= 0)
+    return 'NAO foi salvo: o banco nao autoriza gravar em leads. Fale com o responsavel.';
+  if(txt.indexOf('unavailable') >= 0 || txt.indexOf('network') >= 0)
+    return 'NAO foi salvo: sem conexao com o banco. Tente de novo.';
+  return 'NAO foi salvo: ' + ((err && err.message) ? err.message : 'erro ao gravar');
+}
+
 function svLead(id){
   var nome = (document.getElementById('lnome')||{value:''}).value.trim();
   var tel  = (document.getElementById('ltel')||{value:''}).value.trim();
-  if(!nome||!tel){toast('Nome e Telefone são obrigatórios','err');return;}
+  if(!nome||!tel){toast('Nome e Telefone sao obrigatorios','err');return;}
 
-  if(!DB.leads) DB.leads=[];
+  var anterior = (DB.leads||[]).find(function(x){return x.id==id;}) || {};
+  var hoje = new Date().toISOString().split('T')[0];
   var obj={
-    id: id||nid(DB.leads),
+    id: id||nid(DB.leads||[]),
     nome: nome,
     telefone: tel,
     email: (document.getElementById('lemail')||{value:''}).value.trim(),
@@ -293,20 +314,37 @@ function svLead(id){
     data_retorno: (document.getElementById('lretorno')||{value:''}).value,
     responsavel: (document.getElementById('lresp')||{value:''}).value.trim(),
     observacoes: (document.getElementById('lobs')||{value:''}).value.trim(),
-    data_cadastro: id?(((DB.leads||[]).find(function(x){return x.id==id;})||{}).data_cadastro||new Date().toISOString().split('T')[0]):new Date().toISOString().split('T')[0],
-    data_atualizacao: new Date().toISOString().split('T')[0]
+    data_cadastro: id ? (anterior.data_cadastro || hoje) : hoje,
+    data_atualizacao: hoje
   };
-  if(id) DB.leads=DB.leads.map(function(x){return x.id==id?obj:x;});
-  else DB.leads.push(obj);
-  sDB(); fsave('leads',obj); cm(); render();
-  toast(id?'Lead atualizado':'Lead cadastrado!','ok');
+
+  // A ORDEM AQUI E O CONSERTO. Antes o lead entrava na lista e no cache na
+  // hora e o aviso verde aparecia sempre, mesmo com a gravacao falhando --
+  // ficava na tela parecendo salvo o que nunca chegou ao banco. Agora nada
+  // muda enquanto o banco nao confirmar, e o modal fica aberto se der errado,
+  // para nao se perder o que foi digitado.
+  var btn = document.getElementById('lead-salvar');
+  if(btn){ btn.disabled = true; btn.innerHTML = 'Salvando...'; }
+
+  fsave('leads', obj, function(err){
+    if(btn){ btn.disabled = false; btn.innerHTML = '&#10004; Salvar'; }
+    if(err){ toast(erroGravacao(err), 'err'); return; }
+    if(!DB.leads) DB.leads=[];
+    if(id) DB.leads=DB.leads.map(function(x){return x.id==id?obj:x;});
+    else DB.leads.push(obj);
+    sDB(); cm(); render();
+    toast(id?'Lead atualizado':'Lead cadastrado!','ok');
+  });
 }
 
 function dlLead(id){
   if(!confirm('Excluir este lead?')) return;
-  DB.leads=(DB.leads||[]).filter(function(x){return x.id!=id;});
-  sDB(); fdel('leads',id); cm(); render();
-  toast('Lead excluído','ok');
+  fdel('leads', id, function(err){
+    if(err){ toast(erroGravacao(err), 'err'); return; }  // segue na tela, como no banco
+    DB.leads=(DB.leads||[]).filter(function(x){return x.id!=id;});
+    sDB(); cm(); render();
+    toast('Lead excluido','ok');
+  });
 }
 
 // ── Funções utilitárias copiadas do padrão do sistema ─────────
