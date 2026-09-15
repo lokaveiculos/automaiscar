@@ -231,7 +231,7 @@ function fmLead(id, statusInicial){
   }).join('');
 
   var optsFonte = [''].concat(FONTES).map(function(f){
-    return '<option value="'+f+'"'+((l.fonte||''===f)?' selected':'')+'>'+f+'</option>';
+    return '<option value="'+f+'"'+(((l.fonte||'')===f)?' selected':'')+'>'+f+'</option>';
   }).join('');
 
   om(
