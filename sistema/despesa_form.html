@@ -64,6 +64,7 @@ textarea{resize:vertical;min-height:70px}
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <script src="firebase-shared.js"></script>
 <script>
@@ -151,6 +152,14 @@ function autoPlaca(){
 }
 
 function salvar(){
+  // Esta pagina abre em aba separada, a partir do botao "Form. Avulso".
+  // Quem abriu ja esta logado no sistema; se nao estiver, o banco recusaria
+  // a gravacao sem dizer nada — entao avisamos antes de perder o que foi digitado.
+  var logado = (typeof firebase!=='undefined' && firebase.auth && firebase.auth().currentUser);
+  if(!logado){
+    alert('Sua sessao expirou. Entre no sistema em outra aba e depois clique em Registrar de novo — o que voce digitou continua aqui.');
+    return;
+  }
   var data  = document.getElementById('dd').value;
   var valor = document.getElementById('dval').value;
   var forn  = document.getElementById('dforn').value.trim();

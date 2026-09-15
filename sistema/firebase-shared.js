@@ -71,38 +71,103 @@ async function loadFromFirestore(){
   }
 }
 
-// ── Helpers de sessão ────────────────────────────────────────
+// ── Autenticação (Firebase Auth) ─────────────────────────────
+// O sistema usava sessão só no navegador (localStorage), invisível para o
+// Firestore — por isso as regras precisavam ficar abertas. Agora quem entra
+// tem identidade que o banco reconhece.
+var AM_DOMINIO = 'automaiscar.com.br';
+var fauth = (firebase && typeof firebase.auth === 'function') ? firebase.auth() : null;
+
+// "rogel" -> "rogel@automaiscar.com.br". Quem digitar o e-mail inteiro passa direto.
+function loginParaEmail(u){
+  u = String(u||'').trim().toLowerCase();
+  if(!u) return '';
+  return u.indexOf('@') >= 0 ? u : (u + '@' + AM_DOMINIO);
+}
+// caminho inverso, para procurar o perfil na coleção usuarios
+function emailParaLogin(e){
+  e = String(e||'').trim().toLowerCase();
+  var corte = e.indexOf('@' + AM_DOMINIO);
+  return corte > 0 ? e.substring(0, corte) : e;
+}
+
+// Cache do perfil. Continua síncrono porque isAdmin() é chamado direto no render.
 function getSession(){
   try {
     var raw = localStorage.getItem('am_user');
     if(!raw) return null;
-    var obj = JSON.parse(raw);
-    // Expirar após 8 horas
-    if(obj && obj._ts && Date.now()-obj._ts > 8*60*60*1000){
-      localStorage.removeItem('am_user'); return null;
-    }
-    return obj;
+    return JSON.parse(raw);
   } catch(e){ return null; }
+}
+function _gravarSessao(obj){
+  obj._ts = Date.now();
+  try { localStorage.setItem('am_user', JSON.stringify(obj)); } catch(e){}
+  return obj;
 }
 
 function isAdmin(){
   var s = getSession();
-  return s && (s.perfil === 'admin' || s.login === 'rogel');
+  return !!(s && (s.perfil === 'admin' || s.login === 'rogel'));
 }
 
 function logout(){
   localStorage.removeItem('am_user');
-  window.location.href = 'login.html';
+  var ir = function(){ window.location.href = 'login.html'; };
+  if(fauth) fauth.signOut().then(ir).catch(ir); else ir();
+}
+
+// Busca nome/perfil na coleção usuarios a partir do login. Se não achar, assume
+// atendimento — nunca admin por acidente (o rogel é a exceção histórica).
+function carregarPerfil(user){
+  var base = emailParaLogin(user.email);
+  var padrao = { login: base, nome: base, perfil: (base === 'rogel' ? 'admin' : 'atendimento'), uid: user.uid };
+  return fdb.collection('usuarios').where('login', '==', base).limit(1).get()
+    .then(function(snap){
+      if(snap.empty) return padrao;
+      var d = snap.docs[0].data();
+      if(d.status === 'inativo') return null;   // desativado no sistema
+      return { login: base, nome: d.nome || base, perfil: d.perfil || padrao.perfil, uid: user.uid };
+    })
+    .catch(function(e){
+      console.warn('[auth] nao consegui ler o perfil:', e.message);
+      return padrao;   // banco fora do ar nao pode impedir o trabalho
+    });
+}
+
+function _pintarCabecalho(perfil){
+  var el = document.getElementById('lu');
+  if (el) el.textContent = perfil.nome;
+  var av = document.getElementById('avatar-initials');
+  if (av) av.textContent = perfil.nome ? perfil.nome.charAt(0).toUpperCase() : 'U';
 }
 
 function checkAuth(onOk){
-  var user = getSession();
-  if (!user) { window.location.href = 'login.html'; return; }
-  var el = document.getElementById('lu');
-  if (el) el.textContent = user.nome;
-  var av = document.getElementById('avatar-initials');
-  if (av) av.textContent = user.nome ? user.nome.charAt(0).toUpperCase() : 'U';
-  onOk(user);
+  var paraLogin = function(){ window.location.href = 'login.html'; };
+  if(!fauth){
+    // falta o SDK de auth na pagina. Falhar fechado e de propósito.
+    console.error('[auth] firebase-auth-compat.js nao foi carregado nesta pagina');
+    paraLogin(); return;
+  }
+  var jaRodou = false;
+  fauth.onAuthStateChanged(function(user){
+    if(jaRodou) return;
+    if(!user){ localStorage.removeItem('am_user'); paraLogin(); return; }
+    jaRodou = true;
+
+    // Sessão de 8h, como antes. Vencida = sair de verdade (signOut), senão o
+    // Auth reconheceria o usuario no login.html e faria um vai-e-vem sem fim.
+    var cache = getSession();
+    if(cache && cache._ts && Date.now()-cache._ts > 8*60*60*1000){ logout(); return; }
+
+    if(cache && cache.uid === user.uid){ _pintarCabecalho(cache); onOk(cache); return; }
+
+    carregarPerfil(user).then(function(perfil){
+      if(!perfil){ logout(); return; }   // marcado como inativo
+      _gravarSessao(perfil);
+      _pintarCabecalho(perfil);
+      onOk(perfil);
+    });
+  });
 }
 
 function applyProfile(){
