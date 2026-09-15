@@ -223,3 +223,115 @@ function sbM(s){
   var m={concluida:'bg-g',andamento:'bg-y',pendente:'bg-gr',cancelada:'bg-r'};
   return '<span class="badge '+(m[s]||'bg-gr')+'">'+s+'</span>';
 }
+
+
+// ── Máscaras de digitação e exportação ───────────────────────
+// RESTAURADAS em 15/09/2026. Estas 8 funções existiam no shared até 09/06/2026
+// (commit 28b5874, que enxugou o arquivo de 11.662 para 8.831 bytes) e foram
+// perdidas ali — mas as páginas nunca pararam de chamá-las. Resultado: por mais
+// de tres meses TODA mascara de CPF/CNPJ/telefone/CEP/placa e TODO botao de
+// exportar estavam quebrados, falhando calado no console.
+// Copiadas sem alteracao da ultima versao que as tinha.
+function maskCPF(v) {
+  v = v.replace(/\D/g,'').slice(0,11);
+  if(v.length > 9) return v.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/,'$1.$2.$3-$4');
+  if(v.length > 6) return v.replace(/(\d{3})(\d{3})(\d+)/,'$1.$2.$3');
+  if(v.length > 3) return v.replace(/(\d{3})(\d+)/,'$1.$2');
+  return v;
+}
+
+function maskCNPJ(v) {
+  v = v.replace(/\D/g,'').slice(0,14);
+  if(v.length > 12) return v.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{0,2})/,'$1.$2.$3/$4-$5');
+  if(v.length > 8)  return v.replace(/(\d{2})(\d{3})(\d{3})(\d+)/,'$1.$2.$3/$4');
+  if(v.length > 5)  return v.replace(/(\d{2})(\d{3})(\d+)/,'$1.$2.$3');
+  if(v.length > 2)  return v.replace(/(\d{2})(\d+)/,'$1.$2');
+  return v;
+}
+
+function maskCPFCNPJ(v) {
+  var digits = v.replace(/\D/g,'');
+  return digits.length <= 11 ? maskCPF(v) : maskCNPJ(v);
+}
+
+function maskPhone(v) {
+  v = v.replace(/\D/g,'').slice(0,11);
+  if(v.length > 10) return v.replace(/(\d{2})(\d{5})(\d{4})/,'($1) $2-$3');
+  // CORRIGIDO em 15/09/2026: a regra original usava (\d{4,5}), que e gulosa e
+  // comia 5 digitos tambem no telefone FIXO de 10 digitos -- (75) 3225-2932
+  // saia como (75) 32252-932. Agora o fixo tem a sua propria regra.
+  if(v.length > 9)  return v.replace(/(\d{2})(\d{4})(\d{4})/,'($1) $2-$3');
+  if(v.length > 6)  return v.replace(/(\d{2})(\d{4})(\d*)/,'($1) $2-$3');
+  if(v.length > 2)  return v.replace(/(\d{2})(\d+)/,'($1) $2');
+  return v;
+}
+
+function maskPlate(v) {
+  v = v.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,7);
+  if(v.length > 3) return v.slice(0,3) + '-' + v.slice(3);
+  return v;
+}
+
+function maskCEP(v) {
+  v = v.replace(/\D/g,'').slice(0,8);
+  if(v.length > 5) return v.replace(/(\d{5})(\d+)/,'$1-$2');
+  return v;
+}
+
+function exportCSV(data, filename, colunas) {
+  // Gera CSV com BOM UTF-8 para Excel abrir corretamente
+  var header = colunas.map(function(c){return c.label;}).join(';');
+  var rows = data.map(function(item){
+    return colunas.map(function(c){
+      var val = typeof c.fn==='function' ? c.fn(item) : (item[c.key]||'');
+      val = String(val).replace(/"/g,'""').replace(/;/g,',');
+      return '"'+val+'"';
+    }).join(';');
+  });
+  var csv = '\uFEFF' + header + '\n' + rows.join('\n');
+  var blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  a.href   = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('Arquivo exportado com sucesso','ok');
+}
+
+function exportPrint(titulo, colunas, data, subtitle) {
+  var w = window.open('','_blank');
+  var rows = data.map(function(item){
+    return '<tr>'+colunas.map(function(c){
+      var val = typeof c.fn==='function' ? c.fn(item) : (item[c.key]||'-');
+      return '<td>'+val+'</td>';
+    }).join('')+'</tr>';
+  }).join('');
+  var header = colunas.map(function(c){return '<th>'+c.label+'</th>';}).join('');
+  w.document.write([
+    '<!DOCTYPE html><html><head><meta charset=UTF-8>',
+    '<title>'+titulo+'</title>',
+    '<style>',
+    'body{font-family:Segoe UI,sans-serif;font-size:11px;padding:20px;color:#000}',
+    'h1{font-size:16px;margin-bottom:4px}',
+    '.sub{font-size:11px;color:#666;margin-bottom:16px}',
+    'table{width:100%;border-collapse:collapse;font-size:11px}',
+    'th{background:#f97316;color:#fff;padding:7px 8px;text-align:left;font-weight:700}',
+    'td{padding:6px 8px;border-bottom:1px solid #eee}',
+    'tr:nth-child(even) td{background:#fafafa}',
+    '.footer{margin-top:20px;font-size:10px;color:#999;text-align:center}',
+    '@media print{.no-print{display:none}}',
+    '</style></head><body>',
+    '<div class=no-print style="margin-bottom:12px">',
+    '<button onclick="window.print()" style="padding:8px 16px;background:#f97316;color:#fff;border:none;border-radius:4px;cursor:pointer;font-weight:700">&#128438; Imprimir</button>',
+    '</div>',
+    '<h1>'+titulo+'</h1>',
+    subtitle?'<div class=sub>'+subtitle+'</div>':'',
+    '<table><thead><tr>'+header+'</tr></thead><tbody>'+rows+'</tbody></table>',
+    '<div class=footer>Gerado em '+new Date().toLocaleString('pt-BR')+' &bull; AUTO MAIS VEICULOS LTDA</div>',
+    '</body></html>'
+  ].join(''));
+  w.document.close();
+}

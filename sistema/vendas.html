@@ -267,7 +267,7 @@ document.getElementById('main').innerHTML=
     '</td>'+
     '<td><div class="acts">'+
     '<button class="btn bi bsm" onclick="modalContratosVenda('+v.id+')" title="Ver Documentos">&#128196;</button>'+
-    (isAdmin()?'<button class="btn bd bsm" onclick="dlVanda('+v.id+')" title="Excluir">&#128465;</button>':'')+
+    (isAdmin()?'<button class="btn bd bsm" onclick="dlVenda('+v.id+')" title="Excluir">&#128465;</button>':'')+
     '</div></td></tr>'
   ).join('')+'</tbody></table>'+pagVD+'</div>';
 }
@@ -347,7 +347,10 @@ function svVenda(){
   if(vVendido) fsave("veiculos",vVendido);
   cm();typeof history!=='undefined'&&window.location.protocol!=='file:'?history.replaceState(null,'','vendas.html'):null;render();
   toast('Venda registrada com sucesso! Contrato gerado.','ok');
-  setTimeout(()=>verChecklist(venda.id),200);
+  // O checklist antigo (modal verChecklist) foi substituido em 19/06 pelo
+  // documento gerarChecklist_html(), que ja vem marcado no seletor de
+  // documentos. A chamada a verChecklist ficou orfa e estourava a cada venda
+  // registrada, dentro de um setTimeout -- erro silencioso no console.
 }
 
 function gerarTermo(venda){
@@ -604,6 +607,183 @@ function docHeader(titulo, numero, data){
 }
 
 // ── Contrato de Compra e Venda (HTML A4) ─────────────────────
+// RESTAURADA em 15/09/2026. Removida no commit 20d90f6 (19/06) mas ainda chamada
+// por impTermoChecklist() e verCont() — os dois estavam quebrados desde entao.
+// Esta e a versao em TEXTO do contrato, que e a certa aqui: acompanha o
+// gerarTermo() e o gerarChecklist(), que tambem geram texto puro e sao exibidos
+// em Courier com white-space:pre-wrap. A gerarCV_simples() gera HTML A4 e serve
+// a outro fluxo — nao da para trocar uma pela outra.
+function gerarCV(c){
+  var e=DB.empresa||{}, cl=cObj(c.cliente_id)||{}, v=vObj(c.veiculo_id)||{};
+  var dt=c.data?new Date(c.data+'T12:00').toLocaleDateString('pt-BR'):new Date().toLocaleDateString('pt-BR');
+  var nasc=cl.nasc?new Date(cl.nasc+'T12:00').toLocaleDateString('pt-BR'):'';
+  var entrada=Number(c.entrada||0);
+  var saldo=brl(Number(c.valor||0)-entrada);
+  var LN='='.repeat(70);
+  var LS='\u2500'.repeat(70);
+
+  var txt='';
+  txt+='CONTRATO PARTICULAR DE COMPRA E VENDA DE VE\u00cdCULO USADO N\u00ba '+c.numero+'\n';
+  txt+=LN+'\n\n';
+
+  txt+='VENDEDOR\n';
+  txt+='  '+(e.nome||'AUTO MAIS COMERCIO E CORRETORA DE VE\u00cdCULOS LTDA')+'\n';
+  txt+='  CNPJ: '+(e.cnpj||'05.622.137/0001-00')+'  Tel: '+(e.telefone||'')+'\n';
+  txt+='  '+(e.endereco||'Rua Juarez T\u00e1vora, 346')+', '+(e.bairro||'S\u00e3o Jo\u00e3o')+' \u2013 '+(e.cidade||'Feira de Santana')+'/'+(e.uf||'BA')+'\n\n';
+
+  txt+='COMPRADOR\n';
+  txt+='  Nome: '+cl.nome+'    CPF: '+cl.cpf+(cl.rg?'    RG: '+cl.rg:'')+'\n';
+  txt+='  '+(nasc?'Nasc: '+nasc+'    ':'')+' Est. Civil: '+(cl.estado_civil||'\u2014')+'    Prof: '+(cl.profissao||'\u2014')+'\n';
+  txt+='  End: '+(cl.endereco||'')+' \u2013 '+(cl.cidade||'')+'/'+(cl.uf||'')+'    CEP: '+(cl.cep||'')+'\n';
+  txt+='  Tel: '+(cl.telefone||'')+(cl.email?'    Email: '+cl.email:'')+'\n\n';
+
+  txt+=LS+'\n';
+  txt+='VE\u00cdCULO\n';
+  txt+='  '+v.marca+' '+v.modelo+(v.versao?' '+v.versao:'')+' | Ano: '+v.ano+' | Cor: '+v.cor+' | Comb: '+(v.combustivel||'')+'\n';
+  txt+='  Placa: '+v.placa+'    RENAVAM: '+(v.renavam||'_____________')+'    KM: '+Number(v.km||0).toLocaleString('pt-BR')+' km\n';
+  txt+='  Chassi: '+(v.chassi||'_______________________')+'\n';
+  if(c.obs) txt+='  Obs: '+c.obs+'\n';
+  txt+='\n';
+
+  txt+=LS+'\n';
+  txt+='CONDI\u00c7\u00d5ES DE PAGAMENTO\n';
+  txt+='  Valor Total:  R$ '+brl(c.valor)+'\n';
+  txt+='  Entrada:      R$ '+brl(c.entrada||'0')+'\n';
+  txt+='  Saldo:        R$ '+saldo+'\n';
+  txt+='  Forma:        '+(c.pagamento||'')+'\n';
+  if(c.financeira) txt+='  Financeira:   '+c.financeira+'\n';
+  if(Number(c.num_parcelas||0)>0) txt+='  Parcelamento: '+c.num_parcelas+'x de R$ '+brl(c.valor_parcela||'0')+'\n';
+  txt+='\n';
+
+  txt+=LS+'\n';
+  txt+='CL\u00c1USULAS\n\n';
+  txt+='1. GARANTIA: 90 (noventa) dias contra v\u00edcios ocultos, nos termos do CDC\n';
+  txt+='   (Lei 8.078/90, art. 26). N\u00e3o cobre desgastes naturais, manuten\u00e7\u00e3o\n';
+  txt+='   rotineira (pneus, pastilhas, filtros, velas, fluidos) nem danos por\n';
+  txt+='   uso indevido, acidente ou modifica\u00e7\u00f5es n\u00e3o autorizadas.\n\n';
+  txt+='2. VENDEDOR: Entrega o ve\u00edculo livre de multas, IPVA e grav\u00e3mes at\u00e9 a\n';
+  txt+='   data desta assinatura e fornece documenta\u00e7\u00e3o para transfer\u00eancia em\n';
+  txt+='   at\u00e9 30 (trinta) dias.\n\n';
+  txt+='3. COMPRADOR: Efetua o pagamento conforme acordado; transfere o ve\u00edculo\n';
+  txt+='   em at\u00e9 30 dias arcando com todas as despesas no DETRAN; responsabiliza-\n';
+  txt+='   se por multas e encargos a partir da entrega. Uso para transporte por\n';
+  txt+='   aplicativos (Uber, 99 etc.) deve ser informado, sujeitando-se ao\n';
+  txt+='   Termo de Garantia espec\u00edfico para esta modalidade.\n\n';
+  txt+='4. PROPRIEDADE: Transfere-se somente ap\u00f3s quita\u00e7\u00e3o integral. Em\n';
+  txt+='   financiamento, o ve\u00edculo permanece alienado at\u00e9 liquida\u00e7\u00e3o do d\u00e9bito.\n\n';
+  txt+='5. PENALIDADES: Inadimplemento do COMPRADOR \u2192 reten\u00e7\u00e3o de 20% do valor\n';
+  txt+='   pago. Descumprimento pelo VENDEDOR \u2192 devolu\u00e7\u00e3o + multa de 10%.\n\n';
+  txt+='6. FORO: Comarca de '+(e.cidade||'Feira de Santana')+'/'+(e.uf||'BA')+'.\n\n';
+  txt+='Firmado em 02 (duas) vias de igual teor e validade.\n\n\n';
+  txt+=(e.cidade||'Feira de Santana')+' \u2013 '+(e.uf||'BA')+', '+dt+'\n\n\n';
+  txt+='___________________________________________\n';
+  txt+=(e.nome||'AUTO MAIS VE\u00cdCULOS LTDA')+'\nVENDEDOR\n\n\n';
+  txt+='___________________________________________\n';
+  txt+=cl.nome+' \u2013 CPF: '+cl.cpf+'\nCOMPRADOR\n\n\n';
+  txt+='TESTEMUNHAS:\n';
+  txt+='_______________________    _______________________\n';
+  txt+='Nome:                      Nome:\nCPF:                       CPF:\n';
+
+  // Anexo I — sempre incluso
+  txt+='\n\n'+LN+'\n';
+  txt+='ANEXO I \u2013 TERMO DE CI\u00caNCIA E DE RESPONSABILIDADE\n';
+  txt+=LN+'\n\n';
+  txt+=gerarTermoCiencia(c, cl, v);
+
+  return txt;
+}
+
+// COPIADAS do contratos.html em 15/09/2026. O vizCtDoc() do vendas.html chama
+// as duas (botoes Visualizar e Imprimir) quando o contrato e de compra ou de
+// consignacao, mas elas so existiam no contratos.html -- e as paginas nao
+// compartilham o script inline. Resultado: imprimir esses dois tipos pela tela
+// de Vendas quebrava. A duplicacao segue o padrao ja existente do sistema:
+// gerarCV_simples() tambem vive nos dois arquivos.
+function gerarCompra(c){
+  const e=DB.empresa,f=fObj(c.fornecedor_id),v=vObj(c.veiculo_id);
+  const dt=c.data?new Date(c.data+'T12:00').toLocaleDateString('pt-BR'):new Date().toLocaleDateString('pt-BR');
+  const ln='='.repeat(62);
+  return 'CONTRATO DE COMPRA DE VEICULO\n'+ln+
+'\nNumero: '+c.numero+'    Data: '+dt+
+'\n\nCOMPRADOR: '+e.nome+' | CNPJ: '+e.cnpj+
+'\n  '+e.endereco+', '+e.bairro+' - '+e.cidade+'/'+e.uf+
+'\n\nVENDEDOR: '+(f.nome||'')+' | CPF/CNPJ: '+(f.cpf||'')+
+'\n  '+(f.rg?'RG: '+f.rg+'   ':'')+' Tel: '+(f.telefone||'')+
+'\n  '+(f.endereco||'')+' - '+(f.cidade||'')+'/'+(f.uf||'')+
+'\n\nVEICULO:\n  '+v.marca+' '+v.modelo+' '+(v.versao||'')+
+'\n  Ano: '+v.ano+'   Cor: '+v.cor+'   Placa: '+v.placa+
+'\n  Chassi: '+(v.chassi||'-')+'   RENAVAM: '+(v.renavam||'-')+
+'\n  KM: '+Number(v.km||0).toLocaleString('pt-BR')+
+'\n\nVALOR: R$ '+brl(c.valor)+'   Pagamento: '+c.pagamento+
+'\n\nO VENDEDOR declara ser legitimo proprietario, sem onus\nou impedimentos, respondendo por debitos anteriores.\n'+
+(c.obs?'\nObs: '+c.obs:'')+
+'\n\n\n'+e.cidade+' - '+e.uf+', '+dt+'\n\n\n'+
+'___________________________________________\n'+(f.nome||'')+' | CPF: '+(f.cpf||'')+'\nVENDEDOR\n\n\n'+
+'___________________________________________\n'+e.nome+'\nCOMPRADOR';
+}
+
+function gerarConsig(c){
+  const e=DB.empresa,f=fObj(c.fornecedor_id),v=vObj(c.veiculo_id);
+  const dt=c.data?new Date(c.data+'T12:00').toLocaleDateString('pt-BR'):new Date().toLocaleDateString('pt-BR');
+  const venc=c.data?new Date(new Date(c.data+'T12:00').getTime()+Number(c.prazo||90)*86400000).toLocaleDateString('pt-BR'):'___/___/______';
+  const comTxt=c.tipo_comissao==='fixo'?'R$ '+brl(c.comissao)+' (valor fixo)':(c.comissao||5)+'% sobre o valor de venda';
+  const vlLiq=c.tipo_comissao==='fixo'?brl(Number(c.valor||0)-Number(c.comissao||0)):brl(Number(c.valor||0)*(1-Number(c.comissao||5)/100));
+  const ln='='.repeat(62);const ls=String.fromCharCode(9472).repeat(62);
+  return 'CONTRATO DE CONSIGNACAO DE VEICULO\n'+ln+
+'\nNumero: '+c.numero+'    Data: '+dt+
+'\n\nCONSIGNANTE (PROPRIETARIO):\n  '+(f.nome||'')+' | CPF/CNPJ: '+(f.cpf||'')+
+'\n  '+(f.rg?'RG: '+f.rg:'')+'   Tel: '+(f.telefone||'')+
+'\n  '+(f.endereco||'')+' - '+(f.cidade||'')+'/'+(f.uf||'')+
+'\n  '+(f.banco?'Banco: '+f.banco+' Ag: '+f.agencia+' CC: '+f.conta:'')+
+'\n\nCONSIGNATARIO (LOJA):\n  '+e.nome+' | CNPJ: '+e.cnpj+
+'\n  '+e.endereco+', '+e.bairro+' - '+e.cidade+'/'+e.uf+
+'\n  Tel: '+e.telefone+
+'\n\n'+ls+
+'\nCLAUSULA 1 - DO OBJETO\n\n'+
+'  '+v.marca+' '+v.modelo+' '+(v.versao||'')+
+'\n  Ano: '+v.ano+'   Cor: '+v.cor+'   Placa: '+v.placa+
+'\n  Chassi: '+(v.chassi||'-')+'   KM: '+Number(v.km||0).toLocaleString('pt-BR')+
+'\n  Condicao: '+(c.condicao||'Conforme vistoria')+
+'\n\n  PRECO DE VENDA:  R$ '+brl(c.valor)+
+'\n  PRECO MINIMO:    R$ '+brl(c.valor_minimo||c.valor)+
+'\n\n'+ls+
+'\nCLAUSULA 2 - DO PRAZO\n\n'+
+'  Prazo: '+( c.prazo||90)+' dias | Vencimento: '+venc+
+'\n  Findo o prazo, o veiculo sera devolvido em 5 dias uteis.\n\n'+ls+
+'\nCLAUSULA 3 - DA REMUNERACAO\n\n'+
+'  Comissao do CONSIGNATARIO: '+comTxt+
+'\n  Valor liquido ao CONSIGNANTE: R$ '+vlLiq+
+'\n  Repasse em ate 5 dias uteis apos a venda.\n\n'+ls+
+'\nCLAUSULA 4 - GARANTIAS E OBRIGACOES DO CONSIGNANTE\n\n'+
+'  O CONSIGNANTE declara e garante:\n\n'+
+'  4.1 E o UNICO e LEGITIMO proprietario, sem restricoes.\n\n'+
+'  4.2 O veiculo esta LIVRE de onus, gravames, alienacao\n'+
+'  fiduciaria, hipoteca ou penhora.\n\n'+
+'  4.3 Nao existem debitos de IPVA, DPVAT, multas ou\n'+
+'  licenciamento alem de: "'+(c.debitos||'Nenhum informado')+'"\n\n'+
+'  4.4 O veiculo nao esta envolvido em sinistros, furtos\n'+
+'  ou irregularidades perante as autoridades.\n\n'+
+'  4.5 Todas as informacoes sao verdadeiras, sob pena de\n'+
+'  responsabilidade civil e criminal.\n\n'+
+'  4.6 Onus surgido posteriormente: CONSIGNANTE responde\n'+
+'  por todas as perdas, danos e honorarios.\n\n'+ls+
+'\nCLAUSULA 5 - OBRIGACOES DO CONSIGNATARIO\n\n'+
+'  5.1 Zelar pela guarda e conservacao do veiculo.\n\n'+
+'  5.2 NAO realizar reparos sem autorizacao escrita.\n\n'+
+'  5.3 Comunicar propostas abaixo do preco minimo.\n\n'+
+'  5.4 Test drives apenas com id. do comprador.\n\n'+
+'  5.5 NAO sub-consignar a terceiros.\n\n'+ls+
+'\nCLAUSULA 6 - DEVOLUCAO E RESCISAO\n\n'+
+'  6.1 CONSIGNANTE pode solicitar devolucao com 48h de aviso.\n\n'+
+'  6.2 Rescisao por declaracao falsa: multa de R$ '+brl(Number(c.valor||0)*0.10)+'.\n\n'+ls+
+'\nCLAUSULA 7 - FORO\n\n'+
+'  Comarca de '+e.cidade+'/'+e.uf+'.\n\n\n'+
+e.cidade+' - '+e.uf+', '+dt+'\n\n\n'+
+'___________________________________________\n'+(f.nome||'')+' | CPF: '+(f.cpf||'')+'\nCONSIGNANTE\n\n\n'+
+'___________________________________________\n'+e.nome+'\nCONSIGNATARIO\n\n\n'+
+'TESTEMUNHAS:\n_______________________    _______________________\nNome:                      Nome:\nCPF:                       CPF:';
+}
+
 function gerarCV_simples(c){
   var e=DB.empresa||{}, cl=cObj(c.cliente_id)||{}, v=vObj(c.veiculo_id)||{};
   var dt=c.data?new Date(c.data+'T12:00').toLocaleDateString('pt-BR'):new Date().toLocaleDateString('pt-BR');
