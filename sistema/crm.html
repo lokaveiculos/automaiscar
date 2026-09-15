@@ -30,8 +30,13 @@
   <div id="mdc" class="md" style="max-height:90vh;overflow-y:auto"></div>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <script src="firebase-shared.js"></script>
+<script async src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js" onload="if(typeof renderIcons==='function')renderIcons()"></script>
 <script>
+// DB precisa ser declarado na primeira linha do script da pagina (o shared nao declara)
+var DB=loadDB();
 
 
 
@@ -156,6 +161,7 @@ function render(){
   html += '</div>'; // padding
 
   document.getElementById('main').innerHTML = html;
+  renderIcons();
 }
 
 function metricCard(label, val, cor, sub){
@@ -333,6 +339,34 @@ function sbCollapse(){
 }
 function tsb(){document.getElementById('sb').classList.toggle('open');document.getElementById('sb-overlay').classList.toggle('sh');}
 function csb(){document.getElementById('sb').classList.remove('open');document.getElementById('sb-overlay').classList.remove('sh');}
+
+// -- Lucide init + reinit helper -------------------------------
+function renderIcons(){
+  if(typeof lucide !== 'undefined'){
+    try { lucide.createIcons(); } catch(e){}
+  }
+}
+
+// -- Theme toggle ----------------------------------------------
+function toggleTheme(){
+  var current = document.documentElement.getAttribute('data-theme') || 'light';
+  var next = current === 'light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('am_theme', next);
+  updateThemeBtn(next);
+}
+function updateThemeBtn(theme){
+  var icon  = document.getElementById('theme-icon');
+  var label = document.getElementById('theme-label');
+  if(icon)  icon.setAttribute('data-lucide', theme === 'dark' ? 'moon' : 'sun');
+  if(label) label.textContent = theme === 'dark' ? 'Tema Escuro' : 'Aparência';
+  renderIcons();
+}
+(function(){
+  var saved = localStorage.getItem('am_theme') || 'light';
+  document.documentElement.setAttribute('data-theme', saved);
+  document.addEventListener('DOMContentLoaded', function(){ updateThemeBtn(saved); });
+})();
 
 // ── Init ──────────────────────────────────────────────────────
 checkAuth(function(){
