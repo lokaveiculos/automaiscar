@@ -326,6 +326,181 @@ function selVeic(sel){
   var pl = document.getElementById('mpl');
   if(v && pl) pl.value = v.placa;
 }
+
+// ---------------------------------------------------------------------
+// IMPORTAR MANUTENCAO DA OFICINA (19/09/2026)
+// Mesmo modelo que ja roda na LOKA: a oficina manda um codigo
+// "LOKA-MANUT::<base64 do JSON>" e aqui ele vira manutencao.
+// O fluxo e o mesmo (colar -> pre-visualizar -> importar); o visual segue o
+// do Auto Mais, para nao destoar do resto do sistema.
+// Como a manutencao agora gera despesa, a importada gera tambem.
+// ---------------------------------------------------------------------
+var _impManut = [];
+
+// A placa vem digitada por gente: comparo so letras e numeros.
+function _soPlaca(x){ return String(x||'').toUpperCase().replace(/[^A-Z0-9]/g, ''); }
+
+// "272,00" (brasileiro) ou "642.00" (json) -> numero
+function _numeroBR(x){
+  var t = String(x==null?'':x).trim();
+  if(!t) return 0;
+  if(t.indexOf(',') >= 0) t = t.replace(/\./g, '').replace(',', '.');
+  var n = Number(t);
+  return isNaN(n) ? 0 : n;
+}
+
+// Prefiro o campo custo; sem ele, somo os servicos.
+function _valorDoCodigo(d){
+  var c = _numeroBR(d.custo);
+  if(c > 0) return c;
+  return (d.servicos||[]).reduce(function(s,x){ return s + _numeroBR(x.val); }, 0);
+}
+
+// Le os codigos colados. Separa sem diferenciar maiuscula (o celular
+// autocorrige) e tira todo espaco/quebra de linha, porque o WhatsApp parte o
+// base64 no meio.
+// Tirar os espacos junta o base64 quebrado pelo WhatsApp -- mas tambem cola
+// nele qualquer texto que venha DEPOIS na mensagem ("abraco", "obrigado"),
+// porque essas letras tambem sao caracteres validos de base64. Entao vou
+// encurtando pela direita ate o conteudo virar um JSON de verdade.
+// (O modelo original da LOKA nao faz isso e engasga nesse caso.)
+function _decodificar(b64){
+  for(var len = b64.length; len >= 8; len--){
+    try {
+      var d = JSON.parse(decodeURIComponent(escape(atob(b64.substring(0, len)))));
+      if(d && d.placa) return d;
+    } catch(e){ /* tenta um pouco menor */ }
+  }
+  return null;
+}
+
+function _lerCodigos(raw){
+  var achados = [], erros = 0;
+  String(raw||'').split(/LOKA-MANUT::/i).forEach(function(parte, i){
+    if(i === 0) return;   // o que vier antes do primeiro prefixo
+    var m = parte.replace(/[\r\n\t ]/g, '').match(/^[A-Za-z0-9+\/=]+/);
+    if(!m){ erros++; return; }
+    var d = _decodificar(m[0]);
+    if(d && d.placa) achados.push(d); else erros++;
+  });
+  return { achados: achados, erros: erros };
+}
+
+// Monta a manutencao no formato do Auto Mais.
+// CUIDADO: no codigo da oficina, "tipo" e a natureza (preventiva/corretiva) e
+// "descricao" e a lista de servicos. No Auto Mais e o contrario: "tipo" e o
+// SERVICO. Por isso os dois trocam de lugar aqui.
+function _manutDoCodigo(d, idSugerido){
+  var v = (DB.veiculos||[]).find(function(x){ return _soPlaca(x.placa) === _soPlaca(d.placa); });
+  var det = [];
+  if(d.km)      det.push('KM ' + d.km);
+  if(d.tipo)    det.push('Tipo: ' + d.tipo);
+  if(d.retorno) det.push('Retorno: ' + d.retorno);
+  (d.servicos||[]).forEach(function(x){ det.push(x.desc + ' \u2014 R$ ' + x.val); });
+  if(d.obs)     det.push(d.obs);
+  return {
+    id: idSugerido,
+    veiculo_id: v ? v.id : '',
+    placa: _soPlaca(d.placa),
+    tipo: d.descricao || d.tipo || 'Manuten\u00e7\u00e3o',   // o SERVICO
+    status: 'concluida',
+    data: d.data || new Date().toISOString().split('T')[0],
+    valor: String(_valorDoCodigo(d)),
+    oficina: d.oficina || '',
+    descricao: det.join(' | '),
+    importadoOficina: true
+  };
+}
+
+// Ja existe manutencao igual? Nao bloqueio (pode haver dois servicos no mesmo
+// dia), mas aviso na pre-visualizacao para ninguem importar em duplicidade.
+function _jaImportada(m){
+  return (DB.manutencoes||[]).some(function(x){
+    return _soPlaca(x.placa) === _soPlaca(m.placa) && (x.data||'') === (m.data||'') &&
+           Number(x.valor||0) === Number(m.valor||0);
+  });
+}
+
+function abrirImportarManut(){
+  _impManut = [];
+  om('<div class="mt2"><span>&#128229; Importar Manuten\u00e7\u00e3o da Oficina</span>'+
+     '<button class="btn bg2 bsm" onclick="cm()">X</button></div>'+
+     '<p style="font-size:12px;color:var(--t2);line-height:1.5;margin-bottom:10px">'+
+     'Cole o c\u00f3digo enviado pela oficina (come\u00e7a com <b>LOKA-MANUT::</b>). '+
+     'Pode colar v\u00e1rios de uma vez, um por linha.</p>'+
+     '<textarea id="impCod" spellcheck="false" autocapitalize="off" autocorrect="off" '+
+     'placeholder="LOKA-MANUT::..." style="width:100%;min-height:120px;font-family:monospace;'+
+     'font-size:11px;resize:vertical"></textarea>'+
+     '<div id="impPrev" style="margin-top:12px"></div>'+
+     '<div class="mf">'+
+     '<button class="btn bg2" onclick="cm()">Cancelar</button>'+
+     '<button class="btn bs" onclick="previewImportarManut()">&#128065; Pr\u00e9-visualizar</button>'+
+     '<button class="btn bp" id="impOk" style="display:none" onclick="confirmarImportarManut()">&#10004; Importar</button>'+
+     '</div>', true);
+}
+
+function previewImportarManut(){
+  var raw = (document.getElementById('impCod')||{value:''}).value;
+  var r = _lerCodigos(raw);
+  var prev = document.getElementById('impPrev');
+  var btn  = document.getElementById('impOk');
+
+  var proximo = nid(DB.manutencoes||[]);
+  _impManut = r.achados.map(function(d, i){ return _manutDoCodigo(d, proximo + i); });
+
+  if(!_impManut.length){
+    if(prev) prev.innerHTML = '<div style="padding:10px;border-radius:8px;background:#fdecea;color:#c0392b;font-size:12px">'+
+      'Nenhum c\u00f3digo v\u00e1lido encontrado' + (r.erros? ' ('+r.erros+' com erro)':'') + '</div>';
+    if(btn) btn.style.display = 'none';
+    return;
+  }
+
+  var total = _impManut.reduce(function(s,m){ return s + Number(m.valor||0); }, 0);
+  var linhas = _impManut.map(function(m){
+    var v = (DB.veiculos||[]).find(function(x){ return x.id == m.veiculo_id; });
+    var alerta = !v ? '<span style="color:var(--warn)">&#9888; placa n\u00e3o cadastrada</span>'
+               : (_jaImportada(m) ? '<span style="color:var(--warn)">&#9888; j\u00e1 existe uma igual</span>'
+                                  : '<span style="color:var(--ok)">&#10003; '+v.marca+' '+v.modelo+'</span>');
+    return '<div style="padding:10px 12px;border-bottom:1px solid var(--border);font-size:12px">'+
+      '<b>'+m.placa+'</b> '+alerta+'<br>'+
+      '<span style="font-size:11px;color:var(--t2)">'+String(m.tipo).substring(0,70)+
+      ' &bull; R$ '+brl(m.valor)+(m.oficina?' &bull; '+m.oficina:'')+'</span></div>';
+  }).join('');
+
+  if(prev) prev.innerHTML = '<div style="border:1px solid var(--border);border-radius:8px;overflow:hidden">'+linhas+'</div>'+
+    '<div style="margin-top:8px;font-size:12px;font-weight:700;color:var(--ok)">'+
+    _impManut.length+' manuten\u00e7\u00e3o(\u00f5es) \u2014 R$ '+brl(total)+
+    ' \u2014 vira(m) despesa tamb\u00e9m'+(r.erros?' &bull; '+r.erros+' c\u00f3digo(s) com erro':'')+'</div>';
+  if(btn) btn.style.display = 'inline-block';
+}
+
+function confirmarImportarManut(){
+  if(!_impManut.length) return;
+  if(!DB.manutencoes) DB.manutencoes = [];
+  if(!DB.despesas)    DB.despesas = [];
+
+  // cada manutencao importada leva junto a sua despesa, igual as digitadas
+  var pendentes = [], despesas = [], proxDesp = nid(DB.despesas);
+  _impManut.forEach(function(m){
+    pendentes.push({col:'manutencoes', obj:m});
+    if(Number(m.valor||0) > 0){
+      var d = _despesaDeManutencao(m);
+      d.id = proxDesp++;            // _despesaDeManutencao usa nid(), que repetiria no lote
+      despesas.push(d);
+      pendentes.push({col:'despesas', obj:d});
+    }
+  });
+
+  _gravarTudo(pendentes, function(erros){
+    if(erros.length){ toast('NAO foi importado por completo -- ' + erros.join(', '), 'err'); return; }
+    _impManut.forEach(function(m){ DB.manutencoes.push(m); });
+    despesas.forEach(function(d){ DB.despesas.push(d); });
+    var n = _impManut.length, nd = despesas.length;
+    _impManut = [];
+    sDB(); cm(); renderMnt();
+    toast(n+' manuten\u00e7\u00e3o(\u00f5es) importada(s)'+(nd?' e '+nd+' despesa(s) lan\u00e7ada(s)':''), 'ok');
+  });
+}
 // ---------------------------------------------------------------------
 // MANUTENCAO -> DESPESA (19/09/2026, pedido do Rogel)
 // Ate aqui manutencao e despesa eram mundos separados: os R$ 4.920 ja
@@ -456,7 +631,10 @@ function renderMnt(){
   document.getElementById('main').innerHTML=
   '<div class="ph"><div><div class="pt">Gestão</div>'+
   '<div class="ps">'+fl.length+' manutenção(ões) &bull; Total: R$ '+brl(tot)+'</div></div>'+
-  (isAdmin()?'<button class="btn bp" onclick="fmMnt(null)">+ Nova Manutenção</button>':'')+
+  (isAdmin()?'<div style="display:flex;gap:8px;flex-wrap:wrap">'+
+  '<button class="btn bg2" onclick="abrirImportarManut()" title="Colar o codigo enviado pela oficina">&#128229; Importar</button>'+
+  '<button class="btn bp" onclick="fmMnt(null)">+ Nova Manutenção</button>'+
+  '</div>':'')+
   '</div>'+
   tabsHtml('mnt')+
   '<div class="sb2"><div class="sw"><span class="sico">&#128269;</span>'+
