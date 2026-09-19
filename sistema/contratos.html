@@ -364,6 +364,26 @@ function tgCt(){
   if(vex) vex.style.display=t==='venda'?'':'none';
   if(cons) cons.style.display=t==='consignacao'?'':'none';
 }
+// Grava varios documentos e so avisa depois que TODOS confirmarem. Um contrato
+// de venda mexe em tres coisas (contrato, venda, veiculo); dizer "salvo" com
+// uma delas falhando deixaria o estoque mentindo.
+function _gravarTudo(itens, cb){
+  var faltam = itens.length, erros = [];
+  if(!faltam) return cb(erros);
+  itens.forEach(function(it){
+    fsave(it.col, it.obj, function(err){
+      if(err) erros.push(it.col + ' (' + (err.code || err.message || 'erro') + ')');
+      if(--faltam === 0) cb(erros);
+    });
+  });
+}
+
+// CV-2026-016 -> VD-2026-016. Numero fora do padrao ganha o prefixo VD-.
+function _numeroVenda(numeroContrato){
+  var n = String(numeroContrato || '');
+  return n.indexOf('CV') >= 0 ? n.replace('CV', 'VD') : ('VD-' + n);
+}
+
 function svCt(id){
   var tipo = document.getElementById('ctt').value;
   var num  = document.getElementById('ctn').value.trim();
@@ -393,10 +413,71 @@ function svCt(id){
     condicao:document.getElementById('ctcond')?.value||'',
     debitos:document.getElementById('ctdeb')?.value||'Nenhum',
     obs:document.getElementById('ctobs').value};
-  if(id)DB.contratos=DB.contratos.map(c=>c.id==id?obj:c);else DB.contratos.push(obj);
-  sDB();fsave("contratos",obj);cm();render();
-  toast(id?'Contrato atualizado':'Contrato gerado com sucesso','ok');
-  toast(id?'Contrato atualizado':'Contrato gerado com sucesso','ok');
+
+  // ------------------------------------------------------------------
+  // Contrato de VENDA nao e so um documento: e a venda em si.
+  // Ate 19/09/2026 esta tela gravava SO o contrato. A venda nunca aparecia
+  // na tela de Vendas e o veiculo continuava "disponivel" -- alguem tinha de
+  // baixar na mao depois. Dos 21 contratos do banco, 20 entraram assim, e tres
+  // veiculos ja vendidos seguiam sendo oferecidos como disponiveis.
+  // A tela de Vendas (svVenda) sempre fez as tres coisas; agora as duas portas
+  // se comportam igual.
+  // ------------------------------------------------------------------
+  var ehVenda = (obj.tipo === 'venda');
+  var venda = null, veiculoBaixado = null;
+  var pendentes = [{col:'contratos', obj:obj}];
+
+  if(ehVenda){
+    // uma venda por contrato: editar um contrato atualiza a venda, nao cria outra
+    var jaExiste = (DB.vendas||[]).find(function(v){ return String(v.contrato_id) === String(obj.id); });
+    venda = {
+      id: jaExiste ? jaExiste.id : nid(DB.vendas||[]),
+      numero: jaExiste ? jaExiste.numero : _numeroVenda(obj.numero),
+      data: obj.data,
+      cliente_id: obj.cliente_id,
+      veiculo_id: obj.veiculo_id,
+      valor: obj.valor,
+      pagamento: obj.pagamento,
+      contrato_id: obj.id,
+      obs: obj.obs
+    };
+    pendentes.push({col:'vendas', obj:venda});
+
+    var v = (DB.veiculos||[]).find(function(x){ return x.id == obj.veiculo_id; });
+    if(v && v.status !== 'vendido'){
+      veiculoBaixado = Object.assign({}, v, {status:'vendido'});
+      pendentes.push({col:'veiculos', obj:veiculoBaixado});
+    }
+    // Se o veiculo do contrato foi TROCADO numa edicao, o antigo continua
+    // marcado como vendido de proposito: liberar sozinho um carro que pode ter
+    // saido por outro contrato e pior do que deixar um a menos no estoque.
+  }
+
+  _gravarTudo(pendentes, function(erros){
+    if(erros.length){
+      toast('NAO foi salvo por completo -- ' + erros.join(', '), 'err');
+      return;   // nada muda na tela: o que se ve continua sendo o que o banco tem
+    }
+    if(id) DB.contratos = DB.contratos.map(function(c){ return c.id==id ? obj : c; });
+    else   DB.contratos.push(obj);
+
+    if(venda){
+      if(!DB.vendas) DB.vendas = [];
+      var i = DB.vendas.findIndex(function(x){ return x.id == venda.id; });
+      if(i >= 0) DB.vendas[i] = venda; else DB.vendas.push(venda);
+    }
+    if(veiculoBaixado){
+      DB.veiculos = DB.veiculos.map(function(x){ return x.id == veiculoBaixado.id ? veiculoBaixado : x; });
+    }
+
+    sDB(); cm(); render();
+    var msg = id ? 'Contrato atualizado' : 'Contrato gerado com sucesso';
+    if(ehVenda){
+      msg += ' \u2014 venda ' + venda.numero + ' registrada';
+      if(veiculoBaixado) msg += ' e veiculo baixado';
+    }
+    toast(msg, 'ok');
+  });
 }
 function impVendaDocsPorCt(ctId){
   const ct=DB.contratos.find(x=>x.id==ctId);
