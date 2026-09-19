@@ -326,6 +326,56 @@ function selVeic(sel){
   var pl = document.getElementById('mpl');
   if(v && pl) pl.value = v.placa;
 }
+// ---------------------------------------------------------------------
+// MANUTENCAO -> DESPESA (19/09/2026, pedido do Rogel)
+// Ate aqui manutencao e despesa eram mundos separados: os R$ 4.920 ja
+// lancados em manutencao nao apareciam em lugar nenhum do financeiro.
+// Agora toda manutencao COM VALOR gera a despesa correspondente, com
+// tipo "Manutencao", e a manutencao e a fonte da verdade: editar atualiza,
+// excluir remove, zerar o valor tira a despesa.
+//
+// ATENCAO ao nome dos campos: na manutencao, "tipo" e o SERVICO
+// ("Revisao geral"); na despesa, "tipo" e a CATEGORIA. Sao coisas
+// diferentes com o mesmo nome.
+// ---------------------------------------------------------------------
+var DESP_TIPO_MANUT = 'Manuten\u00e7\u00e3o';
+
+// Grava varios documentos e so avisa depois que TODOS confirmarem.
+function _gravarTudo(itens, cb){
+  var faltam = itens.length, erros = [];
+  if(!faltam) return cb(erros);
+  itens.forEach(function(it){
+    var pronto = function(err){
+      if(err) erros.push(it.col + ' (' + (err.code || err.message || 'erro') + ')');
+      if(--faltam === 0) cb(erros);
+    };
+    if(it.apagar) fdel(it.col, it.id, pronto);
+    else          fsave(it.col, it.obj, pronto);
+  });
+}
+
+function _despesaDaManutencao(mid){
+  return (DB.despesas||[]).find(function(d){ return String(d.manutencao_id) === String(mid); });
+}
+
+function _despesaDeManutencao(m){
+  var ja = _despesaDaManutencao(m.id);
+  var v  = (DB.veiculos||[]).find(function(x){ return x.id == m.veiculo_id; }) || {};
+  var servico = m.tipo || 'Manuten\u00e7\u00e3o';
+  return {
+    id: ja ? ja.id : nid(DB.despesas||[]),
+    manutencao_id: m.id,              // o elo entre os dois registros
+    tipo: DESP_TIPO_MANUT,
+    data: m.data || '',
+    fornecedor: m.oficina || 'Oficina nao informada',
+    proprietario: v.proprietario_id ? (fNome(v.proprietario_id) || '') : '',
+    veiculo: (v.marca || '') + (v.modelo ? ' ' + v.modelo : ''),
+    placa: m.placa || v.placa || '',
+    valor: m.valor,
+    descricao: servico + (m.descricao ? ' \u2014 ' + m.descricao : '')
+  };
+}
+
 function svMnt(id){
   var vid = Number(document.getElementById('mv').value);
   var tp  = document.getElementById('mtp').value.trim();
@@ -340,17 +390,60 @@ function svMnt(id){
     oficina:document.getElementById('mof').value,
     descricao:document.getElementById('mds').value
   };
-  if(id) DB.manutencoes = DB.manutencoes.map(function(m){return m.id==id?obj:m;});
-  else DB.manutencoes.push(obj);
-  sDB(); fsave("manutencoes",obj); cm(); renderMnt();
-  toast(id?'Manutencao atualizada':'Manutencao registrada','ok');
+
+  // A despesa acompanha o VALOR: sem valor nao ha custo a lancar, e se a
+  // manutencao tinha valor e foi zerada, a despesa antiga tem de sair.
+  var temValor = Number(obj.valor || 0) > 0;
+  var jaExiste = _despesaDaManutencao(obj.id);
+  var despesa = temValor ? _despesaDeManutencao(obj) : null;
+
+  var pendentes = [{col:'manutencoes', obj:obj}];
+  if(despesa)                       pendentes.push({col:'despesas', obj:despesa});
+  else if(jaExiste)                 pendentes.push({col:'despesas', id:jaExiste.id, apagar:true});
+
+  _gravarTudo(pendentes, function(erros){
+    if(erros.length){
+      toast('NAO foi salvo por completo -- ' + erros.join(', '), 'err');
+      return;   // a tela continua mostrando o que o banco tem
+    }
+    if(id) DB.manutencoes = DB.manutencoes.map(function(m){return m.id==id?obj:m;});
+    else DB.manutencoes.push(obj);
+
+    if(!DB.despesas) DB.despesas = [];
+    if(despesa){
+      var i = DB.despesas.findIndex(function(d){ return d.id == despesa.id; });
+      if(i >= 0) DB.despesas[i] = despesa; else DB.despesas.push(despesa);
+    } else if(jaExiste){
+      DB.despesas = DB.despesas.filter(function(d){ return d.id != jaExiste.id; });
+    }
+
+    sDB(); cm(); renderMnt();
+    var msg = id ? 'Manutencao atualizada' : 'Manutencao registrada';
+    if(despesa)       msg += ' \u2014 despesa de R$ ' + brl(despesa.valor) + ' lancada';
+    else if(jaExiste) msg += ' \u2014 despesa removida (ficou sem valor)';
+    toast(msg, 'ok');
+  });
 }
+
 function dlMnt(id){
-  if(confirm('Excluir registro?')){
+  var d = _despesaDaManutencao(id);
+  var aviso = d
+    ? 'Excluir esta manutencao?\n\nA despesa de R$ ' + brl(d.valor) + ' lancada por ela tambem sai.'
+    : 'Excluir registro?';
+  if(!confirm(aviso)) return;
+
+  var pendentes = [{col:'manutencoes', id:id, apagar:true}];
+  if(d) pendentes.push({col:'despesas', id:d.id, apagar:true});
+
+  _gravarTudo(pendentes, function(erros){
+    if(erros.length){ toast('NAO foi excluido por completo -- ' + erros.join(', '), 'err'); return; }
     DB.manutencoes = DB.manutencoes.filter(function(m){return m.id!=id;});
-    sDB(); fdel("manutencoes",id); renderMnt();
-  }
+    if(d) DB.despesas = (DB.despesas||[]).filter(function(x){ return x.id != d.id; });
+    sDB(); renderMnt();
+    toast(d ? 'Manutencao e despesa excluidas' : 'Manutencao excluida', 'ok');
+  });
 }
+
 
 // ── RELATORIOS ──────────────────────────────────────────────────
 function renderMnt(){

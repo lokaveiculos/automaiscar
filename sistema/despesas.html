@@ -280,6 +280,7 @@ function renderDesp(){
   '<option value="">Todos os tipos</option>'+
   '<option value="Administrativa"'+(dFiltTipo==="Administrativa"?' selected':'')+'>&#128197; Administrativas</option>'+
   '<option value="Operacional"'+(dFiltTipo==="Operacional"?' selected':'')+'>&#128663; Operacionais</option>'+
+  '<option value="Manutenção"'+(dFiltTipo==="Manutenção"?' selected':'')+'>&#128295; Manuten\u00e7\u00e3o</option>'+
   '</select></div>'+
   '<div class="fg"><label>Placa</label>'+
   '<select id="fplaca" onchange="dFiltPlaca=this.value;dPag=1;renderDesp()">'+
@@ -302,10 +303,11 @@ function renderDesp(){
     '<td><span style="font-family:monospace;font-weight:700;color:var(--accent)">'+(d.placa||'-')+'</span></td>'+
     '<td style="font-weight:800;color:var(--ok)">R$ '+brl(d.valor)+'</td>'+
     '<td style="font-size:12px;color:var(--t2);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+(d.descricao||'')+'">'+(d.descricao||'-')+'</td>'+
-    '<td>'+((d.tipo==='Operacional')
-      ?'<span class="badge bg-y" style="font-size:11px">Op</span>'
-      :'<span class="badge bg-b" style="font-size:11px">Adm</span>')
-    +'</td>'+
+    '<td>'+(
+      d.tipo==='Operacional'   ? '<span class="badge bg-y" style="font-size:11px">Op</span>' :
+      d.tipo==='Manutenção' ? '<span class="badge bg-r" style="font-size:11px" title="Lancada pelo menu Manutencao">Manut</span>' :
+                                 '<span class="badge bg-b" style="font-size:11px">Adm</span>'
+    )+'</td>'+
     '<td><div class="acts">'+
     '<button class="btn bg2 bsm" onclick="fmDesp('+d.id+')" title="Editar">&#9999;</button>'+
     +(isAdmin()?'<button class="btn bd bsm" onclick="dlDesp('+d.id+')">&#128465;</button>':'')+
@@ -372,6 +374,7 @@ function fmDesp(id){
     '<select id="dtipo" style="padding:8px 12px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);color:var(--text);font-size:14px">'+
     '<option value="Operacional"'+(tipoAtual==='Operacional'?' selected':'')+'>&#128663; Operacional</option>'+
     '<option value="Administrativa"'+(tipoAtual==='Administrativa'?' selected':'')+'>&#128197; Administrativa</option>'+
+    '<option value="Manutenção"'+(tipoAtual==='Manutenção'?' selected':'')+'>&#128295; Manuten\u00e7\u00e3o</option>'+
     '</select></div>'+
     '<div class="fg"><label>Data *</label>'+
     '<input id="dd" type="date" value="'+(d.data||hoje)+'"></div>'+
