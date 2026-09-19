@@ -240,21 +240,85 @@ function impWin(html_content, titulo){
 
 
 
-var vdPag=1;
+// Filtros da tela de Vendas (pedido do Rogel em 19/09/2026).
+// Mesmo desenho da tela de Despesas, que ja tinha filtro por periodo.
+var vdPag=1, vdFiltDe='', vdFiltAte='', vdFiltVeic='', vdFiltCli='';
+
+function vdTemFiltro(){ return !!(vdFiltDe || vdFiltAte || vdFiltVeic || vdFiltCli); }
+
+function filtrarVendas(){
+  return (DB.vendas||[]).filter(function(v){
+    var d = String(v.data||'');
+    // venda sem data nao entra quando ha recorte por periodo: nao da para
+    // afirmar que ela cai dentro do intervalo pedido
+    if(vdFiltDe  && (!d || d < vdFiltDe))  return false;
+    if(vdFiltAte && (!d || d > vdFiltAte)) return false;
+    if(vdFiltVeic && String(v.veiculo_id) !== String(vdFiltVeic)) return false;
+    if(vdFiltCli  && String(v.cliente_id) !== String(vdFiltCli))  return false;
+    return true;
+  });
+}
+
+function vdLimparFiltros(){
+  vdFiltDe=''; vdFiltAte=''; vdFiltVeic=''; vdFiltCli=''; vdPag=1; render();
+}
+
+// So entram no menu os veiculos/clientes que REALMENTE tem venda -- opcao que
+// nao filtra nada so atrapalha quem procura.
+function vdOpcoes(campo, nomeDe, selecionado){
+  var vistos = {}, itens = [];
+  (DB.vendas||[]).forEach(function(v){
+    var id = v[campo];
+    if(id === '' || id == null || vistos[id]) return;
+    vistos[id] = 1;
+    itens.push({ id:id, nome: nomeDe(id) || ('#' + id) });
+  });
+  itens.sort(function(a,b){ return String(a.nome).localeCompare(String(b.nome), 'pt-BR'); });
+  return itens.map(function(it){
+    return '<option value="'+it.id+'"'+(String(selecionado)===String(it.id)?' selected':'')+'>'+it.nome+'</option>';
+  }).join('');
+}
 function render(){
-  const total=DB.vendas.reduce((s,v)=>s+Number(v.valor||0),0);
-    var vdR=DB.vendas.slice().reverse();
-  var _pvd=Math.ceil(vdR.length/PAG_SIZE)||1;if(vdPag>_pvd)vdPag=1;
-  var vdSlice=pagSlice(vdR,vdPag);
-  var pagVD=pagHtml(vdPag,vdR.length,'vdPag--;render()','vdPag++;render()');
+  var fl = filtrarVendas();
+  var total = fl.reduce(function(s,v){ return s + Number(v.valor||0); }, 0);
+  var vdR = fl.slice().reverse();
+  var _pvd = Math.ceil(vdR.length/PAG_SIZE)||1; if(vdPag>_pvd) vdPag=1;
+  var vdSlice = pagSlice(vdR, vdPag);
+  var pagVD = pagHtml(vdPag, vdR.length, 'vdPag--;render()', 'vdPag++;render()');
+
+  // com filtro ligado o subtitulo diz "X de Y", senao o numero engana
+  var sub = vdTemFiltro()
+    ? (fl.length + ' de ' + (DB.vendas||[]).length + ' vendas &bull; Total filtrado: R$ ' + brl(total))
+    : ((DB.vendas||[]).length + ' vendas &bull; Total: R$ ' + brl(total));
+
+  var vazio = (DB.vendas||[]).length === 0
+    ? '<div class="empty"><span class="ei">&#128176;</span>Nenhuma venda registrada</div>'
+    : '<div class="empty"><span class="ei">&#128269;</span>Nenhuma venda encontrada com esses filtros</div>';
+
 document.getElementById('main').innerHTML=
-  '<div class="ph"><div><div class="pt">Vendas</div><div class="ps">'+DB.vendas.length+' vendas &bull; Total: R$ '+brl(total)+'</div></div>'+
+  '<div class="ph"><div><div class="pt">Vendas</div><div class="ps">'+sub+'</div></div>'+
   '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
   '<button class="btn bp" onclick="novaVenda(null)">+ Nova Venda</button>'+
   '<button class="btn bg2" onclick="exportVendas()">&#128229; Exportar CSV</button>'+
   '</div></div>'+
+
+  // FILTROS
+  '<div class="card" style="margin-bottom:16px">'+
+  '<div class="shd">Filtros</div>'+
+  '<div style="display:grid;grid-template-columns:1fr 1fr 1.4fr 1.4fr auto;gap:10px;align-items:end">'+
+  '<div class="fg"><label>De</label><input id="vdfde" type="date" value="'+vdFiltDe+'" oninput="vdFiltDe=this.value;vdPag=1;render()"></div>'+
+  '<div class="fg"><label>Ate</label><input id="vdfate" type="date" value="'+vdFiltAte+'" oninput="vdFiltAte=this.value;vdPag=1;render()"></div>'+
+  '<div class="fg"><label>Veiculo</label>'+
+  '<select id="vdfveic" onchange="vdFiltVeic=this.value;vdPag=1;render()">'+
+  '<option value="">Todos os veiculos</option>'+ vdOpcoes('veiculo_id', vNome, vdFiltVeic) +'</select></div>'+
+  '<div class="fg"><label>Cliente</label>'+
+  '<select id="vdfcli" onchange="vdFiltCli=this.value;vdPag=1;render()">'+
+  '<option value="">Todos os clientes</option>'+ vdOpcoes('cliente_id', cNome, vdFiltCli) +'</select></div>'+
+  '<button class="btn bg2" onclick="vdLimparFiltros()">Limpar</button>'+
+  '</div></div>'+
+
   '<div class="tw"><table><thead><tr><th>Numero</th><th>Data</th><th>Veiculo</th><th>Cliente</th><th>Valor</th><th>Pagamento</th><th>Acoes</th></tr></thead><tbody>'+
-  (DB.vendas.length===0?'<tr><td colspan="7"><div class="empty"><span class="ei">&#128176;</span>Nenhuma venda registrada</div></td></tr>':'')+
+  (vdR.length===0?'<tr><td colspan="7">'+vazio+'</td></tr>':'')+
   vdSlice.map(v=>
     '<tr><td style="font-family:monospace;font-weight:700">'+v.numero+'</td>'+
     '<td style="font-size:12px">'+fd(v.data)+'</td>'+
@@ -588,7 +652,9 @@ function exportVendas(){
     {label:'Permuta Placa',key:'permuta_placa'},
     {label:'Permuta Valor',fn:function(v){return brl(v.permuta_valor);}},
   ];
-  exportCSV(DB.vendas,'vendas-automais-'+Date.now()+'.csv',cols);
+  // exporta o que esta na tela: com filtro ligado, mandar a lista inteira
+  // surpreenderia quem acabou de recortar um periodo
+  exportCSV(filtrarVendas(),'vendas-automais-'+Date.now()+'.csv',cols);
 }
 
 
