@@ -260,7 +260,7 @@ function renderVeic(){
   '<div class="tab active">&#128664; Estoque</div>'+
   '<div class="tab" onclick="vTab=\'placa\';renderPlaca()">&#9524; Placa de Venda</div></div>'+
   '<div class="sb2"><div class="sw"><span class="sico">&#128269;</span>'+
-  '<input value="'+vSrch+'" oninput="vSrch=this.value;vPag=1;renderVeic()" placeholder="Placa, marca ou modelo..."></div>'+
+  '<input value="'+vSrch+'" oninput="vSrch=this.value;vPag=1;comFoco(renderVeic)" placeholder="Placa, marca ou modelo..."></div>'+
   '<select style="width:auto;min-width:130px" onchange="vFilt=this.value;vPag=1;renderVeic()">'+
   ['todos','disponivel','vendido','consignado','manutencao'].map(s=>'<option value="'+s+'" '+(vFilt===s?'selected':'')+'>'+s+'</option>').join('')+
   '</select></div>'+

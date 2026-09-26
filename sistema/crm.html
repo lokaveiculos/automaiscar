@@ -134,7 +134,7 @@ function render(){
 
   // ── Barra de filtros
   html += '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;align-items:center">';
-  html += '<input id="crm-srch" value="'+crmSrch+'" oninput="crmSrch=this.value;render()" placeholder="&#128269; Buscar lead..." style="flex:1;min-width:200px;padding:8px 12px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);color:var(--text)">';
+  html += '<input id="crm-srch" value="'+crmSrch+'" oninput="crmSrch=this.value;comFoco(render)" placeholder="&#128269; Buscar lead..." style="flex:1;min-width:200px;padding:8px 12px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);color:var(--text)">';
   html += '<select onchange="crmFonte=this.value;render()" style="padding:8px 12px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);color:var(--text)"><option value="">Todas as fontes</option>'+FONTES.map(function(f){return '<option value="'+f+'"'+(crmFonte===f?' selected':'')+'>'+iconFonte(f)+' '+f+'</option>';}).join('')+'</select>';
   if(resps.length>0) html += '<select onchange="crmResp=this.value;render()" style="padding:8px 12px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);color:var(--text)"><option value="">Todos resp.</option>'+resps.map(function(r){return '<option value="'+r+'"'+(crmResp===r?' selected':'')+'>'+r+'</option>';}).join('')+'</select>';
   html += '<label style="display:flex;align-items:center;gap:6px;font-size:14px;color:var(--text-muted);cursor:pointer;white-space:nowrap"><input type="checkbox" '+(crmMostrarPerdidos?'checked':'')+' onchange="crmMostrarPerdidos=this.checked;render()"> Mostrar perdidos</label>';

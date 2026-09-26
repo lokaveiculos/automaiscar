@@ -338,3 +338,139 @@ function exportPrint(titulo, colunas, data, subtitle) {
   ].join(''));
   w.document.close();
 }
+
+
+// ── Fornecedores: sugestão ao digitar e cadastro rápido ──────
+// Pedido do Rogel em 26/09/2026. Os campos de fornecedor (despesas) e oficina
+// (manutenção) eram texto livre: dos 25 nomes já digitados, só 2 batiam com
+// os 6 fornecedores cadastrados. Trocar por lista fechada apagaria os outros
+// 23 ao reabrir o lançamento -- por isso é SUGESTÃO, não imposição: o campo
+// continua aceitando nome novo.
+
+function _fornNorm(x){ return String(x||'').trim().toUpperCase().replace(/\s+/g, ' '); }
+
+// Acha o fornecedor cadastrado com esse nome (ignorando caixa e espaço extra)
+function fornPorNome(nome){
+  var k = _fornNorm(nome);
+  if(!k) return null;
+  return (DB.fornecedores||[]).find(function(f){ return _fornNorm(f.nome) === k; }) || null;
+}
+
+// <datalist> para o input sugerir enquanto se digita
+function fornDatalist(id){
+  var itens = (DB.fornecedores||[]).slice().sort(function(a,b){
+    return String(a.nome||'').localeCompare(String(b.nome||''), 'pt-BR');
+  });
+  return '<datalist id="'+id+'">' + itens.map(function(f){
+    return '<option value="' + String(f.nome||'').replace(/"/g, '&quot;') + '">';
+  }).join('') + '</datalist>';
+}
+
+// Painel de cadastro rápido. NÃO usa om()/cm() de propósito: o formulário de
+// despesa/manutenção já é um modal, e o om() troca o conteúdo dele -- abriria
+// por cima e apagaria tudo que a pessoa digitou. Este painel é um overlay
+// próprio, acima do modal, e devolve o foco sem tocar no que está embaixo.
+function novoFornecedorRapido(campoId){
+  var velho = document.getElementById('am-forn-rapido');
+  if(velho) velho.remove();
+
+  var campo = document.getElementById(campoId);
+  var jaDigitado = campo ? String(campo.value||'').trim() : '';
+
+  var p = document.createElement('div');
+  p.id = 'am-forn-rapido';
+  p.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;'+
+    'display:flex;align-items:center;justify-content:center;padding:16px';
+  p.innerHTML =
+    '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;'+
+    'width:420px;max-width:100%;box-shadow:0 20px 48px rgba(0,0,0,.28)">'+
+    '<div style="padding:14px 18px;font-weight:800;font-size:13px;border-bottom:1px solid var(--border)">'+
+    '&#128100; Novo Fornecedor</div>'+
+    '<div style="padding:18px">'+
+    '<div class="fg"><label>Nome *</label>'+
+    '<input id="fr-nome" value="'+jaDigitado.replace(/"/g,'&quot;')+'" placeholder="Oficina, loja, prestador..."></div>'+
+    '<div class="fr" style="margin-top:10px">'+
+    '<div class="fg"><label>Telefone</label>'+
+    '<input id="fr-tel" oninput="this.value=maskPhone(this.value)" placeholder="(75) 99999-9999"></div>'+
+    '<div class="fg"><label>CPF / CNPJ</label>'+
+    '<input id="fr-doc" oninput="this.value=maskCPFCNPJ(this.value)" placeholder="opcional"></div>'+
+    '</div>'+
+    '<p style="font-size:11px;color:var(--t3);margin-top:10px;line-height:1.5">'+
+    'Só o nome é obrigatório aqui. Os demais dados (endereço, banco) podem ser '+
+    'completados depois em Clientes / Fornec.</p>'+
+    '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">'+
+    '<button class="btn bg2" id="fr-cancelar">Cancelar</button>'+
+    '<button class="btn bp" id="fr-salvar">&#10004; Cadastrar</button>'+
+    '</div></div></div>';
+  document.body.appendChild(p);
+
+  var fechar = function(){ p.remove(); };
+  p.addEventListener('click', function(e){ if(e.target === p) fechar(); });
+  document.getElementById('fr-cancelar').onclick = fechar;
+
+  var nomeEl = document.getElementById('fr-nome');
+  if(nomeEl) nomeEl.focus();
+
+  document.getElementById('fr-salvar').onclick = function(){
+    var btn = this;
+    var nome = (document.getElementById('fr-nome')||{value:''}).value.trim();
+    if(!nome){ toast('Informe o nome do fornecedor','err'); return; }
+
+    // Já existe com esse nome? Aproveita em vez de criar duplicata.
+    var ja = fornPorNome(nome);
+    if(ja){
+      if(campo) campo.value = ja.nome;
+      fechar();
+      toast('Esse fornecedor já estava cadastrado — usei o existente','ok');
+      return;
+    }
+
+    if(!DB.fornecedores) DB.fornecedores = [];
+    var obj = {
+      id: nid(DB.fornecedores), nome: nome,
+      cpf: (document.getElementById('fr-doc')||{value:''}).value.trim(),
+      rg: '',
+      telefone: (document.getElementById('fr-tel')||{value:''}).value.trim(),
+      email: '', endereco: '', cidade: '', uf: '',
+      tipo: 'pessoa_juridica', banco: '', agencia: '', conta: '', obs: ''
+    };
+
+    btn.disabled = true; btn.innerHTML = 'Cadastrando...';
+    // só mexe na lista e no campo depois que o banco confirmar
+    fsave('fornecedores', obj, function(err){
+      btn.disabled = false; btn.innerHTML = '&#10004; Cadastrar';
+      if(err){
+        toast('NAO foi cadastrado: ' + (err.message || err.code || 'erro ao gravar'), 'err');
+        return;   // painel fica aberto, nada se perde
+      }
+      DB.fornecedores.push(obj);
+      sDB();
+      if(campo) campo.value = obj.nome;
+      fechar();
+      toast('Fornecedor ' + obj.nome + ' cadastrado', 'ok');
+    });
+  };
+}
+
+
+// ── Redesenhar sem perder o que se está digitando ────────────
+// Os campos de busca chamam um render que troca o #main inteiro. Isso destrói
+// e recria o próprio campo: o cursor se perde e a tecla seguinte não entra em
+// lugar nenhum -- na prática, só dava para digitar UMA letra por vez.
+// comFoco() guarda quem estava focado e onde estava o cursor, redesenha, e
+// devolve os dois. Conserta sem precisar reescrever os render.
+function comFoco(render){
+  var ativo = document.activeElement;
+  var id = ativo && ativo.id;
+  var ini = null, fim = null;
+  // input de data/número não tem selectionStart em todo navegador
+  try { ini = ativo.selectionStart; fim = ativo.selectionEnd; } catch(e){}
+
+  render();
+
+  if(!id) return;
+  var novo = document.getElementById(id);
+  if(!novo || novo === ativo) return;   // o render não recriou o campo
+  try { novo.focus(); } catch(e){}
+  try { if(ini != null && novo.setSelectionRange) novo.setSelectionRange(ini, fim); } catch(e){}
+}

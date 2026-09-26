@@ -260,7 +260,7 @@ function renderCli(){
   '<div class="tabs">'+
   '<div class="tab active">&#128101; Clientes ('+DB.clientes.length+')</div>'+
   '<div class="tab" onclick="cadTab=\'forn\';renderForn()">&#127970; Fornecedores ('+DB.fornecedores.length+')</div></div>'+
-  '<div class="sb2"><div class="sw"><span class="sico">&#128269;</span><input value="'+cSrch+'" oninput="cSrch=this.value;cPag=1;renderCli()" placeholder="Nome, CPF ou telefone..."></div></div>'+
+  '<div class="sb2"><div class="sw"><span class="sico">&#128269;</span><input value="'+cSrch+'" oninput="cSrch=this.value;cPag=1;comFoco(renderCli)" placeholder="Nome, CPF ou telefone..."></div></div>'+
   '<div class="tw"><table><thead><tr><th>Cliente</th><th>CPF</th><th>Telefone</th><th>Cidade/UF</th><th>Acoes</th></tr></thead><tbody>'+
   (fl.length===0?'<tr><td colspan="5"><div class="empty"><span class="ei">&#128101;</span>Nenhum cliente</div></td></tr>':'')+
   fl.map((c,i)=>
@@ -330,7 +330,7 @@ function renderForn(){
   '<div class="tabs">'+
   '<div class="tab" onclick="cadTab=\'clientes\';renderCli()">&#128101; Clientes ('+DB.clientes.length+')</div>'+
   '<div class="tab active">&#127970; Fornecedores ('+DB.fornecedores.length+')</div></div>'+
-  '<div class="sb2"><div class="sw"><span class="sico">&#128269;</span><input value="'+fSrch+'" oninput="fSrch=this.value;fPag=1;renderForn()" placeholder="Nome ou CPF/CNPJ..."></div></div>'+
+  '<div class="sb2"><div class="sw"><span class="sico">&#128269;</span><input value="'+fSrch+'" oninput="fSrch=this.value;fPag=1;comFoco(renderForn)" placeholder="Nome ou CPF/CNPJ..."></div></div>'+
   '<div class="tw"><table><thead><tr><th>Fornecedor</th><th>CPF/CNPJ</th><th>Telefone</th><th>Tipo</th><th>Veiculos</th><th>Acoes</th></tr></thead><tbody>'+
   (fl.length===0?'<tr><td colspan="6"><div class="empty"><span class="ei">&#127970;</span>Nenhum fornecedor</div></td></tr>':'')+
   fl.map(f=>{

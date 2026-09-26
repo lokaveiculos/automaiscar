@@ -316,7 +316,7 @@ function fmMnt(id){
     '<div class="fr">' +
     '<div class="fg"><label>Data</label><input id="mdt" type="date" value="'+m.data+'"></div>' +
     '<div class="fg"><label>Valor (R$)</label><input id="mvl" type="number" value="'+m.valor+'" placeholder="500"></div></div>' +
-    '<div class="fr"><div class="fg full"><label>Oficina / Prestador</label><input id="mof" value="'+(m.oficina||'')+'"></div></div>' +
+    '<div class="fr"><div class="fg full"><label>Oficina / Prestador</label><div style="display:flex;gap:6px"><input id="mof" list="dl-ofic" value="'+(m.oficina||'')+'" style="flex:1"><button type="button" class="btn bg2" onclick="novoFornecedorRapido(\'mof\')" title="Cadastrar fornecedor novo" style="white-space:nowrap">+ Novo</button></div>'+fornDatalist('dl-ofic')+'</div></div>' +
     '<div class="fr"><div class="fg full"><label>Descricao</label><textarea id="mds">'+(m.descricao||'')+'</textarea></div></div>' +
     '<div class="mf"><button class="btn bg2" onclick="cm()">Cancelar</button><button class="btn bp" onclick="svMnt('+(id||'null')+')">Salvar</button></div>'
   );
@@ -638,7 +638,7 @@ function renderMnt(){
   '</div>'+
   tabsHtml('mnt')+
   '<div class="sb2"><div class="sw"><span class="sico">&#128269;</span>'+
-  '<input id="mnt-srch" value="'+(q)+'" oninput="renderMnt()" placeholder="Placa, tipo ou veículo...">'+
+  '<input id="mnt-srch" value="'+(q)+'" oninput="comFoco(renderMnt)" placeholder="Placa, tipo ou veículo...">'+
   '</div></div>'+
   '<div id="mbody">'+buildMntRows(fl)+'</div>';
   renderIcons();

@@ -273,8 +273,8 @@ function renderDesp(){
   '<div class="card" style="margin-bottom:16px">'+
   '<div class="shd">Filtros</div>'+
   '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:10px;align-items:end;flex-wrap:wrap">'+
-  '<div class="fg"><label>De</label><input id="fde" type="date" value="'+dFiltDe+'" oninput="dFiltDe=this.value;dPag=1;renderDesp()"></div>'+
-  '<div class="fg"><label>Ate</label><input id="fate" type="date" value="'+dFiltAte+'" oninput="dFiltAte=this.value;dPag=1;renderDesp()"></div>'+
+  '<div class="fg"><label>De</label><input id="fde" type="date" value="'+dFiltDe+'" oninput="dFiltDe=this.value;dPag=1;comFoco(renderDesp)"></div>'+
+  '<div class="fg"><label>Ate</label><input id="fate" type="date" value="'+dFiltAte+'" oninput="dFiltAte=this.value;dPag=1;comFoco(renderDesp)"></div>'+
   '<div class="fg"><label>Tipo</label>'+
   '<select onchange="dFiltTipo=this.value;dPag=1;renderDesp()" style="padding:8px 10px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);color:var(--text)">'+
   '<option value="">Todos os tipos</option>'+
@@ -286,7 +286,7 @@ function renderDesp(){
   '<select id="fplaca" onchange="dFiltPlaca=this.value;dPag=1;renderDesp()">'+
   '<option value="">Todas as placas</option>'+placasDisp+'</select></div>'+
   '<div class="fg"><label>Busca</label>'+
-  '<input id="fsrch" value="'+dSrch+'" oninput="dSrch=this.value;dPag=1;renderDesp()" placeholder="Fornecedor, descricao..."></div>'+
+  '<input id="fsrch" value="'+dSrch+'" oninput="dSrch=this.value;dPag=1;comFoco(renderDesp)" placeholder="Fornecedor, descricao..."></div>'+
   '<button class="btn bg2" onclick="dSrch=\'\';dFiltDe=\'\';dFiltAte=\'\';dFiltPlaca=\'\';renderDesp()">Limpar</button>'+
   '</div></div>'+
   '<div class="tw"><table>'+
@@ -391,7 +391,7 @@ function fmDesp(id){
     '<input id="dprop" value="'+(d.proprietario||'')+'" placeholder="Nome do propriet\u00e1rio"></div></div>'+
 
     '<div class="fr"><div class="fg full"><label>Fornecedor *</label>'+
-    '<input id="dforn" value="'+(d.fornecedor||'')+'" placeholder="Nome da oficina, loja, prestador..."></div></div>'+
+    '<div style="display:flex;gap:6px">'+'<input id="dforn" list="dl-forn" value="'+(d.fornecedor||'')+'" placeholder="Nome da oficina, loja, prestador..." style="flex:1">'+'<button type="button" class="btn bg2" onclick="novoFornecedorRapido(\'dforn\')" title="Cadastrar fornecedor novo" style="white-space:nowrap">+ Novo</button>'+'</div>'+fornDatalist('dl-forn')+'</div></div>'+
 
     '<div class="fr"><div class="fg full"><label>Descri\u00e7\u00e3o do Servi\u00e7o</label>'+
     '<textarea id="ddesc">'+(d.descricao||'')+'</textarea></div></div>'+

@@ -306,8 +306,8 @@ document.getElementById('main').innerHTML=
   '<div class="card" style="margin-bottom:16px">'+
   '<div class="shd">Filtros</div>'+
   '<div style="display:grid;grid-template-columns:1fr 1fr 1.4fr 1.4fr auto;gap:10px;align-items:end">'+
-  '<div class="fg"><label>De</label><input id="vdfde" type="date" value="'+vdFiltDe+'" oninput="vdFiltDe=this.value;vdPag=1;render()"></div>'+
-  '<div class="fg"><label>Ate</label><input id="vdfate" type="date" value="'+vdFiltAte+'" oninput="vdFiltAte=this.value;vdPag=1;render()"></div>'+
+  '<div class="fg"><label>De</label><input id="vdfde" type="date" value="'+vdFiltDe+'" oninput="vdFiltDe=this.value;vdPag=1;comFoco(render)"></div>'+
+  '<div class="fg"><label>Ate</label><input id="vdfate" type="date" value="'+vdFiltAte+'" oninput="vdFiltAte=this.value;vdPag=1;comFoco(render)"></div>'+
   '<div class="fg"><label>Veiculo</label>'+
   '<select id="vdfveic" onchange="vdFiltVeic=this.value;vdPag=1;render()">'+
   '<option value="">Todos os veiculos</option>'+ vdOpcoes('veiculo_id', vNome, vdFiltVeic) +'</select></div>'+
