@@ -370,6 +370,26 @@ function fornDatalist(id){
 // despesa/manutenção já é um modal, e o om() troca o conteúdo dele -- abriria
 // por cima e apagaria tudo que a pessoa digitou. Este painel é um overlay
 // próprio, acima do modal, e devolve o foco sem tocar no que está embaixo.
+// O campo pode ser <input> (despesas, manutencao) ou <select> (veiculos).
+// Num select nao adianta atribuir o nome: e preciso existir a <option>.
+function _preencherCampoForn(campo, forn){
+  if(!campo || !forn) return;
+  if(String(campo.tagName||'').toUpperCase() === 'SELECT'){
+    var tem = false, i;
+    for(i=0; i<campo.options.length; i++){
+      if(String(campo.options[i].value) === String(forn.id)){ tem = true; break; }
+    }
+    if(!tem && campo.appendChild && document.createElement){
+      var op = document.createElement('option');
+      op.value = forn.id; op.textContent = forn.nome;
+      campo.appendChild(op);
+    }
+    campo.value = String(forn.id);
+  } else {
+    campo.value = forn.nome;
+  }
+}
+
 function novoFornecedorRapido(campoId){
   var velho = document.getElementById('am-forn-rapido');
   if(velho) velho.remove();
@@ -419,7 +439,7 @@ function novoFornecedorRapido(campoId){
     // Já existe com esse nome? Aproveita em vez de criar duplicata.
     var ja = fornPorNome(nome);
     if(ja){
-      if(campo) campo.value = ja.nome;
+      _preencherCampoForn(campo, ja);
       fechar();
       toast('Esse fornecedor já estava cadastrado — usei o existente','ok');
       return;
@@ -445,7 +465,7 @@ function novoFornecedorRapido(campoId){
       }
       DB.fornecedores.push(obj);
       sDB();
-      if(campo) campo.value = obj.nome;
+      _preencherCampoForn(campo, obj);
       fechar();
       toast('Fornecedor ' + obj.nome + ' cadastrado', 'ok');
     });

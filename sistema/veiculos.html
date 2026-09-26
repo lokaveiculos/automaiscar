@@ -271,7 +271,8 @@ function renderVeic(){
     '<div style="font-size:11px;color:var(--t3)">'+v.cor+' &bull; '+v.combustivel+'</div></td>'+
     '<td><div style="font-family:monospace;font-weight:700">'+v.placa+'</div><div style="font-size:10px;color:var(--t3)">'+(v.chassi||'-')+'</div></td>'+
     '<td><span style="font-weight:700">'+(v.ano_modelo?v.ano+'/'+v.ano_modelo:v.ano)+'</span><div style="font-size:11px;color:var(--t3)">'+Number(v.km||0).toLocaleString('pt-BR')+' km</div></td>'+
-    '<td>'+(v.tipo_est==='consignado'?'<span class="badge bg-y">Consig.</span><div style="font-size:11px;color:var(--t3);margin-top:2px">'+(fNome(v.proprietario_id)||'-')+'</div>':'<span class="badge bg-gr">Proprio</span>')+'</td>'+
+    '<td>'+(v.tipo_est==='consignado'?'<span class="badge bg-y">Consig.</span>':'<span class="badge bg-gr">Proprio</span>')+
+    (v.proprietario_id?'<div style="font-size:11px;color:var(--t3);margin-top:2px">'+(fNome(v.proprietario_id)||'-')+'</div>':'')+'</td>'+
     '<td style="font-weight:800;color:var(--accent)">R$ '+brl(v.preco)+'</td>'+
     '<td>'+sbV(v.status)+'</td>'+
     '<td><div class="acts">'+
@@ -349,11 +350,14 @@ function fmVeic(id){
   ['Flex','Gasolina','Diesel','Eletrico','Hibrido','GNV'].map(c=>'<option '+(v.combustivel===c?'selected':'')+'>'+c+'</option>').join('')+'</select></div></div>'+
   '<div class="fr"><div class="fg"><label>KM</label><input id="vkm" value="'+v.km+'" type="number"></div><div class="fg"><label>Preco (R$) *</label><input id="vpreco" value="'+v.preco+'" type="number"></div></div>'+
   '<div class="fr"><div class="fg"><label>Chassi</label><input id="vchassi" value="'+(v.chassi||'')+'" style="font-family:monospace"></div><div class="fg"><label>RENAVAM</label><input id="vren" value="'+(v.renavam||'')+'" style="font-family:monospace"></div></div>'+
-  '<div class="fr"><div class="fg"><label>Tipo Estoque</label><select id="vtipo" onchange="document.getElementById(\'ff\').style.display=this.value===\'consignado\'?\'\':\'none\'">'+
+  '<div class="fr"><div class="fg"><label>Tipo Estoque</label><select id="vtipo" onchange="document.getElementById(\'lbl-forn\').textContent=this.value===\'consignado\'?\'Proprietario (consignante)\':\'Fornecedor (de quem compramos)\'">'+
   '<option value="proprio" '+(v.tipo_est==='proprio'?'selected':'')+'>Estoque Proprio</option>'+
   '<option value="consignado" '+(v.tipo_est==='consignado'?'selected':'')+'>Consignado</option></select></div>'+
-  '<div class="fg" id="ff" style="'+(v.tipo_est!=='consignado'?'display:none':'')+'"><label>Proprietario</label>'+
-  '<select id="vforn"><option value="">Selecione...</option>'+fOpts+'</select></div></div>'+
+  '<div class="fg" id="ff"><label id="lbl-forn">'+(v.tipo_est==='consignado'?'Proprietario (consignante)':'Fornecedor (de quem compramos)')+'</label>'+
+  '<div style="display:flex;gap:6px">'+
+  '<select id="vforn" style="flex:1"><option value="">Selecione...</option>'+fOpts+'</select>'+
+  '<button type="button" class="btn bg2" onclick="novoFornecedorRapido(\'vforn\')" title="Cadastrar fornecedor novo" style="white-space:nowrap">+ Novo</button>'+
+  '</div></div></div>'+
   '<div class="fr">'+
   '<div class="fg"><label>Valor de Compra - Custo (R$)</label><input id="vcusto" type="number" value="'+(v.valor_compra||'')+'" placeholder="Ex: 75000"></div>'+
   '<div class="fg"><label>Data de Entrada no Estoque</label><input id="vdentrada" type="date" value="'+(v.data_entrada||hoje)+'"></div></div>'+
@@ -390,7 +394,10 @@ function svVeic(id){
     fipe:document.getElementById('vfipe').value,
     status:document.getElementById('vs').value,
     tipo_est:te,
-    proprietario_id:te==='consignado'?Number(document.getElementById('vforn').value)||'':'',
+    // Antes so gravava quando consignado: em estoque proprio a informacao de
+    // quem vendeu o carro para a loja era jogada fora. Agora vale para os dois.
+    // Quem diz de quem e o carro e o tipo_est, nao este campo estar vazio.
+    proprietario_id:Number(document.getElementById('vforn').value)||'',
     chassi:document.getElementById('vchassi').value,
     renavam:document.getElementById('vren').value,
     combustivel:document.getElementById('vcomb').value,

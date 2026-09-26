@@ -543,7 +543,10 @@ function _despesaDeManutencao(m){
     tipo: DESP_TIPO_MANUT,
     data: m.data || '',
     fornecedor: m.oficina || 'Oficina nao informada',
-    proprietario: v.proprietario_id ? (fNome(v.proprietario_id) || '') : '',
+    // So consignado tem proprietario de fora: em carro proprio o dono e a loja,
+    // e o proprietario_id passou a guardar de QUEM COMPRAMOS. Mesma regra que o
+    // despesas.html ja usa no preenchimento automatico.
+    proprietario: (v.tipo_est === 'consignado' && v.proprietario_id) ? (fNome(v.proprietario_id) || '') : '',
     veiculo: (v.marca || '') + (v.modelo ? ' ' + v.modelo : ''),
     placa: m.placa || v.placa || '',
     valor: m.valor,
