@@ -90,17 +90,17 @@ function badgeRetorno(dt){
 // ── Filtro de leads ───────────────────────────────────────────
 function filtrarLeads(){
   var leads = Array.isArray(DB.leads) ? DB.leads : [];
-  var q = crmSrch.toLowerCase();
+  var q = semAcento(crmSrch);
   return leads.filter(function(l){
     if(!crmMostrarPerdidos && l.status==='perdido') return false;
     if(crmStatus && etapaIdDoLead(l)!==crmStatus) return false;
     if(crmFonte  && l.fonte!==crmFonte)   return false;
     if(crmResp   && l.responsavel!==crmResp) return false;
     if(!q) return true;
-    return (l.nome||'').toLowerCase().includes(q)||
+    return semAcento((l.nome||'')).includes(q)||
            (l.telefone||'').includes(q)||
-           (l.veiculo_interesse||'').toLowerCase().includes(q)||
-           (l.observacoes||'').toLowerCase().includes(q);
+           semAcento((l.veiculo_interesse||'')).includes(q)||
+           semAcento((l.observacoes||'')).includes(q);
   });
 }
 

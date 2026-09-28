@@ -241,7 +241,7 @@ function impWin(html_content, titulo){
 
 var ctSrch='', ctPag=1;
 function render(){
-  const fl=DB.contratos.filter(c=>{const m=ctSrch.toLowerCase();return !m||c.numero.toLowerCase().includes(m)||(cNome(c.cliente_id)||'').toLowerCase().includes(m)||(fNome(c.fornecedor_id)||'').toLowerCase().includes(m);});
+  const fl=DB.contratos.filter(c=>{const m=semAcento(ctSrch);return !m||semAcento(c.numero).includes(m)||semAcento((cNome(c.cliente_id)||'')).includes(m)||semAcento((fNome(c.fornecedor_id)||'')).includes(m);});
   const tl={venda:'Compra e Venda',compra:'Compra',consignacao:'Consignacao'};
     var flR=fl.slice().reverse();
   var _pct=Math.ceil(flR.length/PAG_SIZE)||1;if(ctPag>_pct)ctPag=1;

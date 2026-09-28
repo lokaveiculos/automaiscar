@@ -248,7 +248,7 @@ checkAuth(function() {
 function renderTab(){ cadTab==='forn'?renderForn():renderCli(); }
 
 function renderCli(){
-  const fl=DB.clientes.filter(c=>{const m=cSrch.toLowerCase();return !m||c.nome.toLowerCase().includes(m)||c.cpf.includes(m)||c.telefone.includes(m);});
+  const fl=DB.clientes.filter(c=>{const m=semAcento(cSrch);return !m||semAcento(c.nome).includes(m)||c.cpf.includes(m)||c.telefone.includes(m);});
   const cols=['rgba(249,115,22,.15)','rgba(34,197,94,.12)','rgba(59,130,246,.12)','rgba(245,158,11,.12)'];
   const tc=['var(--accent)','var(--ok)','var(--info)','var(--warn)'];
     var _pcli=Math.ceil(fl.length/PAG_SIZE)||1;if(cPag>_pcli)cPag=1;
@@ -320,7 +320,7 @@ function dlCli(id){
 }
 
 function renderForn(){
-  const fl=DB.fornecedores.filter(f=>{const m=fSrch.toLowerCase();return !m||f.nome.toLowerCase().includes(m)||f.cpf.includes(m);});
+  const fl=DB.fornecedores.filter(f=>{const m=semAcento(fSrch);return !m||semAcento(f.nome).includes(m)||f.cpf.includes(m);});
     var _pforn=Math.ceil(fl.length/PAG_SIZE)||1;if(fPag>_pforn)fPag=1;
   var flFornP=pagSlice(fl,fPag);
   var pagForn=pagHtml(fPag,fl.length,'fPag--;renderForn()','fPag++;renderForn()');

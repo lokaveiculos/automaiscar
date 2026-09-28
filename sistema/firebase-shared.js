@@ -17,6 +17,17 @@ var COLS = ['veiculos','clientes','fornecedores','contratos',
             'vendas','manutencoes','usuarios','despesas','leads'];
 
 // ── Cache local ──────────────────────────────────────────────
+// ── BUSCA SEM ACENTO ──────────────────────────────────────────
+// "João" e "Joao" têm de se encontrar. NFD separa a letra do acento, e o
+// intervalo \u0300-\u036f apaga só os acentos, sem tocar nas letras.
+// Precisa valer nos DOIS lados da comparação: no que foi digitado e no que
+// está gravado. Não usar em login, perfil nem chave — ali o texto é
+// identidade, e ignorar acento faria dois cadastros distintos virarem um.
+function semAcento(s) {
+  s = String(s === null || s === undefined ? '' : s);
+  return (s.normalize ? s.normalize('NFD').replace(/[\u0300-\u036f]/g, '') : s).toLowerCase();
+}
+
 function loadDB(){
   try {
     var raw = localStorage.getItem(CACHE_KEY);

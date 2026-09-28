@@ -248,7 +248,7 @@ checkAuth(function() {
 function renderTab(){ vTab==='placa'?renderPlaca():renderVeic(); }
 
 function renderVeic(){
-  const fl=DB.veiculos.filter(v=>{const m=vSrch.toLowerCase();return(!m||v.placa.toLowerCase().includes(m)||v.marca.toLowerCase().includes(m)||v.modelo.toLowerCase().includes(m))&&(vFilt==='todos'||v.status===vFilt);});
+  const fl=DB.veiculos.filter(v=>{const m=semAcento(vSrch);return(!m||semAcento(v.placa).includes(m)||semAcento(v.marca).includes(m)||semAcento(v.modelo).includes(m))&&(vFilt==='todos'||v.status===vFilt);});
   var _pv=Math.ceil(fl.length/PAG_SIZE)||1;if(vPag>_pv)vPag=1;var flPag=pagSlice(fl,vPag);var pagV=pagHtml(vPag,fl.length,'vPag--;renderVeic()','vPag++;renderVeic()');
   document.getElementById('main').innerHTML=
   '<div class="ph"><div><div class="pt">Veiculos</div><div class="ps">'+DB.veiculos.length+' cadastrados</div></div>'+

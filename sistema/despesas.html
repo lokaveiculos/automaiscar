@@ -321,10 +321,10 @@ function renderDesp(){
 
 function filtrarDespesas(){
   return (DB.despesas||[]).filter(function(d){
-    var q = dSrch.toLowerCase();
-    var matchSrch = !q || (d.fornecedor||'').toLowerCase().includes(q) ||
-                    (d.descricao||'').toLowerCase().includes(q) ||
-                    (d.proprietario||'').toLowerCase().includes(q);
+    var q = semAcento(dSrch);
+    var matchSrch = !q || semAcento((d.fornecedor||'')).includes(q) ||
+                    semAcento((d.descricao||'')).includes(q) ||
+                    semAcento((d.proprietario||'')).includes(q);
     var matchPlaca = !dFiltPlaca || d.placa===dFiltPlaca;
     var dTipo = (d.tipo||'Operacional');
     var matchTipo = !dFiltTipo || dTipo.toLowerCase()===dFiltTipo.toLowerCase();

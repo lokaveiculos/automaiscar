@@ -323,7 +323,7 @@ function buscaGlobal(q){
   var el = document.getElementById('buscaResultados');
   if(!el) return;
   if(!q||q.length<2){el.innerHTML='';return;}
-  var q2=q.toLowerCase().trim();
+  var q2=semAcento(q).trim();
 
   function hl(txt2){
     if(!txt2)return'-';
@@ -346,28 +346,28 @@ function buscaGlobal(q){
 
   // Veículos
   var rV = DB.veiculos.filter(function(v){
-    return v.placa.toLowerCase().includes(q2)||v.marca.toLowerCase().includes(q2)||
-           v.modelo.toLowerCase().includes(q2)||(v.chassi||'').toLowerCase().includes(q2);
+    return semAcento(v.placa).includes(q2)||semAcento(v.marca).includes(q2)||
+           semAcento(v.modelo).includes(q2)||semAcento((v.chassi||'')).includes(q2);
   });
   // Clientes
   var rC = DB.clientes.filter(function(c){
-    return c.nome.toLowerCase().includes(q2)||c.cpf.includes(q2)||(c.telefone||'').includes(q2);
+    return semAcento(c.nome).includes(q2)||c.cpf.includes(q2)||(c.telefone||'').includes(q2);
   });
   // Contratos
   var rCt = DB.contratos.filter(function(c){
-    return c.numero.toLowerCase().includes(q2)||(cNome(c.cliente_id)||'').toLowerCase().includes(q2)||(fNome(c.fornecedor_id)||'').toLowerCase().includes(q2);
+    return semAcento(c.numero).includes(q2)||semAcento((cNome(c.cliente_id)||'')).includes(q2)||semAcento((fNome(c.fornecedor_id)||'')).includes(q2);
   });
   // Fornecedores
   var rF = DB.fornecedores.filter(function(f){
-    return f.nome.toLowerCase().includes(q2)||f.cpf.includes(q2);
+    return semAcento(f.nome).includes(q2)||f.cpf.includes(q2);
   });
   // Manutenções
   var rM = DB.manutencoes.filter(function(m){
-    return vNome(m.veiculo_id).toLowerCase().includes(q2)||(m.tipo||'').toLowerCase().includes(q2)||(m.oficina||'').toLowerCase().includes(q2);
+    return semAcento(vNome(m.veiculo_id)).includes(q2)||semAcento((m.tipo||'')).includes(q2)||semAcento((m.oficina||'')).includes(q2);
   });
   // Despesas
   var rD = (DB.despesas||[]).filter(function(d){
-    return (d.placa||'').toLowerCase().includes(q2)||(d.fornecedor||'').toLowerCase().includes(q2)||(d.descricao||'').toLowerCase().includes(q2);
+    return semAcento((d.placa||'')).includes(q2)||semAcento((d.fornecedor||'')).includes(q2)||semAcento((d.descricao||'')).includes(q2);
   });
 
   var totalRes = rV.length+rC.length+rCt.length+rF.length+rM.length+rD.length;

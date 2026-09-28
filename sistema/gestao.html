@@ -291,7 +291,7 @@ function buildMntRows(list){
 
 function filtMnt(q){
   var fl = q
-    ? DB.manutencoes.filter(function(m){ return vNome(m.veiculo_id).toLowerCase().includes(q.toLowerCase())||m.tipo.toLowerCase().includes(q.toLowerCase()); })
+    ? DB.manutencoes.filter(function(m){ return semAcento(vNome(m.veiculo_id)).includes(semAcento(q))||semAcento(m.tipo).includes(semAcento(q)); })
     : DB.manutencoes;
   var el = document.getElementById('mbody');
   if(el) el.innerHTML = buildMntRows(fl);
@@ -626,9 +626,9 @@ function dlMnt(id){
 // ── RELATORIOS ──────────────────────────────────────────────────
 function renderMnt(){
   var srch=document.getElementById('mnt-srch');
-  var q=(srch?srch.value:'').toLowerCase();
+  var q=semAcento((srch?srch.value:''));
   var fl=q?DB.manutencoes.filter(function(m){
-    return (m.placa||'').toLowerCase().includes(q)||(m.tipo||'').toLowerCase().includes(q)||vNome(m.veiculo_id).toLowerCase().includes(q);
+    return semAcento((m.placa||'')).includes(q)||semAcento((m.tipo||'')).includes(q)||semAcento(vNome(m.veiculo_id)).includes(q);
   }):DB.manutencoes;
   var tot=fl.reduce(function(s,m){return s+Number(m.valor||0);},0);
   document.getElementById('main').innerHTML=
