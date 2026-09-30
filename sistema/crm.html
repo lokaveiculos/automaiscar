@@ -177,6 +177,37 @@ function metricCard(label, val, cor, sub){
   '</div>';
 }
 
+// Mensagem de WhatsApp do lead. O texto acompanha a ETAPA: abordar quem
+// acabou de chegar é diferente de retomar quem já está negociando.
+// Quem envia continua sendo a pessoa -- o WhatsApp abre com o texto pronto
+// e ela confere antes de mandar.
+function waMsgLead(l){
+  var quem  = waPrimeiroNome(l.nome);
+  var loja  = waEmpresa();
+  var carro = String(l.veiculo_interesse || '').trim();
+  var etapa = etapaIdDoLead(l);
+
+  var ola = 'Olá' + (quem ? ', ' + quem : '') + '!';
+  var eu  = loja ? ('Aqui é da ' + loja + '.') : '';
+
+  var corpo;
+  if(etapa === 'ganho'){
+    corpo = carro
+      ? ('Obrigado pela confiança na compra do ' + carro + '! Qualquer dúvida, é só chamar.')
+      : 'Obrigado pela confiança! Qualquer dúvida, é só chamar.';
+  } else if(etapa === 'negociacao' || etapa === 'proposta'){
+    corpo = carro
+      ? ('Passando para retomar nossa conversa sobre o ' + carro + '. Posso te ajudar a fechar?')
+      : 'Passando para retomar nossa conversa. Posso te ajudar a fechar?';
+  } else {
+    corpo = carro
+      ? ('Vi seu interesse no ' + carro + '. Posso te passar mais informações?')
+      : 'Recebemos seu contato. Posso te ajudar a encontrar o carro certo?';
+  }
+
+  return waTexto([ola, eu, '', corpo]);
+}
+
 function cardLead(l){
   var et = etapa(l.status);
   var diasR = diasAte(l.data_retorno);
@@ -206,8 +237,8 @@ function cardLead(l){
     html += '<button class="btn bg2 bsm" onclick="moverEtapa('+l.id+','+(idx-1)+')" title="Recuar">&#9664;</button>';
   if(idx<ETAPAS.length-2)
     html += '<button class="btn bp bsm" onclick="moverEtapa('+l.id+','+(idx+1)+')" title="Avançar" style="background:'+ETAPAS[idx+1].cor+'">&#9654;</button>';
-  if(l.telefone)
-    html += '<a href="https://wa.me/55'+l.telefone.replace(/\D/g,'')+'" target="_blank" class="btn bsm" style="background:#25d366;color:#fff;text-decoration:none">&#128172;</a>';
+  if(waLink(l.telefone))
+    html += '<a href="'+waLink(l.telefone, waMsgLead(l))+'" target="_blank" class="btn bsm" style="background:#25d366;color:#fff;text-decoration:none">&#128172;</a>';
   html += '<button class="btn bd bsm" onclick="dlLead('+l.id+')" title="Excluir">&#128465;</button>';
   html += '</div>';
   html += '</div>';

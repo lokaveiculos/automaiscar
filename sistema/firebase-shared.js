@@ -505,3 +505,72 @@ function comFoco(render){
   try { novo.focus(); } catch(e){}
   try { if(ini != null && novo.setSelectionRange) novo.setSelectionRange(ini, fim); } catch(e){}
 }
+
+
+// ── WhatsApp: abrir a conversa com a mensagem já escrita ─────
+// Pedido do Rogel em 30/09/2026. O sistema já abria o WhatsApp em 5 pontos,
+// mas sempre com a conversa EM BRANCO -- a pessoa digitava tudo de novo.
+// O endereço wa.me aceita ?text=, então dá para entregar a mensagem pronta
+// com os dados que já estão no banco. Sem servidor, sem API, sem custo.
+// Quem envia continua sendo a pessoa: o WhatsApp abre com o texto e ela
+// confere (e edita, se quiser) antes de mandar.
+
+var WA_DDI = '55';
+
+// Número no formato que o WhatsApp espera: DDI + DDD + número, só dígitos.
+function waNumero(tel){
+  var d = String(tel == null ? '' : tel).replace(/\D/g, '');
+  if(!d) return '';
+  // já veio com o DDI (alguém digitou +55) -- não repetir
+  if(d.length > 11 && d.indexOf(WA_DDI) === 0) d = d.slice(WA_DDI.length);
+  // sem DDD não dá para discar; melhor não abrir do que abrir errado
+  if(d.length < 10 || d.length > 11) return '';
+  return WA_DDI + d;
+}
+
+// "João Carlos da Silva" -> "João". Tratar a pessoa pelo primeiro nome soa
+// melhor do que despejar o nome completo do cadastro.
+function waPrimeiroNome(nome){
+  var n = String(nome == null ? '' : nome).trim().split(/\s+/)[0] || '';
+  if(!n) return '';
+  return n.charAt(0).toUpperCase() + n.slice(1).toLowerCase();
+}
+
+// Como a empresa se apresenta. O cadastro guarda a razão social inteira
+// ("AUTO MAIS COMERCIO E CORRETORA DE VEICULOS LTDA"), que não se usa numa
+// conversa. Pega as duas primeiras palavras -- e respeita nome_curto se
+// alguém cadastrar, para não depender do palpite.
+function waEmpresa(){
+  var e = (typeof DB !== 'undefined' && DB.empresa) || {};
+  if(e.nome_curto) return String(e.nome_curto);
+  var partes = String(e.nome || '').trim().split(/\s+/).filter(Boolean).slice(0, 2);
+  if(!partes.length) return '';
+  return partes.map(function(x){
+    return x.charAt(0).toUpperCase() + x.slice(1).toLowerCase();
+  }).join(' ');
+}
+
+// Endereço da conversa. Devolve '' quando o número não serve, para quem
+// chama poder esconder o botão em vez de abrir um link quebrado.
+function waLink(tel, msg){
+  var n = waNumero(tel);
+  if(!n) return '';
+  return 'https://wa.me/' + n + (msg ? ('?text=' + encodeURIComponent(msg)) : '');
+}
+
+// Junta as linhas da mensagem. Uma entrada vazia e SEPARADOR DE PARAGRAFO,
+// nao um buraco: campo em branco no cadastro nao pode virar linha solta no
+// meio do texto, mas a linha em branco que pedimos de proposito entre a
+// saudacao e o assunto tem de sobreviver. Por isso corrida de vazios vira
+// UMA linha em branco, e as das pontas caem fora.
+function waTexto(linhas){
+  var fora = [], vazio = false;
+  (linhas || []).forEach(function(l){
+    var txt = (l == null ? "" : String(l)).trim();
+    if(!txt){ vazio = true; return; }         // guarda, decide no proximo cheio
+    if(vazio && fora.length) fora.push("");  // so separa o que tem texto dos dois lados
+    vazio = false;
+    fora.push(txt);
+  });
+  return fora.join("\n");
+}
