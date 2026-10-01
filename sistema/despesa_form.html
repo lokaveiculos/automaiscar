@@ -161,7 +161,12 @@ function salvar(){
     data:         data,
     fornecedor:   forn,
     proprietario: document.getElementById('dprop').value,
-    veiculo:      document.getElementById('dveic').value,
+    // Mesmo caso do despesas.html: o <option> tem value=placa.
+    veiculo:      (function(){
+                    var p = (document.getElementById('dveic')||{}).value || '';
+                    var v = (DB.veiculos||[]).find(function(x){ return x && x.placa===p; });
+                    return v ? ((v.marca||'')+' '+(v.modelo||'')).trim() : '';
+                  })(),
     placa:        document.getElementById('dplaca').value.toUpperCase(),
     valor:        valor,
     descricao:    document.getElementById('ddesc').value,

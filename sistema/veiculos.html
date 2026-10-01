@@ -507,7 +507,8 @@ function exportEstoque(){
     {label:'Marca',key:'marca'},
     {label:'Modelo',key:'modelo'},
     {label:'Versao',key:'versao'},
-    {label:'Ano',key:'ano'},
+    {label:'Ano Fab.',key:'ano'},
+    {label:'Ano Modelo',fn:function(v){return v.ano_modelo||v.ano||'';}},
     {label:'Cor',key:'cor'},
     {label:'KM',key:'km'},
     {label:'Cambio',key:'cambio'},
@@ -517,7 +518,7 @@ function exportEstoque(){
     {label:'Valor Compra',fn:function(v){return brl(v.valor_compra);}},
     {label:'FIPE',fn:function(v){return brl(v.fipe);}},
     {label:'Status',key:'status'},
-    {label:'Tipo Estoque',key:'tipo_est'},
+    {label:'Estoque',fn:function(v){return v.tipo_est==='consignado'?'Consignado':'Proprio';}},
     {label:'Data Entrada',fn:function(v){return fd(v.data_entrada);}},
     {label:'Chassi',key:'chassi'},
     {label:'RENAVAM',key:'renavam'},
@@ -530,7 +531,14 @@ function exportEstoque(){
     exportPrint(
       'Relatorio de Estoque',
       [{label:'Placa',key:'placa'},{label:'Veiculo',fn:function(v){return v.marca+' '+v.modelo+' '+( v.versao||'');}},
-       {label:'Ano',key:'ano'},{label:'KM',fn:function(v){return Number(v.km||0).toLocaleString('pt-BR')+' km';}},
+       {label:'Ano',fn:function(v){
+          // Fabricacao/modelo. Quando sao iguais, repetir "2017/2017" so
+          // polui — mostra um ano so.
+          var f=v.ano||'', m=v.ano_modelo||f;
+          return (f&&m&&String(f)!==String(m)) ? f+'/'+m : (f||m||'');
+       }},
+       {label:'Estoque',fn:function(v){return v.tipo_est==='consignado'?'Consignado':'Proprio';}},
+       {label:'KM',fn:function(v){return Number(v.km||0).toLocaleString('pt-BR')+' km';}},
        {label:'Cambio',key:'cambio'},{label:'Combustivel',key:'combustivel'},
        {label:'Preco',fn:function(v){return 'R$ '+brl(v.preco);}},
        {label:'Status',key:'status'}],

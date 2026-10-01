@@ -334,11 +334,27 @@ function filtrarDespesas(){
   });
 }
 
+// O campo `veiculo` da despesa guardou a PLACA durante muito tempo: o <option>
+// do seletor tinha value=placa e svDesp copiava esse value direto. Por isso o
+// relatorio mostrava a placa na coluna que promete o nome.
+// Resolver pelo cadastro conserta tambem o que ja esta gravado, sem migrar nada.
+function _nplDesp(p){ return String(p||'').toUpperCase().replace(/[^A-Z0-9]/g,''); }
+function nomeVeicDesp(d){
+  if(!d) return '';
+  var alvo = _nplDesp(d.placa || d.veiculo);
+  var cad = alvo ? (DB.veiculos||[]).find(function(v){ return v && _nplDesp(v.placa)===alvo; }) : null;
+  if(cad) return ((cad.marca||'')+' '+(cad.modelo||'')).trim()+(cad.versao?' '+cad.versao:'');
+  var t = String(d.veiculo||'').trim();
+  // So a placa, e o carro nao esta mais cadastrado: devolver vazio e mais
+  // honesto do que repetir a placa numa coluna que promete o nome.
+  return (t && _nplDesp(t)!==_nplDesp(d.placa)) ? t : '';
+}
+
 function resumoPorVeiculo(fl){
   var map = {};
   fl.forEach(function(d){
     var key = d.placa||'Sem placa';
-    if(!map[key]) map[key]={placa:key,veiculo:d.veiculo||'-',total:0,qtd:0};
+    if(!map[key]) map[key]={placa:key,veiculo:nomeVeicDesp(d)||'-',total:0,qtd:0};
     map[key].total += Number(d.valor||0);
     map[key].qtd++;
   });
@@ -430,7 +446,13 @@ function svDesp(id){
     data:     data,
     fornecedor: forn,
     proprietario: document.getElementById('dprop').value,
-    veiculo:  document.getElementById('dveic').value,
+    // O <option> tem value=placa; gravar esse value fazia a coluna
+    // "Veiculo" repetir a placa. Grava o nome do cadastro.
+    veiculo:  (function(){
+                var p = (document.getElementById('dveic')||{}).value || '';
+                var v = (DB.veiculos||[]).find(function(x){ return x && x.placa===p; });
+                return v ? ((v.marca||'')+' '+(v.modelo||'')).trim() : '';
+              })(),
     placa:    document.getElementById('dplaca').value.toUpperCase(),
     valor:    valor,
     descricao: document.getElementById('ddesc').value,
@@ -454,7 +476,7 @@ function exportDespesas(){
     {label:'Data',fn:function(d){return fd(d.data);}},
     {label:'Fornecedor',key:'fornecedor'},
     {label:'Proprietario',key:'proprietario'},
-    {label:'Veiculo',key:'veiculo'},
+    {label:'Veiculo',fn:function(d){return nomeVeicDesp(d)||'-';}},
     {label:'Placa',key:'placa'},
     {label:'Valor',fn:function(d){return brl(d.valor);}},
     {label:'Descricao',key:'descricao'},
