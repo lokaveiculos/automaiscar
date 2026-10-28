@@ -574,3 +574,20 @@ function waTexto(linhas){
   });
   return fora.join("\n");
 }
+
+
+// ── Ano do veiculo para exibir ────────────────────────────────
+// Pedido do Rogel em 28/10/2026: no Painel, mostrar o ANO MODELO.
+// E o ano que se usa para anunciar e negociar o carro -- em 23 dos 43
+// veiculos ele e diferente do de fabricacao, entao a tela mostrava um ano
+// menor do que o comercial.
+// Cai no ano de fabricacao quando o modelo nao esta cadastrado (ha 1 caso),
+// e devolve '' quando nao ha nenhum dos dois -- nunca "undefined" na tela.
+// ⚠️ Isto NAO substitui o par "fab/modelo" da tela de Veiculos e do
+// relatorio, que mostram os dois de proposito.
+function anoModeloVeic(v){
+  v = v || {};
+  var m = String(v.ano_modelo == null ? '' : v.ano_modelo).trim();
+  if(m) return m;
+  return String(v.ano == null ? '' : v.ano).trim();
+}
