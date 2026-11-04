@@ -269,7 +269,7 @@ function renderCli(){
     '<div><div style="font-weight:700">'+c.nome+'</div><div style="font-size:11px;color:var(--t3)">'+(c.email||'-')+'</div></div></div></td>'+
     '<td style="font-family:monospace">'+c.cpf+'</td><td>'+c.telefone+'</td>'+
     '<td style="font-size:12px;color:var(--t3)">'+(c.cidade||'-')+(c.uf?' / '+c.uf:'')+'</td>'+
-    '<td><div class="acts"><button class="btn bg2 bsm" onclick="fmCli('+c.id+')">&#9999;</button>'+(isAdmin()?'<button class="btn bd bsm" onclick="dlCli('+c.id+')">&#128465;</button>':'')+' </div></td></tr>'
+    '<td><div class="acts"><button class="btn bg2 bsm" onclick="fmCli('+c.id+')">&#9999;</button>'+_cliBotaoForn(c)+(isAdmin()?'<button class="btn bd bsm" onclick="dlCli('+c.id+')">&#128465;</button>':'')+' </div></td></tr>'
   ).join('')+
   '</tbody></table>'+pagCli+'</div>';
 }
@@ -290,7 +290,7 @@ function fmCli(id){
   '<div class="fr"><div class="fg"><label>Cidade</label><input id="ccid" value="'+(c.cidade||'')+'"></div>'+
   '<div class="fg"><label>UF</label><input id="cuf" value="'+(c.uf||'BA')+'" maxlength="2" style="text-transform:uppercase"></div></div>'+
   '<div class="fr"><div class="fg full"><label>Observacoes</label><textarea id="cobs">'+(c.obs||'')+'</textarea></div></div>'+
-  '<div class="mf"><button class="btn bg2" onclick="cm()">Cancelar</button><button class="btn bp" onclick="svCli('+(id||'null')+')">Salvar</button></div>');
+  '<div class="mf">'+(id?'<button class="btn bg2" onclick="cliTornarForn('+id+')" title="Usar estes dados para cadastrar o mesmo nome como fornecedor">&#127970; Tornar fornecedor</button>':'')+'<button class="btn bg2" onclick="cm()">Cancelar</button><button class="btn bp" onclick="svCli('+(id||'null')+')">Salvar</button></div>');
 }
 function svCli(id){
   const nome=document.getElementById('cn').value.trim(),cpf=document.getElementById('ccpf').value.trim(),tel=document.getElementById('ctel').value.trim();
@@ -343,9 +343,9 @@ function renderForn(){
   }).join('')+
   '</tbody></table>'+pagForn+'</div>';
 }
-function fmForn(id){
-  const f=id?DB.fornecedores.find(x=>x.id==id):{nome:'',cpf:'',rg:'',telefone:'',email:'',endereco:'',cidade:'',uf:'BA',cep:'',tipo:'pessoa_fisica',banco:'',agencia:'',conta:'',obs:''};
-  om('<div class="mt2"><span>'+(id?'Editar':'Novo Fornecedor / Consignante')+'</span><button class="btn bg2 bsm" onclick="cm()">X</button></div>'+
+function fmForn(id,pre){
+  const f=id?DB.fornecedores.find(x=>x.id==id):pre||{nome:'',cpf:'',rg:'',telefone:'',email:'',endereco:'',cidade:'',uf:'BA',cep:'',tipo:'pessoa_fisica',banco:'',agencia:'',conta:'',obs:''};
+  om('<div class="mt2"><span>'+(id?'Editar':(pre?'Novo Fornecedor (dados do cliente)':'Novo Fornecedor / Consignante'))+'</span><button class="btn bg2 bsm" onclick="cm()">X</button></div>'+
   '<div class="fr"><div class="fg"><label>Tipo</label><select id="ftp"><option value="pessoa_fisica" '+(f.tipo==='pessoa_fisica'?'selected':'')+'>Pessoa Fisica</option><option value="pessoa_juridica" '+(f.tipo==='pessoa_juridica'?'selected':'')+'>Pessoa Juridica</option></select></div>'+
   '<div class="fg"><label>Nome / Razao Social *</label><input id="fn" value="'+f.nome+'"></div></div>'+
   '<div class="fr"><div class="fg"><label>CPF / CNPJ *</label><input id="fcpf" value="'+f.cpf+'" placeholder="000.000.000-00" oninput="this.value=maskCPFCNPJ(this.value)"></div>'+
@@ -363,9 +363,102 @@ function fmForn(id){
   '<div class="fr"><div class="fg full"><label>Observacoes</label><textarea id="fobs">'+(f.obs||'')+'</textarea></div></div>'+
   '<div class="mf"><button class="btn bg2" onclick="cm()">Cancelar</button><button class="btn bp" onclick="svForn('+(id||'null')+')">Salvar</button></div>');
 }
+// ── Cliente que tambem e fornecedor ─────────────────────────────
+// A loja compra o carro de quem ja vendeu. Os dois cadastros guardam 9
+// campos em comum (nome, documento, RG, telefone, email, endereco, cidade,
+// UF e observacoes), entao o que faltava era aproveitar.
+
+// So os digitos do documento: o cliente pode estar com mascara e o
+// fornecedor sem (ou o contrario).
+function _soDig(v){ return String(v == null ? "" : v).replace(/\D/g, ""); }
+
+// Fornecedor que JA existe com o mesmo documento. E a trava contra
+// duplicata: o svForn nunca conferiu documento repetido (o svCli confere).
+function _fornMesmoDoc(doc, ignorarId){
+  var d = _soDig(doc);
+  if(!d) return null;
+  var achados = (DB.fornecedores || []).filter(function(f){
+    return f && _soDig(f.cpf) === d && f.id != ignorarId;
+  });
+  return achados.length ? achados[0] : null;
+}
+
+// Mesmo nome, documento diferente ou ausente. Isto AVISA, nao bloqueia:
+// nome se repete, e 7 dos 14 fornecedores estao sem documento nenhum
+// (vieram do cadastro rapido), entao nunca casariam por documento.
+function _fornMesmoNome(nome){
+  var n = semAcento(nome);
+  if(!n) return null;
+  var achados = (DB.fornecedores || []).filter(function(f){
+    return f && semAcento(f.nome) === n;
+  });
+  return achados.length ? achados[0] : null;
+}
+
+// Rascunho de fornecedor a partir do cliente. NAO grava -- quem grava e o
+// svForn, depois de a pessoa conferir.
+// O tipo e DERIVADO da contagem de digitos, e isso foi conferido nos 14
+// fornecedores reais: todo documento de 11 digitos esta como pessoa fisica,
+// todo de 14 como juridica, sem uma excecao.
+// Os campos que so o cliente tem (nascimento, CEP, estado civil, profissao)
+// nao vao: o fornecedor nao os guarda. Os dados bancarios nascem vazios --
+// o cliente nao os tem, e nao se inventa conta de ninguem.
+function _fornDeCliente(c){
+  c = c || {};
+  return {
+    nome: c.nome || "",
+    cpf: c.cpf || "",
+    rg: c.rg || "",
+    telefone: c.telefone || "",
+    email: c.email || "",
+    endereco: c.endereco || "",
+    cidade: c.cidade || "",
+    uf: c.uf || "BA",
+    tipo: _soDig(c.cpf).length === 14 ? "pessoa_juridica" : "pessoa_fisica",
+    banco: "", agencia: "", conta: "",
+    obs: c.obs || ""
+  };
+}
+
+// Abre o formulario de fornecedor JA preenchido com o cliente.
+// Nao grava sozinho de proposito: o tipo e um palpite (bom, mas palpite) e
+// os dados bancarios -- que existem justamente para repassar o pagamento do
+// carro -- so quem esta comprando sabe.
+function cliTornarForn(id){
+  var c = (DB.clientes || []).find(function(x){ return x.id == id; });
+  if(!c){ toast("Cliente nao encontrado", "err"); return; }
+
+  var ja = _fornMesmoDoc(c.cpf);
+  if(ja){
+    if(confirm(c.nome + " ja esta cadastrado como fornecedor (" + ja.nome + ")." +
+               "\n\nAbrir esse fornecedor para conferir os dados?")) fmForn(ja.id);
+    return;
+  }
+
+  var mesmoNome = _fornMesmoNome(c.nome);
+  if(mesmoNome && !confirm("Ja existe um fornecedor com o nome " + mesmoNome.nome +
+      " (documento " + (mesmoNome.cpf || "nao informado") + ")." +
+      "\n\nCadastrar " + c.nome + " como fornecedor assim mesmo?")) return;
+
+  fmForn(null, _fornDeCliente(c));
+}
+
+// Selo quando o cliente JA e fornecedor (e atalho para abri-lo), ou o botao
+// que cria. Sem isso a pessoa clicaria sem saber que ja existe.
+function _cliBotaoForn(c){
+  var ja = _fornMesmoDoc(c && c.cpf);
+  if(ja) return '<button class="btn bg2 bsm" onclick="fmForn(' + ja.id +
+    ')" title="Ja cadastrado como fornecedor - abrir">&#127970;&#10003;</button>';
+  return '<button class="btn bg2 bsm" onclick="cliTornarForn(' + c.id +
+    ')" title="Cadastrar como fornecedor (compra de veiculo)">&#127970;+</button>';
+}
 function svForn(id){
   const nome=document.getElementById('fn').value.trim(),cpf=document.getElementById('fcpf').value.trim(),tel=document.getElementById('ftel').value.trim();
   if(!nome||!cpf||!tel){toast('Preencha Nome, CPF e Telefone','err');return;}
+  // o svCli ja conferia documento repetido; aqui nao conferia, e o atalho do
+  // cliente deixaria duplicar facil
+  var dupDoc=_fornMesmoDoc(cpf,id);
+  if(dupDoc&&!confirm('Ja existe um fornecedor com o documento '+cpf+' ('+dupDoc.nome+').\n\nDeseja continuar mesmo assim?')) return;
   const obj={id:id||nid(DB.fornecedores),nome,cpf,rg:document.getElementById('frg').value,telefone:tel,email:document.getElementById('femail').value,endereco:document.getElementById('fend').value,cidade:document.getElementById('fcid').value,uf:document.getElementById('fuf').value.toUpperCase(),tipo:document.getElementById('ftp').value,banco:document.getElementById('fbco').value,agencia:document.getElementById('fag').value,conta:document.getElementById('fcc').value,obs:document.getElementById('fobs').value};
   if(id)DB.fornecedores=DB.fornecedores.map(f=>f.id==id?obj:f);else DB.fornecedores.push(obj);
   sDB();fsave("fornecedores",obj);cm();renderForn();
