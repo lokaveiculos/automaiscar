@@ -358,8 +358,7 @@ function fmForn(id,pre){
   '<div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;font-weight:700;padding:10px 0 6px">Dados Bancarios (para repasse)</div>'+
   '<div class="fr"><div class="fg"><label>Banco</label><input id="fbco" value="'+(f.banco||'')+'"></div>'+
   '<div class="fg"><label>Agencia</label><input id="fag" value="'+(f.agencia||'')+'"></div></div>'+
-  '<div class="fr"><div class="fg"><label>Conta</label><input id="fcc" value="'+(f.conta||'')+'"></div>'+
-  '<div class="fg"><label>Tipo</label><select id="ftcc"><option>Corrente</option><option>Poupanca</option></select></div></div>'+
+  '<div class="fr"><div class="fg full"><label>Conta</label><input id="fcc" value="'+(f.conta||'')+'"></div></div>'+
   '<div class="fr"><div class="fg full"><label>Observacoes</label><textarea id="fobs">'+(f.obs||'')+'</textarea></div></div>'+
   '<div class="mf"><button class="btn bg2" onclick="cm()">Cancelar</button><button class="btn bp" onclick="svForn('+(id||'null')+')">Salvar</button></div>');
 }
