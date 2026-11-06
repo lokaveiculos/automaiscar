@@ -333,9 +333,15 @@ function fmCt(id){
   '<div class="fg"><label>Status</label><select id="cts">'+['ativo','assinado','cancelado','concluido'].map(s=>'<option value="'+s+'" '+(c.status===s?'selected':'')+'>'+s+'</option>').join('')+'</select></div></div>'+
   '<div id="f_cli" style="'+(c.tipo==='consignacao'?'display:none':'')+'"><div class="fr"><div class="fg full"><label>Cliente</label><select id="ctcli">'+optsCli+'</select></div></div></div>'+
   '<div id="f_forn" style="'+(c.tipo!=='consignacao'&&c.tipo!=='compra'?'display:none':'')+'"><div class="fr"><div class="fg full"><label>Fornecedor / Proprietario</label><select id="ctforn">'+optsForn+'</select></div></div></div>'+
-  '<div class="fr"><div class="fg full"><label>Veiculo</label><select id="ctv">'+optsVeic+'</select></div></div>'+
+  '<div class="fr"><div class="fg full"><label>Veiculo</label>'+
+  '<div style="display:flex;gap:8px">'+
+  '<input id="ctvPlaca" style="flex:0 0 150px" placeholder="Digite a placa" oninput="ctvPorPlaca()" autocomplete="off">'+
+  '<select id="ctv" style="flex:1;min-width:0" onchange="ctvPlacaLimpar()">'+optsVeic+'</select>'+
+  '</div>'+
+  '<span id="ctvAviso" style="font-size:12px;display:block;min-height:16px"></span>'+
+  '</div></div>'+
   '<div class="fr"><div class="fg"><label>Valor (R$)</label><input id="ctval" type="number" value="'+c.valor+'" placeholder="85000"></div>'+
-  '<div class="fg"><label>Pagamento</label><select id="ctpag">'+['A vista','Financiamento','Consorcio','Entrada + Parcelas'].map(p=>'<option '+(c.pagamento===p?'selected':'')+'>'+p+'</option>').join('')+'</select></div></div>'+
+  '<div class="fg"><label>Pagamento</label><select id="ctpag">'+pagamentoOpts(c.pagamento)+'</select></div></div>'+
   '<div id="f_vex" style="'+(c.tipo!=='venda'?'display:none':'')+'">'+
   '<div class="fr"><div class="fg"><label>Entrada (R$)</label><input id="ctent" type="number" value="'+(c.entrada||'')+'"></div>'+
   '<div class="fg"><label>Financeira</label><input id="ctfin" value="'+(c.financeira||'')+'"></div></div>'+
@@ -382,6 +388,91 @@ function _gravarTudo(itens, cb){
 function _numeroVenda(numeroContrato){
   var n = String(numeroContrato || '');
   return n.indexOf('CV') >= 0 ? n.replace('CV', 'VD') : ('VD-' + n);
+}
+
+// ── Digitar a placa para escolher o veiculo ───────────────────────────────
+// Pedido do Rogel em 06/11/2026. O <select id="ctv"> continua sendo a FONTE
+// DA VERDADE (o svCt le o veiculo_id dele); a caixa e um atalho de busca.
+// Assim nada muda na gravacao, e a lista segue disponivel para quem prefere
+// escolher com o mouse.
+//
+// 🔴 Os candidatos sao as opcoes do PROPRIO seletor, nunca uma lista
+// paralela: buscando em DB.veiculos direto, uma placa visivel na lista
+// poderia "nao existir" na busca (ou o contrario) e ninguem entenderia.
+//
+// ⚠️ Ignora hifen e caixa de proposito: das 46 placas cadastradas, 20 estao
+// gravadas COM hifen (PLF-0254) e 26 SEM (OLF1I86). Comparar o texto cru
+// deixaria metade da frota inalcancavel pela digitacao.
+function _ctvNorm(p) {
+  return String(p == null ? '' : p).toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+
+// cada <option> do seletor com a sua placa. A placa vem do cadastro (pelo id
+// da opcao); o texto da opcao e só reserva, porque depende de a placa ser a
+// ultima palavra do rotulo.
+function _ctvOpcoes() {
+  var sel = document.getElementById('ctv');
+  if (!sel) return [];
+  var fora = [];
+  for (var i = 0; i < sel.options.length; i++) {
+    var o = sel.options[i];
+    if (!o.value) continue;   // o "Selecione..."
+    var v = ((typeof DB !== 'undefined' && DB && DB.veiculos) || []).find(function (x) {
+      return x && String(x.id) === String(o.value);
+    });
+    var placa = v ? _ctvNorm(v.placa) : '';
+    if (!placa) {
+      var partes = String(o.text || '').trim().split(/\s+/);
+      placa = _ctvNorm(partes[partes.length - 1]);
+    }
+    fora.push({ valor: o.value, texto: o.text, placa: placa });
+  }
+  return fora;
+}
+
+function _ctvAvisar(txt, cor) {
+  var el = document.getElementById('ctvAviso');
+  if (!el) return;
+  el.textContent = txt || '';
+  el.style.color = cor || 'var(--text-muted)';
+}
+
+// o seletor mexido a mao manda: a caixa para de opinar.
+// (mudar sel.value por codigo NAO dispara onchange, entao a digitacao nao
+// apaga o proprio aviso)
+function ctvPlacaLimpar() {
+  var cx = document.getElementById('ctvPlaca');
+  if (cx) cx.value = '';
+  _ctvAvisar('');
+}
+
+function ctvPorPlaca() {
+  var cx = document.getElementById('ctvPlaca');
+  var sel = document.getElementById('ctv');
+  if (!cx || !sel) return;
+  var q = _ctvNorm(cx.value);
+  if (!q) { _ctvAvisar(''); return; }
+
+  var ops = _ctvOpcoes();
+  var exatas = ops.filter(function (o) { return o.placa === q; });
+  var achadas = exatas.length ? exatas
+    : ops.filter(function (o) { return o.placa.indexOf(q) === 0; });
+  // quem digita o fim da placa tambem e atendido
+  if (!achadas.length) achadas = ops.filter(function (o) { return o.placa.indexOf(q) >= 0; });
+
+  if (achadas.length === 1) {
+    sel.value = achadas[0].valor;
+    _ctvAvisar('\u2713 ' + achadas[0].texto, 'var(--success)');
+    return;
+  }
+  // 🔴 Nada e selecionado quando ha duvida, e a escolha de antes NAO e
+  // apagada: um caractere errado no meio da digitacao nao pode descartar o
+  // veiculo que ja estava escolhido.
+  if (achadas.length > 1) {
+    _ctvAvisar(achadas.length + ' veiculos com essa placa -- escolha na lista ao lado');
+  } else {
+    _ctvAvisar('Nenhum veiculo com a placa ' + q, 'var(--danger)');
+  }
 }
 
 function svCt(id){

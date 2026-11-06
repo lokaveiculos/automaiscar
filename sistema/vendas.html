@@ -352,7 +352,7 @@ function novaVenda(preVid){
   '<div class="fr"><div class="fg"><label>Valor de Venda (R$) *</label><input id="vdval" type="number" value="'+(vPre?vPre.preco:'')+'" placeholder="85000"></div>'+
   '<div class="fg"><label>Entrada (R$)</label><input id="vdent" type="number" placeholder="0"></div></div>'+
   '<div class="fr"><div class="fg"><label>Forma de Pagamento</label><select id="vdpag">'+
-  ['A vista','Financiamento','Consorcio','Permuta','Entrada + Parcelas'].map(p=>'<option>'+p+'</option>').join('')+'</select></div>'+
+  pagamentoOpts()+'</select></div>'+
   '<div class="fg"><label>Financeira / Banco</label><input id="vdfin" placeholder="(se houver)"></div></div>'+
   '<div class="fr"><div class="fg"><label>N. Parcelas</label><input id="vdnp" type="number" placeholder="0"></div>'+
   '<div class="fg"><label>Valor da Parcela</label><input id="vdvp" type="number" placeholder="0"></div></div>'+

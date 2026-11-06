@@ -576,6 +576,39 @@ function waTexto(linhas){
 }
 
 
+// ── Formas de pagamento ─────────────────────────────────────────────────
+// UMA lista para as duas telas que gravam pagamento. Antes eram duas:
+//   contratos.html -> A vista, Financiamento, Consorcio, Entrada + Parcelas
+//   vendas.html    -> as mesmas + "Permuta"
+// E as duas gravam o registro uma da outra (svCt grava a venda, svVenda grava
+// o contrato). Entao uma venda registrada como Permuta, reaberta no Contratos,
+// caia na PRIMEIRA opcao e era sobrescrita como "A vista" nos DOIS registros,
+// sem avisar. Mesma familia do bug do select de Fonte do CRM (15/09/2026).
+// "Troca por outro veiculo" e o nome pedido pelo Rogel em 06/11/2026; ele
+// substitui "Permuta" -- duas opcoes para a mesma coisa dividiriam o dado em
+// dois valores e os relatorios nunca mais fechariam.
+// Sem acento, como o resto do vocabulario gravado ("Consorcio", "Veiculo").
+var AM_PAGAMENTOS = [
+  'A vista',
+  'Financiamento',
+  'Consorcio',
+  'Entrada + Parcelas',
+  'Troca por outro veiculo'
+];
+
+// Monta as <option>, marcando a atual.
+// 🔴 Valor que a lista NAO conhece e PRESERVADO como opcao extra, nunca
+// descartado: e o que impede o select de trocar calado o pagamento de um
+// registro antigo (p.ex. "Permuta") pela primeira opcao da lista.
+function pagamentoOpts(atual) {
+  var lista = AM_PAGAMENTOS.slice();
+  var a = String(atual == null ? '' : atual).trim();
+  if (a && lista.indexOf(a) < 0) lista.push(a);
+  return lista.map(function (p) {
+    return '<option' + (p === a ? ' selected' : '') + '>' + p + '</option>';
+  }).join('');
+}
+
 // ── Ano do veiculo para exibir ────────────────────────────────
 // Pedido do Rogel em 28/10/2026: no Painel, mostrar o ANO MODELO.
 // E o ano que se usa para anunciar e negociar o carro -- em 23 dos 43
