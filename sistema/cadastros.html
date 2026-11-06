@@ -107,6 +107,8 @@ function applyProfile() {
     document.querySelectorAll('[data-admin-only]').forEach(function(el){
       el.style.display = 'none';
     });
+    // esconde do menu as telas que o perfil nao alcanca (vive no shared)
+    if (typeof amAplicarTelas === 'function') amAplicarTelas();
   }
 }
 
@@ -171,7 +173,11 @@ var DB=loadDB();
 function sDB(){try{localStorage.setItem(SK,JSON.stringify(DB));}catch(e){}}
 function brl(v){return Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function fd(d){if(!d)return'-';try{return new Date(d+'T12:00').toLocaleDateString('pt-BR');}catch(e){return d;}}
-function nid(a){return a.length?Math.max(...a.map(x=>x.id))+1:1;}
+// 🔴 Number(x.id)||0 NAO e enfeite: sem ele, um id de TEXTO na lista (o do
+// rogel e "u1787759746817") faz Math.max devolver NaN, e o registro novo
+// nasce com id NaN -- foi assim que o usuario "daniel" ficou impossivel de
+// editar. Medido em 06/11/2026 com os ids reais.
+function nid(a){return (a&&a.length)?Math.max.apply(null,a.map(function(x){return Number(x&&x.id)||0;}))+1:1;}
 function ini(n){return(n||'?').split(' ').slice(0,2).map(p=>p[0]).join('').toUpperCase();}
 function vNome(id){const v=DB.veiculos.find(x=>x.id==id);return v?v.marca+' '+v.modelo+' '+v.placa:'';}
 function vObj(id){return DB.veiculos.find(x=>x.id==id)||{};}
@@ -269,7 +275,7 @@ function renderCli(){
     '<div><div style="font-weight:700">'+c.nome+'</div><div style="font-size:11px;color:var(--t3)">'+(c.email||'-')+'</div></div></div></td>'+
     '<td style="font-family:monospace">'+c.cpf+'</td><td>'+c.telefone+'</td>'+
     '<td style="font-size:12px;color:var(--t3)">'+(c.cidade||'-')+(c.uf?' / '+c.uf:'')+'</td>'+
-    '<td><div class="acts"><button class="btn bg2 bsm" onclick="fmCli('+c.id+')">&#9999;</button>'+_cliBotaoForn(c)+(isAdmin()?'<button class="btn bd bsm" onclick="dlCli('+c.id+')">&#128465;</button>':'')+' </div></td></tr>'
+    '<td><div class="acts"><button class="btn bg2 bsm" onclick="fmCli('+c.id+')">&#9999;</button>'+_cliBotaoForn(c)+(podeAcao('excluir')?'<button class="btn bd bsm" onclick="dlCli('+c.id+')">&#128465;</button>':'')+' </div></td></tr>'
   ).join('')+
   '</tbody></table>'+pagCli+'</div>';
 }

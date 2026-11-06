@@ -104,6 +104,57 @@ function showError(){
   document.getElementById('pwd').focus();
 }
 
+// ── SENHA COM HASH (SHA-256 + salt) ───────────────────────────────────
+// ⚠️ O separador '|' e o formato que gerou o senhaHash que ja esta no banco
+// (commit 5352cff, 26/08/2026). Trocar o separador invalidaria essa senha.
+// Esta copia vive aqui de proposito: o login.html NAO carrega o
+// firebase-shared.js (ele inicializa o Firebase sozinho no fim do arquivo).
+function _amTemCrypto(){
+  return !!(window.crypto && window.crypto.subtle &&
+            window.crypto.subtle.digest && window.TextEncoder);
+}
+function _amHex(buf){
+  return Array.prototype.map.call(new Uint8Array(buf), function(b){
+    return ('0'+b.toString(16)).slice(-2);
+  }).join('');
+}
+function _amNovoSalt(){
+  var a = new Uint8Array(16);
+  window.crypto.getRandomValues(a);
+  return Array.prototype.map.call(a, function(b){ return ('0'+b.toString(16)).slice(-2); }).join('');
+}
+async function _amHashSenha(senha, salt){
+  var dados = new TextEncoder().encode(String(salt) + '|' + String(senha));
+  return _amHex(await window.crypto.subtle.digest('SHA-256', dados));
+}
+
+// 🔴 HASH PRIMEIRO. Se o registro tem hash, a resposta e a do hash e ponto:
+// um registro que ficou com os dois (migracao que gravou o hash e nao apagou
+// o texto) tem de RECUSAR a senha antiga.
+async function _amConfere(reg, digitada){
+  if (!reg) return false;
+  if (reg.senhaHash && reg.salt) {
+    if (!_amTemCrypto()) return false;
+    try { return (await _amHashSenha(digitada, reg.salt)) === reg.senhaHash; }
+    catch(e) { return false; }
+  }
+  // legado: texto puro
+  return !!reg.senha && reg.senha === digitada;
+}
+
+// Converte o registro legado para hash no primeiro acerto, e apaga o texto.
+// Falhar aqui NAO pode barrar o login: a pessoa acertou a senha.
+async function _amMigrar(docId, reg, digitada){
+  if (!docId || !reg || reg.senhaHash || !reg.senha) return;
+  if (!_amTemCrypto()) return;
+  try {
+    var salt = _amNovoSalt();
+    var h = await _amHashSenha(digitada, salt);
+    await firebase.firestore().collection('usuarios').doc(String(docId))
+      .update({ senhaHash: h, salt: salt, senha: null });
+    console.info('[login] senha de '+(reg.login||docId)+' convertida para hash');
+  } catch(e) { console.warn('[login] nao consegui converter a senha:', e && e.message); }
+}
 function doLoginSuccess(user){
   localStorage.setItem('am_user',JSON.stringify({login:user.login,nome:user.nome,perfil:user.perfil,_ts:Date.now()}));
   window.location.href='index.html';
@@ -126,9 +177,12 @@ async function doLogin(){
       if(raw){
         var db=JSON.parse(raw);
         var dbUsers=db.usuarios||[];
-        found=dbUsers.find(function(x){
-          return x.login===u && x.senha===p && x.status!=='inativo';
-        });
+        // o cache pode ter hash: compara pelo mesmo criterio do Firestore
+        for (var ci=0; ci<dbUsers.length; ci++){
+          var cu = dbUsers[ci];
+          if (!cu || cu.login!==u || cu.status==='inativo') continue;
+          if (await _amConfere(cu, p)) { found = cu; break; }
+        }
       }
     }catch(e){}
   }
@@ -142,10 +196,17 @@ async function doLogin(){
         .where('status','==','ativo')
         .get();
       if(!snap.empty){
-        snap.docs.forEach(function(doc){
-          var d=doc.data();
-          if(!found && d.senha===p) found=d;
-        });
+        for (var di=0; di<snap.docs.length; di++){
+          var doc = snap.docs[di];
+          var d = doc.data();
+          if (await _amConfere(d, p)) {
+            found = d;
+            // registro legado: converte agora. Nao esperamos o resultado
+            // para nao atrasar a entrada, e falhar aqui nao barra o login.
+            _amMigrar(doc.id, d, p);
+            break;
+          }
+        }
       }
     }catch(e){
       console.warn('[login] Firestore indisponível:',e.message);

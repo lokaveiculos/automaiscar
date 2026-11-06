@@ -36,12 +36,13 @@ function loadDB(){
       // Garantir que todos os arrays existem
       COLS.forEach(function(c){ if(!parsed[c]) parsed[c]=[]; });
       if(!parsed.empresa) parsed.empresa={};
+      if(!parsed.perfis)  parsed.perfis={};
       return parsed;
     }
   } catch(e) {}
   return {
     veiculos:[],clientes:[],fornecedores:[],contratos:[],
-    vendas:[],manutencoes:[], leads:[],usuarios:[],despesas:[],empresa:{},
+    vendas:[],manutencoes:[], leads:[],usuarios:[],despesas:[],empresa:{},perfis:{},
     config: {}
   };
 }
@@ -71,8 +72,15 @@ async function loadFromFirestore(){
       .then(function(snap){ if(snap.exists) DB.empresa = snap.data(); })
       .catch(function(){});
 
+    // Perfis de acesso (telas + funcoes). Falhar aqui NAO pode travar nada:
+    // sem perfis salvos o sistema cai nos padroes, que reproduzem o
+    // comportamento de antes desta mudanca.
+    var perfPromise = fdb.collection('config').doc('perfis').get()
+      .then(function(snap){ if(snap.exists) DB.perfis = snap.data(); })
+      .catch(function(){});
+
     // Aguardar TUDO de uma vez (não sequencial!)
-    await Promise.all([...colPromises, empPromise]);
+    await Promise.all([...colPromises, empPromise, perfPromise]);
 
     sDB(); // salvar cache
     return true;
@@ -116,6 +124,139 @@ function checkAuth(onOk){
   onOk(user);
 }
 
+// ── PERFIS DE ACESSO: telas + funcoes ───────────────────────────────────
+// Modelo da LOKA (loka_perfis), adaptado. Guardado em config/perfis -- ver o
+// comentario do loadFromFirestore sobre por que nao e uma colecao propria.
+//
+// 🔴 Os PADROES abaixo reproduzem exatamente o que o sistema fazia antes:
+// admin alcanca tudo; atendimento ve as 8 telas do menu (nenhuma tinha
+// data-admin-only) e nao tem nenhuma funcao. Enquanto ninguem editar um
+// perfil, nada muda de acesso para ninguem.
+var AM_CURINGA = '*';
+
+// as 8 telas do menu, na ordem em que aparecem
+var AM_TELA_LABEL = {
+  painel:'Painel', vendas:'Vendas', crm:'CRM / Leads', contratos:'Contratos',
+  veiculos:'Veiculos', cadastros:'Clientes/Fornecedores', despesas:'Despesas',
+  gestao:'Manutencao / Gestao'
+};
+var AM_TELAS = Object.keys(AM_TELA_LABEL);
+
+// arquivo -> tela. O menu de cada pagina aponta para estes arquivos, entao o
+// applyProfile resolve a tela pelo href e NAO e preciso marcar as 10 paginas.
+var AM_TELA_POR_ARQ = {
+  'index.html':'painel', 'vendas.html':'vendas', 'crm.html':'crm',
+  'contratos.html':'contratos', 'veiculos.html':'veiculos',
+  'cadastros.html':'cadastros', 'despesas.html':'despesas', 'gestao.html':'gestao'
+};
+
+// as funcoes sao as que o sistema JA controlava com isAdmin() -- nenhuma foi
+// inventada. Funcao que nao controla nada seria promessa falsa na tela.
+var AM_ACAO_LABEL = {
+  excluir:   'Excluir registros',
+  exportar:  'Exportar relatorio e CSV',
+  relatorio: 'Ver a aba Relatorios',
+  usuarios:  'Gerenciar usuarios e perfis',
+  config:    'Configuracoes da empresa'
+};
+var AM_ACOES = Object.keys(AM_ACAO_LABEL);
+
+var AM_PERFIS_PADRAO = {
+  admin:       { nome:'Administrador', telas:[AM_CURINGA], acoes:{ '*':true } },
+  atendimento: { nome:'Atendimento',   telas:AM_TELAS.slice(), acoes:{} }
+};
+
+// Os padroes, com o que estiver salvo por cima. Nunca estoura: banco fora do
+// ar ou perfis corrompidos caem no padrao.
+function amPerfisDef(){
+  var d = {};
+  Object.keys(AM_PERFIS_PADRAO).forEach(function(k){
+    d[k] = { nome: AM_PERFIS_PADRAO[k].nome,
+             telas: AM_PERFIS_PADRAO[k].telas.slice(),
+             acoes: Object.assign({}, AM_PERFIS_PADRAO[k].acoes),
+             padrao: true };
+  });
+  var sal = (typeof DB !== 'undefined' && DB && DB.perfis) ? DB.perfis : null;
+  if (sal && typeof sal === 'object') {
+    Object.keys(sal).forEach(function(k){
+      var p = sal[k];
+      if (!p || typeof p !== 'object') return;
+      d[k] = { nome:  p.nome || (d[k] && d[k].nome) || k,
+               telas: Array.isArray(p.telas) ? p.telas.slice() : [],
+               acoes: (p.acoes && typeof p.acoes === 'object') ? Object.assign({}, p.acoes) : {},
+               padrao: false };
+    });
+  }
+  return d;
+}
+
+function perfilDef(chave){
+  var d = amPerfisDef();
+  return d[String(chave || '')] || d.atendimento ||
+         { nome:String(chave||''), telas:[], acoes:{} };
+}
+
+// 🔴 isAdmin() e PISO nas duas: quem e admin nunca se tranca para fora por
+// ter salvo um perfil errado. Foi a licao de 15/10/2026 na LOKA -- defeito
+// que barra quem tem acesso legitimo e pior do que o que ele conserta.
+function podeTela(t){
+  if (isAdmin()) return true;
+  var tl = perfilDef((getSession()||{}).perfil).telas || [];
+  if (tl.indexOf(AM_CURINGA) >= 0) return true;
+  return tl.indexOf(t) >= 0;
+}
+function podeAcao(a){
+  if (isAdmin()) return true;
+  var ac = perfilDef((getSession()||{}).perfil).acoes || {};
+  if (ac[AM_CURINGA]) return true;
+  return !!ac[a];
+}
+
+// grava config/perfis. Nao passa pelo fsave porque este nao e um registro de
+// colecao com id -- e um documento fixo, como o config/empresa.
+function amSalvarPerfis(obj, cb){
+  fdb.collection('config').doc('perfis').set(obj)
+    .then(function(){ if(cb) cb(null); })
+    .catch(function(e){ console.error('[amSalvarPerfis]', e); if(cb) cb(e); });
+}
+
+// ── SENHA COM HASH (SHA-256 + salt) ─────────────────────────────────────
+// ⚠️ O separador '|' NAO e escolha: e o formato que gerou o senhaHash que ja
+// esta no banco (login.html do commit 5352cff, 26/08/2026). Trocar por outro
+// caractere invalidaria a senha de quem ja tem hash.
+function amTemCrypto(){
+  return !!(window.crypto && window.crypto.subtle &&
+            window.crypto.subtle.digest && window.TextEncoder);
+}
+function amNovoSalt(){
+  var a = new Uint8Array(16);
+  window.crypto.getRandomValues(a);
+  return Array.prototype.map.call(a, function(b){ return ('0'+b.toString(16)).slice(-2); }).join('');
+}
+function amHashSenha(senha, salt){
+  var dados = new TextEncoder().encode(String(salt) + '|' + String(senha));
+  return window.crypto.subtle.digest('SHA-256', dados).then(function(buf){
+    return Array.prototype.map.call(new Uint8Array(buf), function(b){
+      return ('0'+b.toString(16)).slice(-2);
+    }).join('');
+  });
+}
+
+// Esconde do menu as telas que o perfil nao alcanca.
+// 🔴 Vive separado porque CADA PAGINA declara o proprio applyProfile(), que
+// sombreia o daqui -- os locais chamam esta funcao. Sem isso a parte do menu
+// seria codigo morto.
+function amAplicarTelas(){
+  try {
+    if (isAdmin()) return;   // piso: admin nunca perde item de menu
+    document.querySelectorAll('a[href]').forEach(function(el){
+      var arq = String(el.getAttribute('href')||'').split('#')[0].split('/').pop();
+      var t = AM_TELA_POR_ARQ[arq];
+      if (t && !podeTela(t)) el.style.display = 'none';
+    });
+  } catch(e) { /* nunca deixa a pagina sem menu por causa disto */ }
+}
+
 function applyProfile(){
   if (!isAdmin()) {
     document.querySelectorAll('[data-admin-only]').forEach(function(el){
@@ -124,6 +265,7 @@ function applyProfile(){
     document.querySelectorAll('.admin-nav').forEach(function(el){
       el.style.display = 'none';
     });
+    amAplicarTelas();
   }
 }
 

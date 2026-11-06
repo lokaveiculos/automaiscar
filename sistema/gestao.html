@@ -107,6 +107,8 @@ function applyProfile() {
     document.querySelectorAll('[data-admin-only]').forEach(function(el){
       el.style.display = 'none';
     });
+    // esconde do menu as telas que o perfil nao alcanca (vive no shared)
+    if (typeof amAplicarTelas === 'function') amAplicarTelas();
   }
 }
 
@@ -170,7 +172,11 @@ var DB=loadDB();
 function sDB(){try{localStorage.setItem(SK,JSON.stringify(DB));}catch(e){}}
 function brl(v){return Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function fd(d){if(!d)return'-';try{return new Date(d+'T12:00').toLocaleDateString('pt-BR');}catch(e){return d;}}
-function nid(a){return a.length?Math.max(...a.map(x=>x.id))+1:1;}
+// 🔴 Number(x.id)||0 NAO e enfeite: sem ele, um id de TEXTO na lista (o do
+// rogel e "u1787759746817") faz Math.max devolver NaN, e o registro novo
+// nasce com id NaN -- foi assim que o usuario "daniel" ficou impossivel de
+// editar. Medido em 06/11/2026 com os ids reais.
+function nid(a){return (a&&a.length)?Math.max.apply(null,a.map(function(x){return Number(x&&x.id)||0;}))+1:1;}
 function ini(n){return(n||'?').split(' ').slice(0,2).map(p=>p[0]).join('').toUpperCase();}
 function vNome(id){const v=DB.veiculos.find(x=>x.id==id);return v?v.marca+' '+v.modelo+' '+v.placa:'';}
 function vObj(id){return DB.veiculos.find(x=>x.id==id)||{};}
@@ -248,19 +254,22 @@ checkAuth(function() {
   }).catch(function(e){ console.error('[gestao.html]', e); });
 });
 function renderTab(){
-  if(gTab==='rel'&&isAdmin()) renderRel();
-  else if(gTab==='usr'&&isAdmin()) renderUsr();
-  else if(gTab==='cfg'&&isAdmin()) renderCfg();
+  if(gTab==='rel'&&podeAcao('relatorio')) renderRel();
+  else if(gTab==='usr'&&podeAcao('usuarios')) renderUsr();
+  else if(gTab==='perf'&&podeAcao('usuarios')) renderPerfis();
+  else if(gTab==='cfg'&&podeAcao('config')) renderCfg();
   else renderMnt();
 }
 
 function tabsHtml(active){
   var tabs=[['mnt','&#128295; Manutencao','renderMnt()']];
-  if(isAdmin()){
-    tabs.push(['rel','&#128200; Relatorios','renderRel()']);
-    tabs.push(['usr','&#128100; Usuarios','renderUsr()']);
-    tabs.push(['cfg','&#9881; Configuracoes','renderCfg()']);
-  }
+  // As abas passam a depender da FUNCAO do perfil, nao de isAdmin direto.
+  // Com os perfis padrao o resultado e identico ao de antes: admin ve as tres,
+  // atendimento nao ve nenhuma.
+  if(podeAcao('relatorio')) tabs.push(['rel','&#128200; Relatorios','renderRel()']);
+  if(podeAcao('usuarios'))  tabs.push(['usr','&#128100; Usuarios','renderUsr()']);
+  if(podeAcao('usuarios'))  tabs.push(['perf','&#128272; Perfis de Acesso','renderPerfis()']);
+  if(podeAcao('config'))    tabs.push(['cfg','&#9881; Configuracoes','renderCfg()']);
   return '<div class="tabs">' +
     tabs.map(function(t){
       return '<div class="tab'+(active===t[0]?' active':'')+'" onclick="gTab=\''+t[0]+'\';'+t[2]+'">'+t[1]+'</div>';
@@ -281,7 +290,7 @@ function buildMntRows(list){
       '<td>'+sbM(m.status)+'</td>' +
       '<td><div class="acts">' +
       '<button class="btn bg2 bsm" onclick="fmMnt('+m.id+')">&#9999;</button>' +
-      +(isAdmin()?'<button class="btn bd bsm" onclick="dlMnt('+m.id+')">&#128465;</button>':'') +
+      (podeAcao('excluir')?'<button class="btn bd bsm" onclick="dlMnt('+m.id+')">&#128465;</button>':'') +
       '</div></td></tr>';
   }).join('');
   return '<div class="tw"><table>' +
@@ -688,7 +697,7 @@ function renderRel(){
   }).join('') || '<div class="empty"><span class="ei">&#128295;</span>Nenhuma manutencao</div>';
 
   document.getElementById('main').innerHTML =
-    '<div class="ph"><div><div class="pt">Gestao</div></div>'+(isAdmin()?'<button class="btn bg2" onclick="exportRelatorio()">&#128229; Exportar</button>':'')+'</div>' +
+    '<div class="ph"><div><div class="pt">Gestao</div></div>'+(podeAcao('exportar')?'<button class="btn bg2" onclick="exportRelatorio()">&#128229; Exportar</button>':'')+'</div>' +
     tabsHtml('rel') +
     '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">'+cards+'</div>' +
     '<div class="card" style="margin-bottom:16px"><div class="shd">Veiculos Vendidos</div>' +
@@ -699,133 +708,498 @@ function renderRel(){
 }
 
 // ── USUARIOS ────────────────────────────────────────────────────
+// 🔴 As acoes da linha passam o INDICE do array, nao o id -- e o padrao da
+// LOKA (editarUsuario(n)). Motivo medido em 06/11/2026: o usuario "daniel"
+// tem id NaN no banco, e `find(u => u.id == NaN)` nunca casa (NaN != NaN),
+// entao o botao de editar dele chamava fmUsr(NaN), caia no `if(!u) return`
+// e NAO FAZIA NADA, em silencio. Pelo indice, todo registro e alcancavel.
+function _usrEsc(s){
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// id utilizavel para gravar/apagar o documento. O do daniel (NaN) nao e.
+function _usrIdValido(v){
+  if (v === null || v === undefined || v === '') return false;
+  if (typeof v === 'number') return isFinite(v);
+  var s = String(v).trim();
+  return s !== '' && s.toLowerCase() !== 'nan' && s.toLowerCase() !== 'undefined';
+}
+
+function _usrLista(){ return Array.isArray(DB.usuarios) ? DB.usuarios : []; }
+function _usrEuLogin(){ return String(((getSession()||{}).login)||'').toLowerCase(); }
+
+// quantos admins ATIVOS existem, ignorando um indice (o que esta sendo mexido)
+function _usrAdminsAtivos(ignorar){
+  return _usrLista().filter(function(u, i){
+    return u && i !== ignorar && u.perfil === 'admin' && u.status !== 'inativo';
+  }).length;
+}
+
 function renderUsr(){
-  var rows = DB.usuarios.map(function(u){
+  var defs = amPerfisDef();
+  var eu = _usrEuLogin();
+  var lista = _usrLista();
+  var podeMexer = podeAcao('usuarios');
+  var rows = lista.map(function(u, n){
+    if (!u) return '';
+    var def = defs[u.perfil] || {};
     var pBadge = u.perfil==='admin'?'bg-r':u.perfil==='gerente'?'bg-y':'bg-b';
     var sBadge = u.status==='ativo'?'bg-g':'bg-gr';
+    var souEu = eu && String(u.login||'').toLowerCase() === eu;
+    var acts = '<button class="btn bg2 bsm" title="Editar" onclick="fmUsr('+n+')">&#9999;</button>';
+    if (podeMexer) {
+      acts += ' <button class="btn bg2 bsm" title="Alterar senha" onclick="trocarSenhaUsr('+n+')">&#128273;</button>';
+      acts += ' <button class="btn bd bsm" title="Excluir" onclick="dlUsr('+n+')">&#128465;</button>';
+    }
     return '<tr>' +
       '<td><div style="display:flex;align-items:center;gap:10px">' +
-      '<div class="av" style="background:var(--adim);color:var(--accent)">'+ini(u.nome)+'</div>' +
-      '<span style="font-weight:700">'+u.nome+'</span></div></td>' +
-      '<td><div style="font-size:13px;font-weight:700">@'+(u.login||'—')+'</div>'+'<div style="font-size:11px;color:var(--text-muted)">'+u.email+'</div></td>' +
-      '<td><span class="badge '+pBadge+'">'+u.perfil+'</span></td>' +
-      '<td><span class="badge '+sBadge+'">'+u.status+'</span></td>' +
-      '<td><div class="acts">' +
-      '<button class="btn bg2 bsm" onclick="fmUsr('+u.id+')">&#9999;</button>' +
-      +(isAdmin()?'<button class="btn bd bsm" onclick="dlUsr('+u.id+')">&#128465;</button>':'') +
-      '</div></td></tr>';
+      '<div class="av" style="background:var(--adim);color:var(--accent)">'+_usrEsc(ini(u.nome))+'</div>' +
+      '<span style="font-weight:700">'+_usrEsc(u.nome)+'</span>' +
+      (souEu?' <span class="badge bg-gr" title="Voce esta logado com este usuario">voce</span>':'') +
+      '</div></td>' +
+      '<td><div style="font-size:13px;font-weight:700">@'+_usrEsc(u.login||'—')+'</div>'+'<div style="font-size:11px;color:var(--text-muted)">'+_usrEsc(u.email||'')+'</div></td>' +
+      '<td><span class="badge '+pBadge+'">'+_usrEsc(def.nome||u.perfil)+'</span>' +
+      '<div style="font-size:10px;color:var(--text-muted);margin-top:3px">'+_usrEsc(_perfResumo(u.perfil))+'</div></td>' +
+      '<td><span class="badge '+sBadge+'">'+_usrEsc(u.status)+'</span>' +
+      (u.senhaHash ? '<div style="font-size:10px;color:var(--success);margin-top:3px">&#128274; senha protegida</div>'
+                   : '<div style="font-size:10px;color:var(--danger);margin-top:3px">&#9888; senha em texto puro</div>') +
+      '</td>' +
+      '<td><div class="acts">'+acts+'</div></td></tr>';
   }).join('');
   document.getElementById('main').innerHTML =
     '<div class="ph"><div><div class="pt">Gestao</div></div>' +
-    '<button class="btn bp" onclick="fmUsr(null)">+ Novo Usuario</button></div>' +
+    (podeMexer?'<button class="btn bp" onclick="fmUsr(null)">+ Novo Usuario</button>':'') + '</div>' +
     tabsHtml('usr') +
     '<div class="tw"><table>' +
-    '<thead><tr><th>Usuario</th><th>Email</th><th>Perfil</th><th>Status</th><th>Acoes</th></tr></thead>' +
+    '<thead><tr><th>Usuario</th><th>Login / Email</th><th>Perfil</th><th>Status</th><th>Acoes</th></tr></thead>' +
     '<tbody>'+(rows||'<tr><td colspan="5"><div class="empty"><span class="ei">&#128100;</span>Nenhum usuario</div></td></tr>')+'</tbody>' +
     '</table></div>';
 }
+
+// resumo curto do que o perfil alcanca, para quem edita o usuario ver o efeito
+// da escolha sem precisar abrir a aba Perfis
+function _perfResumo(chave){
+  var def = perfilDef(chave);
+  var tl = def.telas || [];
+  var nT = (tl.indexOf(AM_CURINGA) >= 0) ? AM_TELAS.length : tl.length;
+  var ac = def.acoes || {};
+  var nA = ac[AM_CURINGA] ? AM_ACOES.length : AM_ACOES.filter(function(a){ return !!ac[a]; }).length;
+  return nT + ' tela(s) · ' + nA + ' funcao(oes)';
+}
+
 function gerarSenha(){
   var chars='abcdefghjkmnpqrstuvwxyz23456789';
   var s='';
-  for(var i=0;i<8;i++) s+=chars[Math.floor(Math.random()*chars.length)];
-  var el=document.getElementById('usenha');
-  if(el){ el.value=s; el.type='text'; }
-  toast('Senha gerada: '+s,'ok',5000);
+  for(var i=0;i<10;i++) s+=chars[Math.floor(Math.random()*chars.length)];
+  ['usenha','usenha2'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el){ el.value=s; el.type='text'; }
+  });
+  toast('Senha gerada: '+s+' — anote antes de salvar','ok',8000);
 }
 
-function fmUsr(id){
-  var u=id?DB.usuarios.find(function(x){return x.id==id;}):{nome:'',login:'',email:'',perfil:'atendimento',status:'ativo',senha:''};
-  if(!u) return;
-  var optsP=['admin','atendimento'].map(function(p){
-    return '<option value="'+p+'" '+(u.perfil===p?'selected':'')+'>'+{admin:'Administrador',atendimento:'Atendimento'}[p]+'</option>';
+function fmUsr(n){
+  var novo = (n === null || n === undefined);
+  var lista = _usrLista();
+  var u = novo ? {nome:'',login:'',email:'',perfil:'atendimento',status:'ativo'} : lista[n];
+  if (!u) { toast('Usuario nao encontrado','err'); return; }
+  var defs = amPerfisDef();
+  var optsP = Object.keys(defs).map(function(k){
+    return '<option value="'+_usrEsc(k)+'" '+(u.perfil===k?'selected':'')+'>'+_usrEsc(defs[k].nome||k)+'</option>';
   }).join('');
-  var optsS=['ativo','inativo'].map(function(s){
+  var optsS = ['ativo','inativo'].map(function(s){
     return '<option value="'+s+'" '+(u.status===s?'selected':'')+'>'+{ativo:'Ativo',inativo:'Inativo'}[s]+'</option>';
   }).join('');
   om(
     '<div class="mt2">'+
     '<div style="display:flex;align-items:center;gap:10px">'+
-    '<div style="width:36px;height:36px;border-radius:50%;background:var(--brand);color:var(--brand-contrast);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px">'+
-    (u.nome?u.nome.charAt(0).toUpperCase():'N')+'</div>'+
-    '<span style="font-weight:700;font-size:16px">'+(id?u.nome:'Novo Usuário')+'</span>'+
+    '<div id="uavatar" style="width:36px;height:36px;border-radius:50%;background:var(--brand);color:var(--brand-contrast);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px">'+
+    (u.nome?_usrEsc(u.nome.charAt(0).toUpperCase()):'N')+'</div>'+
+    '<span style="font-weight:700;font-size:16px">'+(novo?'Novo Usuário':'Editar: '+_usrEsc(u.nome))+'</span>'+
     '</div>'+
     '<button class="btn bg2 bsm" onclick="cm()">&#10005;</button></div>'+
     '<div class="mb" style="display:flex;flex-direction:column;gap:14px">'+
       '<div class="fr"><div class="fg full">'+
         '<label>Nome completo *</label>'+
-        '<input id="un" value="'+u.nome+'" placeholder="Nome do usuário" oninput="var av=document.getElementById(\'uavatar\');if(av)av.textContent=this.value.charAt(0).toUpperCase()||\'N\'">'+
+        '<input id="un" value="'+_usrEsc(u.nome)+'" placeholder="Nome do usuário" oninput="var av=document.getElementById(\'uavatar\');if(av)av.textContent=this.value.charAt(0).toUpperCase()||\'N\'">'+
       '</div></div>'+
       '<div class="fr">'+
         '<div class="fg"><label>Login *</label>'+
-          '<input id="ulog" value="'+(u.login||'')+'" placeholder="Ex: rogel">'+
+          '<input id="ulog" value="'+_usrEsc(u.login||'')+'" placeholder="Ex: rogel">'+
         '</div>'+
         '<div class="fg"><label>Email</label>'+
-          '<input id="ue" type="email" value="'+(u.email||'')+'" placeholder="email@exemplo.com">'+
+          '<input id="ue" type="email" value="'+_usrEsc(u.email||'')+'" placeholder="email@exemplo.com">'+
         '</div>'+
       '</div>'+
       '<div class="fr">'+
-        '<div class="fg">'+
-          '<label>Senha'+(id?' (deixe em branco para não alterar)':' *')+'</label>'+
-          '<div style="display:flex;gap:6px">'+
-            '<input id="usenha" type="password" value="'+(u.senha||'')+'" placeholder="••••••••" style="flex:1">'+
-            '<button class="btn bp bsm" onclick="gerarSenha()" title="Gerar senha aleatória" type="button">&#128273; Gerar</button>'+
-          '</div>'+
-        '</div>'+
-        '<div class="fg"><label>Perfil</label><select id="up">'+optsP+'</select></div>'+
-      '</div>'+
-      '<div class="fr">'+
+        '<div class="fg"><label>Perfil</label><select id="up" onchange="_usrMostrarFuncoes()">'+optsP+'</select></div>'+
         '<div class="fg"><label>Status</label><select id="ust">'+optsS+'</select></div>'+
       '</div>'+
+      '<div class="fr"><div class="fg full">'+
+        '<div id="uFuncoes" style="font-size:12px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r);padding:10px"></div>'+
+      '</div></div>'+
+      (novo
+        ? '<div class="fr"><div class="fg"><label>Senha *</label>'+
+          '<div style="display:flex;gap:6px">'+
+          '<input id="usenha" type="password" placeholder="mínimo 6 caracteres" style="flex:1">'+
+          '<button class="btn bp bsm" onclick="gerarSenha()" title="Gerar senha" type="button">&#128273;</button>'+
+          '</div></div>'+
+          '<div class="fg"><label>Repita a senha *</label><input id="usenha2" type="password" placeholder="repita"></div></div>'
+        : '<div class="fr"><div class="fg full">'+
+          '<div style="font-size:12px;color:var(--text-muted)">A senha não é alterada aqui. Use o botão '+
+          '<b>&#128273; Alterar senha</b> na lista, ou '+
+          '<button class="btn bg2 bsm" type="button" onclick="cm();trocarSenhaUsr('+n+')">&#128273; alterar agora</button></div>'+
+          '</div></div>') +
     '</div>'+
     '<div class="mf">'+
       '<button class="btn bg2" onclick="cm()">Cancelar</button>'+
-      '<button class="btn bp" onclick="svUsr('+(id||'null')+')">&#128190; Salvar</button>'+
+      '<button class="btn bp" id="uBtnSalvar" onclick="svUsr('+(novo?'null':n)+')">&#128190; Salvar</button>'+
     '</div>'
   );
+  _usrMostrarFuncoes();
 }
 
-function svUsr(id){
+// mostra, dentro do formulario, o que o perfil escolhido alcanca
+function _usrMostrarFuncoes(){
+  var el = document.getElementById('uFuncoes');
+  if (!el) return;
+  var chave = (document.getElementById('up')||{}).value || '';
+  var def = perfilDef(chave);
+  var tl = def.telas || [];
+  var todasT = tl.indexOf(AM_CURINGA) >= 0;
+  var ac = def.acoes || {};
+  var todasA = !!ac[AM_CURINGA];
+  var telas = todasT ? AM_TELAS.slice() : tl.filter(function(t){ return AM_TELA_LABEL[t]; });
+  var acoes = todasA ? AM_ACOES.slice() : AM_ACOES.filter(function(a){ return !!ac[a]; });
+  el.innerHTML =
+    '<div style="font-weight:700;margin-bottom:4px">O perfil <b>'+_usrEsc(def.nome||chave)+'</b> alcança:</div>'+
+    '<div><b>Telas:</b> '+(telas.length
+      ? telas.map(function(t){ return _usrEsc(AM_TELA_LABEL[t]); }).join(' · ') + (todasT?' (todas)':'')
+      : '<span style="color:var(--danger)">nenhuma</span>')+'</div>'+
+    '<div style="margin-top:3px"><b>Funções:</b> '+(acoes.length
+      ? acoes.map(function(a){ return _usrEsc(AM_ACAO_LABEL[a]); }).join(' · ') + (todasA?' (todas)':'')
+      : '<span style="color:var(--text-muted)">nenhuma</span>')+'</div>'+
+    '<div style="margin-top:6px;font-size:11px;color:var(--text-muted)">Para mudar o que um perfil alcança, use a aba <b>Perfis de Acesso</b>.</div>';
+}
+
+// ── gravar o usuario ───────────────────────────────────────────
+// 🔴 So mexe na tela DEPOIS que o banco confirma (licao do CRM, 15/09/2026):
+// avisar "salvo" sem ter salvado e pior do que nao funcionar.
+function svUsr(n){
+  var novo = (n === null || n === undefined);
+  var lista = _usrLista();
+  var atual = novo ? null : lista[n];
+  if (!novo && !atual) { toast('Usuario nao encontrado','err'); return; }
+
   var nome  = (document.getElementById('un')||{value:''}).value.trim();
   var login = (document.getElementById('ulog')||{value:''}).value.trim().toLowerCase();
   var email = (document.getElementById('ue')||{value:''}).value.trim();
-  var senha = (document.getElementById('usenha')||{value:''}).value.trim();
   var perfil= (document.getElementById('up')||{value:'atendimento'}).value;
   var status= (document.getElementById('ust')||{value:'ativo'}).value;
+  var s1 = novo ? (document.getElementById('usenha')||{value:''}).value : '';
+  var s2 = novo ? (document.getElementById('usenha2')||{value:''}).value : '';
+
   if(!nome){ toast('Informe o nome','err'); return; }
   if(!login){ toast('Informe o login','err'); return; }
-  if(!id && !senha){ toast('Informe uma senha','err'); return; }
-  // Verificar login duplicado
-  var dup = DB.usuarios.find(function(u){ return u.login===login && u.id!=id; });
+  if(novo){
+    if(!s1){ toast('Informe uma senha','err'); return; }
+    if(s1.length < 6){ toast('A senha precisa de no mínimo 6 caracteres','err'); return; }
+    if(s1 !== s2){ toast('As senhas não conferem','err'); return; }
+  }
+  var dup = lista.find(function(u,i){
+    return u && String(u.login||'').toLowerCase() === login && i !== n;
+  });
   if(dup){ toast('Login "'+login+'" já está em uso','err'); return; }
-  var existing = id ? DB.usuarios.find(function(u){return u.id==id;}) : null;
-  var obj = {
-    id:     id || nid(DB.usuarios),
-    nome:   nome,
-    login:  login,
-    email:  email,
-    perfil: perfil,
-    status: status,
-    senha:  senha || (existing ? existing.senha : '')
-  };
-  if(id) DB.usuarios = DB.usuarios.map(function(u){ return u.id==id ? obj : u; });
-  else   DB.usuarios.push(obj);
-  sDB(); fsave('usuarios', obj);
-  cm(); renderUsr();
-  toast('Usuário '+(id?'atualizado':'criado')+' com sucesso','ok');
+
+  // 🔴 Não deixar o sistema sem nenhum administrador ativo. Sem esta trava,
+  // rebaixar ou desativar o último admin trancaria todos para fora da
+  // Gestão -- e seria preciso mexer no banco para voltar.
+  var eraAdminAtivo = !novo && atual.perfil === 'admin' && atual.status !== 'inativo';
+  var vaiSerAdminAtivo = (perfil === 'admin' && status !== 'inativo');
+  if (eraAdminAtivo && !vaiSerAdminAtivo && _usrAdminsAtivos(n) === 0) {
+    toast('Este é o único administrador ativo. Crie ou ative outro antes de mudar este.','err',7000);
+    return;
+  }
+
+  // id para gravar o documento. O registro com id invalido (NaN) ganha um id
+  // novo e o documento velho e removido, senao ficariam dois do mesmo usuario.
+  var idAntigo = novo ? null : atual.id;
+  var trocouId = !novo && !_usrIdValido(idAntigo);
+  var id = (!novo && _usrIdValido(idAntigo)) ? idAntigo : nid(lista);
+
+  var btn = document.getElementById('uBtnSalvar');
+  if (btn) { btn.disabled = true; btn.textContent = 'Salvando...'; }
+  function destrava(){ if (btn) { btn.disabled = false; btn.innerHTML = '&#128190; Salvar'; } }
+
+  function montarSenha(){
+    if (!novo) return Promise.resolve({});
+    if (!amTemCrypto()) {
+      // Sem crypto nao da para gerar hash. Grava como antes e AVISA, em vez
+      // de recusar e deixar o usuario sem senha nenhuma.
+      toast('Navegador sem suporte a hash — senha gravada sem proteção','err',7000);
+      return Promise.resolve({ senha: s1, senhaHash: null, salt: null });
+    }
+    var salt = amNovoSalt();
+    return amHashSenha(s1, salt).then(function(h){
+      // senha: null apaga o texto puro do banco
+      return { senhaHash: h, salt: salt, senha: null };
+    });
+  }
+
+  montarSenha().then(function(campos){
+    var obj = Object.assign({}, novo ? {} : atual, {
+      id: id, nome: nome, login: login, email: email,
+      perfil: perfil, status: status
+    }, campos);
+
+    fsave('usuarios', obj, function(err){
+      if (err) {
+        destrava();
+        toast('NÃO foi salvo: '+(err && err.code === 'permission-denied'
+          ? 'o banco não autoriza gravar em usuarios.' : (err.message||'falha de conexão')),'err',8000);
+        return;   // o modal fica aberto, nada do que foi digitado se perde
+      }
+      if (trocouId) {
+        fdel('usuarios', String(idAntigo));   // remove o documento de id inválido
+      }
+      if (novo) DB.usuarios = lista.concat([obj]);
+      else      DB.usuarios = lista.map(function(u,i){ return i === n ? obj : u; });
+      sDB(); cm(); renderUsr();
+      toast('Usuário '+(novo?'criado':'atualizado')+' com sucesso'+(trocouId?' (id corrigido)':''),'ok');
+    });
+  }).catch(function(e){
+    destrava();
+    toast('NÃO foi salvo: '+(e && e.message || e),'err',8000);
+  });
 }
 
-function dlUsr(id){
-  if(confirm('Excluir usuario?')){
-    DB.usuarios = DB.usuarios.filter(function(u){return u.id!=id;});
-    sDB(); fdel("usuarios",id); renderUsr();
+// ── alterar a senha (o 🔑 da lista) ───────────────────────────
+function trocarSenhaUsr(n){
+  var u = _usrLista()[n];
+  if (!u) { toast('Usuario nao encontrado','err'); return; }
+  om(
+    '<div class="mt2"><span style="font-weight:700;font-size:16px">&#128273; Alterar senha</span>'+
+    '<button class="btn bg2 bsm" onclick="cm()">&#10005;</button></div>'+
+    '<div class="mb" style="display:flex;flex-direction:column;gap:14px">'+
+      '<div style="font-size:13px">Usuário: <b>'+_usrEsc(u.nome)+'</b> (@'+_usrEsc(u.login||'')+')</div>'+
+      '<div class="fr">'+
+        '<div class="fg"><label>Nova senha *</label>'+
+          '<div style="display:flex;gap:6px">'+
+          '<input id="usenha" type="password" placeholder="mínimo 6 caracteres" style="flex:1">'+
+          '<button class="btn bp bsm" type="button" onclick="gerarSenha()" title="Gerar senha">&#128273;</button>'+
+          '</div></div>'+
+        '<div class="fg"><label>Repita a nova senha *</label><input id="usenha2" type="password" placeholder="repita"></div>'+
+      '</div>'+
+      '<div style="font-size:11px;color:var(--text-muted)">A senha é guardada como hash (SHA-256 + salt). '+
+      'O sistema não mostra senha de ninguém — se for esquecida, basta definir uma nova aqui.</div>'+
+    '</div>'+
+    '<div class="mf"><button class="btn bg2" onclick="cm()">Cancelar</button>'+
+    '<button class="btn bp" id="uBtnSenha" onclick="svSenhaUsr('+n+')">&#128190; Salvar senha</button></div>'
+  );
+}
+
+function svSenhaUsr(n){
+  var lista = _usrLista();
+  var u = lista[n];
+  if (!u) { toast('Usuario nao encontrado','err'); return; }
+  var s1 = (document.getElementById('usenha')||{value:''}).value;
+  var s2 = (document.getElementById('usenha2')||{value:''}).value;
+  if (!s1) { toast('Informe a nova senha','err'); return; }
+  if (s1.length < 6) { toast('A senha precisa de no mínimo 6 caracteres','err'); return; }
+  if (s1 !== s2) { toast('As senhas não conferem','err'); return; }
+
+  var idAntigo = u.id;
+  var trocouId = !_usrIdValido(idAntigo);
+  var id = trocouId ? nid(lista) : idAntigo;
+  var btn = document.getElementById('uBtnSenha');
+  if (btn) { btn.disabled = true; btn.textContent = 'Salvando...'; }
+  function destrava(){ if (btn) { btn.disabled = false; btn.innerHTML = '&#128190; Salvar senha'; } }
+
+  var p;
+  if (!amTemCrypto()) {
+    toast('Navegador sem suporte a hash — senha gravada sem proteção','err',7000);
+    p = Promise.resolve({ senha: s1, senhaHash: null, salt: null });
+  } else {
+    var salt = amNovoSalt();
+    p = amHashSenha(s1, salt).then(function(h){ return { senhaHash:h, salt:salt, senha:null }; });
   }
+
+  p.then(function(campos){
+    var obj = Object.assign({}, u, { id:id }, campos);
+    fsave('usuarios', obj, function(err){
+      if (err) {
+        destrava();
+        toast('A senha NÃO foi alterada: '+(err && err.code === 'permission-denied'
+          ? 'o banco não autoriza gravar em usuarios.' : (err.message||'falha de conexão')),'err',8000);
+        return;
+      }
+      if (trocouId) fdel('usuarios', String(idAntigo));
+      DB.usuarios = lista.map(function(x,i){ return i === n ? obj : x; });
+      sDB(); cm(); renderUsr();
+      toast('Senha de '+u.nome+' alterada','ok');
+    });
+  }).catch(function(e){
+    destrava();
+    toast('A senha NÃO foi alterada: '+(e && e.message || e),'err',8000);
+  });
+}
+
+function dlUsr(n){
+  var lista = _usrLista();
+  var u = lista[n];
+  if (!u) { toast('Usuario nao encontrado','err'); return; }
+  // 🔴 Duas travas que nao podem sair: apagar a propria conta derruba quem
+  // esta usando o sistema, e apagar o ultimo admin tranca todos para fora.
+  if (_usrEuLogin() && String(u.login||'').toLowerCase() === _usrEuLogin()) {
+    toast('Você não pode excluir o usuário com que está logado','err',6000); return;
+  }
+  if (u.perfil === 'admin' && u.status !== 'inativo' && _usrAdminsAtivos(n) === 0) {
+    toast('Este é o único administrador ativo — criar outro antes de excluir','err',7000); return;
+  }
+  if (!confirm('Excluir o usuário '+u.nome+' (@'+(u.login||'')+')?\n\nEle perde o acesso ao sistema. Isto não pode ser desfeito.')) return;
+  fdel('usuarios', String(u.id), function(err){
+    if (err) {
+      toast('NÃO foi excluído: '+(err.message||'falha de conexão'),'err',8000);
+      return;   // a linha continua na tela: o que se ve e o que o banco tem
+    }
+    DB.usuarios = lista.filter(function(x,i){ return i !== n; });
+    sDB(); renderUsr();
+    toast('Usuário excluído','ok');
+  });
+}
+
+// ── PERFIS DE ACESSO (as "funcoes") ─────────────────────────────
+function renderPerfis(){
+  var defs = amPerfisDef();
+  var lista = _usrLista();
+  var rows = Object.keys(defs).map(function(k){
+    var d = defs[k];
+    var tl = d.telas || [];
+    var todasT = tl.indexOf(AM_CURINGA) >= 0;
+    var ac = d.acoes || {};
+    var todasA = !!ac[AM_CURINGA];
+    var nT = todasT ? AM_TELAS.length : tl.filter(function(t){ return AM_TELA_LABEL[t]; }).length;
+    var nA = todasA ? AM_ACOES.length : AM_ACOES.filter(function(a){ return !!ac[a]; }).length;
+    var quantos = lista.filter(function(u){ return u && u.perfil === k; }).length;
+    return '<tr>' +
+      '<td><div style="font-weight:700">'+_usrEsc(d.nome||k)+'</div>'+
+      '<div style="font-size:11px;color:var(--text-muted)">chave: '+_usrEsc(k)+'</div></td>' +
+      '<td>'+nT+(todasT?' <span class="badge bg-g">todas</span>':'')+'</td>' +
+      '<td>'+nA+(todasA?' <span class="badge bg-g">todas</span>':'')+'</td>' +
+      '<td>'+quantos+'</td>' +
+      '<td><div class="acts"><button class="btn bg2 bsm" title="Editar" onclick="fmPerfil(\''+_usrEsc(k)+'\')">&#9999;</button></div></td>' +
+      '</tr>';
+  }).join('');
+  document.getElementById('main').innerHTML =
+    '<div class="ph"><div><div class="pt">Gestao</div></div></div>' +
+    tabsHtml('perf') +
+    '<div class="card" style="margin-bottom:14px"><div style="font-size:12px;color:var(--text-muted)">'+
+    'O perfil decide <b>quais telas</b> a pessoa vê no menu e <b>quais funções</b> ela pode usar. ' +
+    'Cada usuário recebe um perfil na aba <b>Usuários</b>. ' +
+    'Quem é <b>Administrador</b> alcança tudo, sempre — é a trava que evita alguém se trancar para fora.' +
+    '</div></div>' +
+    '<div class="tw"><table>' +
+    '<thead><tr><th>Perfil</th><th>Telas</th><th>Funcoes</th><th>Usuarios</th><th>Acoes</th></tr></thead>' +
+    '<tbody>'+rows+'</tbody></table></div>';
+}
+
+function fmPerfil(chave){
+  var d = perfilDef(chave);
+  var tl = d.telas || [];
+  var ac = d.acoes || {};
+  var todasT = tl.indexOf(AM_CURINGA) >= 0;
+  var todasA = !!ac[AM_CURINGA];
+  var cxTelas = AM_TELAS.map(function(t){
+    return '<label style="display:flex;align-items:center;gap:6px;font-size:13px">'+
+      '<input type="checkbox" class="pf-tela" value="'+t+'" '+((todasT||tl.indexOf(t)>=0)?'checked':'')+'> '+
+      '<span>'+_usrEsc(AM_TELA_LABEL[t])+'</span></label>';
+  }).join('');
+  var cxAcoes = AM_ACOES.map(function(a){
+    return '<label style="display:flex;align-items:center;gap:6px;font-size:13px">'+
+      '<input type="checkbox" class="pf-acao" value="'+a+'" '+((todasA||ac[a])?'checked':'')+'> '+
+      '<span>'+_usrEsc(AM_ACAO_LABEL[a])+'</span></label>';
+  }).join('');
+  om(
+    '<div class="mt2"><span style="font-weight:700;font-size:16px">&#128272; Perfil: '+_usrEsc(d.nome||chave)+'</span>'+
+    '<button class="btn bg2 bsm" onclick="cm()">&#10005;</button></div>'+
+    '<div class="mb" style="display:flex;flex-direction:column;gap:14px">'+
+      '<div class="fr"><div class="fg full"><label>Nome do perfil</label>'+
+      '<input id="pfNome" value="'+_usrEsc(d.nome||chave)+'"></div></div>'+
+      '<div class="fr"><div class="fg full"><label>Telas que este perfil vê no menu</label>'+
+        '<label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;margin-bottom:4px">'+
+        '<input type="checkbox" id="pfTodasTelas" '+(todasT?'checked':'')+' onchange="_pfTodas(\'pf-tela\',this.checked)"> '+
+        '<span>Todas as telas (vale também para tela criada depois)</span></label>'+
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">'+cxTelas+'</div>'+
+      '</div></div>'+
+      '<div class="fr"><div class="fg full"><label>Funções que este perfil pode usar</label>'+
+        '<label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;margin-bottom:4px">'+
+        '<input type="checkbox" id="pfTodasAcoes" '+(todasA?'checked':'')+' onchange="_pfTodas(\'pf-acao\',this.checked)"> '+
+        '<span>Todas as funções (vale também para função criada depois)</span></label>'+
+        '<div style="display:flex;flex-direction:column;gap:6px">'+cxAcoes+'</div>'+
+      '</div></div>'+
+    '</div>'+
+    '<div class="mf"><button class="btn bg2" onclick="cm()">Cancelar</button>'+
+    '<button class="btn bp" id="pfBtn" onclick="svPerfil(\''+_usrEsc(chave)+'\')">&#128190; Salvar perfil</button></div>'
+  );
+}
+
+// marcar 'Todas' desabilita a escolha item a item -- o curinga nao e a lista
+function _pfTodas(classe, marcado){
+  document.querySelectorAll('.'+classe).forEach(function(c){
+    c.checked = marcado ? true : c.checked;
+    c.disabled = !!marcado;
+  });
+}
+
+function svPerfil(chave){
+  var nome = (document.getElementById('pfNome')||{value:''}).value.trim() || chave;
+  var todasT = !!(document.getElementById('pfTodasTelas')||{}).checked;
+  var todasA = !!(document.getElementById('pfTodasAcoes')||{}).checked;
+  var telas = todasT ? [AM_CURINGA] : Array.prototype.map.call(
+    document.querySelectorAll('.pf-tela:checked'), function(c){ return c.value; });
+  var acoes = {};
+  if (todasA) acoes[AM_CURINGA] = true;
+  else Array.prototype.forEach.call(document.querySelectorAll('.pf-acao:checked'),
+    function(c){ acoes[c.value] = true; });
+
+  // 🔴 O perfil admin nao pode perder as funcoes de gestao: seria o unico
+  // caminho de volta. A trava do isAdmin() ja garante o acesso, mas deixar a
+  // tela mostrar menos do que a pessoa tem seria mentir sobre o acesso.
+  if (chave === 'admin' && !todasA) {
+    toast('O perfil Administrador alcança tudo por definição — não é possível limitá-lo','err',7000);
+    return;
+  }
+
+  var defs = amPerfisDef();
+  var obj = {};
+  Object.keys(defs).forEach(function(k){
+    obj[k] = { nome: defs[k].nome, telas: defs[k].telas, acoes: defs[k].acoes };
+  });
+  obj[chave] = { nome: nome, telas: telas, acoes: acoes };
+
+  var btn = document.getElementById('pfBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Salvando...'; }
+  amSalvarPerfis(obj, function(err){
+    if (btn) { btn.disabled = false; btn.innerHTML = '&#128190; Salvar perfil'; }
+    if (err) {
+      toast('NÃO foi salvo: '+(err && err.code === 'permission-denied'
+        ? 'o banco não autoriza gravar em config. Fale com o responsável.'
+        : (err.message||'falha de conexão')),'err',9000);
+      return;   // o modal fica aberto
+    }
+    DB.perfis = obj;
+    sDB(); cm(); renderPerfis();
+    toast('Perfil '+nome+' salvo','ok');
+  });
 }
 
 // ── Configurações da Empresa (Bloco 10) ──────────────────────
 function renderCfg(){
   var e = DB.empresa || {};
   document.getElementById('main').innerHTML =
-  '<div class="ph"><div><div class="pt">Gestao</div></div>'+(isAdmin()?'<button class="btn bg2" onclick="exportRelatorio()">&#128229; Exportar</button>':'')+'</div>' +
+  '<div class="ph"><div><div class="pt">Gestao</div></div>'+(podeAcao('exportar')?'<button class="btn bg2" onclick="exportRelatorio()">&#128229; Exportar</button>':'')+'</div>' +
   tabsHtml('cfg') +
   '<div class="card" style="max-width:620px">' +
   '<div class="shd">&#9881; Dados da Empresa</div>' +
