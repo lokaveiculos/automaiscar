@@ -247,8 +247,9 @@ function amHashSenha(senha, salt){
 // sombreia o daqui -- os locais chamam esta funcao. Sem isso a parte do menu
 // seria codigo morto.
 function amAplicarTelas(){
+  // nao precisa de piso do admin aqui: quem tem o piso e o podeTela(),
+  // e nenhum teste conseguia distinguir esta linha -- guarda inerte, saiu.
   try {
-    if (isAdmin()) return;   // piso: admin nunca perde item de menu
     document.querySelectorAll('a[href]').forEach(function(el){
       var arq = String(el.getAttribute('href')||'').split('#')[0].split('/').pop();
       var t = AM_TELA_POR_ARQ[arq];
