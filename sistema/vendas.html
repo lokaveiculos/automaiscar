@@ -381,8 +381,6 @@ function novaVenda(preVid){
   '<div class="fg"><label>Valor Atribuido (R$)</label>'+
   '<input id="vdperm_val" type="number" placeholder="0"></div></div>'+
   '<div class="fr"><div class="fg full"><label>Observacoes</label><textarea id="vdobs"></textarea></div></div>'+
-  '<div class="fg full"><label>Observações</label>'+
-  '<textarea id="cobs" rows="2" style="height:auto;resize:vertical;padding:6px 12px">'+(id&&c.obs?c.obs:'')+'</textarea></div>'+
   '<div class="mf"><button class="btn bg2" onclick="cm()">Cancelar</button>'+
   '<button class="btn bp" onclick="svVenda()">&#10004; Confirmar Venda</button></div>',true);
   if(preVid)autoPreco();
@@ -392,22 +390,42 @@ function autoPreco(){
   var v=DB.veiculos.find(function(x){return x.id==Number(sel.value);});
   if(v){var f=document.getElementById('vdval');if(f&&!f.value)f.value=v.preco;}
 }
+// Le um campo do formulario sem estourar se ele nao estiver na tela.
+// 🔴 Devolve '' em vez de undefined: o Firestore RECUSA undefined, e aquela
+// gravacao falharia inteira -- venda, contrato e a baixa do veiculo.
+function _vdCampo(id){
+  var el = document.getElementById(id);
+  return el ? String(el.value == null ? '' : el.value).trim() : '';
+}
 function svVenda(){
   const vid=Number(document.getElementById('vdveic').value);
   const cid=Number(document.getElementById('vdcli').value);
   const val=document.getElementById('vdval').value;
   const pag=document.getElementById('vdpag').value;
   const data=document.getElementById('vddata').value;
-  if(!vid||!cid||!val){toast('Selecione Veiculo, Cliente e informe o Valor','err');return;}
+  // 🔴 Number(val)>0, nao !val: o campo devolve TEXTO, e a string "0" e
+  // verdadeira -- sem isto uma venda de R$ 0,00 marcaria o carro como vendido
+  // e geraria um contrato de R$ 0.
+  if(!vid||!cid||!(Number(val)>0)){toast('Selecione Veiculo, Cliente e informe o Valor','err');return;}
   const num=document.getElementById('vdnum').value;
   const ent=document.getElementById('vdent').value||'0';
   const fin=document.getElementById('vdfin').value;
   const np=document.getElementById('vdnp').value||'0';
   const vp=document.getElementById('vdvp').value||'0';
   const obs=document.getElementById('vdobs').value;
+  // Os 5 campos que o formulario coleta e que, antes, eram jogados fora.
+  // A propria tabela exibe permuta_placa e vendedor_id, entao gravar nao e
+  // enfeite: sem isto a tela mostraria coluna vazia para dado que a pessoa
+  // acabou de digitar.
+  const vend=_vdCampo('vdvendedor');
+  const com=_vdCampo('vdcom');
+  const prep=_vdCampo('vdprep');
+  const permP=_vdCampo('vdperm_placa').toUpperCase();
+  const permV=_vdCampo('vdperm_val');
   const ct={id:nid(DB.contratos),tipo:'venda',numero:num.replace('VD','CV'),data,cliente_id:cid,fornecedor_id:'',veiculo_id:vid,valor:val,entrada:ent,saldo:String(Number(val)-Number(ent)),pagamento:pag,financeira:fin,num_parcelas:np,valor_parcela:vp,prazo:'',tipo_comissao:'percentual',comissao:'',valor_minimo:'',condicao:'',debitos:'',status:'ativo',obs};
   DB.contratos.push(ct);
-  const venda={id:nid(DB.vendas),numero:num,data,cliente_id:cid,veiculo_id:vid,valor:val,pagamento:pag,contrato_id:ct.id,obs};
+  const venda={id:nid(DB.vendas),numero:num,data,cliente_id:cid,veiculo_id:vid,valor:val,pagamento:pag,contrato_id:ct.id,obs,
+    vendedor_id:vend,comissao:com,custo_preparacao:prep,permuta_placa:permP,permuta_valor:permV};
   DB.vendas.push(venda);
   DB.veiculos=DB.veiculos.map(v=>v.id==vid?Object.assign({},v,{status:'vendido'}):v);
   sDB();
