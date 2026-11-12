@@ -242,6 +242,55 @@ function amHashSenha(senha, salt){
   });
 }
 
+// ── Manutencao -> Despesa ────────────────────────────────────
+// 🔴 Vive aqui, e nao numa pagina, porque DUAS telas lancam manutencao:
+// a aba Manutencao (gestao.html) e a baixa da previsao de reparo
+// (veiculos.html). Em duas copias, uma aprenderia regra nova e a outra nao --
+// foi exatamente isso que fez o relatorio da LOKA imprimir numero errado.
+// ⚠️ contratos.html declara o PROPRIO _gravarTudo, numa versao que nao trata
+// `apagar` -- a local vence por sombreamento. Nao foi tocada (ela nunca
+// recebe `apagar` hoje), mas e divida conhecida.
+var DESP_TIPO_MANUT = 'Manuten\u00e7\u00e3o';
+
+// Grava varios documentos e so avisa depois que TODOS confirmarem.
+function _gravarTudo(itens, cb){
+  var faltam = itens.length, erros = [];
+  if(!faltam) return cb(erros);
+  itens.forEach(function(it){
+    var pronto = function(err){
+      if(err) erros.push(it.col + ' (' + (err.code || err.message || 'erro') + ')');
+      if(--faltam === 0) cb(erros);
+    };
+    if(it.apagar) fdel(it.col, it.id, pronto);
+    else          fsave(it.col, it.obj, pronto);
+  });
+}
+
+function _despesaDaManutencao(mid){
+  return (DB.despesas||[]).find(function(d){ return String(d.manutencao_id) === String(mid); });
+}
+
+function _despesaDeManutencao(m){
+  var ja = _despesaDaManutencao(m.id);
+  var v  = (DB.veiculos||[]).find(function(x){ return x.id == m.veiculo_id; }) || {};
+  var servico = m.tipo || 'Manuten\u00e7\u00e3o';
+  return {
+    id: ja ? ja.id : nid(DB.despesas||[]),
+    manutencao_id: m.id,              // o elo entre os dois registros
+    tipo: DESP_TIPO_MANUT,
+    data: m.data || '',
+    fornecedor: m.oficina || 'Oficina nao informada',
+    // So consignado tem proprietario de fora: em carro proprio o dono e a loja,
+    // e o proprietario_id passou a guardar de QUEM COMPRAMOS. Mesma regra que o
+    // despesas.html ja usa no preenchimento automatico.
+    proprietario: (v.tipo_est === 'consignado' && v.proprietario_id) ? (fNome(v.proprietario_id) || '') : '',
+    veiculo: (v.marca || '') + (v.modelo ? ' ' + v.modelo : ''),
+    placa: m.placa || v.placa || '',
+    valor: m.valor,
+    descricao: servico + (m.descricao ? ' \u2014 ' + m.descricao : '')
+  };
+}
+
 // Esconde do menu as telas que o perfil nao alcanca.
 // 🔴 Vive separado porque CADA PAGINA declara o proprio applyProfile(), que
 // sombreia o daqui -- os locais chamam esta funcao. Sem isso a parte do menu

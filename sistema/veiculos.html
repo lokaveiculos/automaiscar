@@ -270,8 +270,8 @@ function renderVeic(){
   '<select style="width:auto;min-width:130px" onchange="vFilt=this.value;vPag=1;renderVeic()">'+
   ['todos','disponivel','vendido','consignado','manutencao'].map(s=>'<option value="'+s+'" '+(vFilt===s?'selected':'')+'>'+s+'</option>').join('')+
   '</select></div>'+
-  '<div class="tw"><table><thead><tr><th>Veiculo</th><th>Placa/Chassi</th><th>Ano/KM</th><th>Estoque</th><th>Preco</th><th>Status</th><th>Acoes</th></tr></thead><tbody>'+
-  (fl.length===0?'<tr><td colspan="7"><div class="empty"><span class="ei">&#128663;</span>Nenhum veiculo</div></td></tr>':'')+
+  '<div class="tw"><table><thead><tr><th>Veiculo</th><th>Placa/Chassi</th><th>Ano/KM</th><th>Estoque</th><th>Preco</th><th>Previsao Reparos</th><th>Status</th><th>Acoes</th></tr></thead><tbody>'+
+  (fl.length===0?'<tr><td colspan="8"><div class="empty"><span class="ei">&#128663;</span>Nenhum veiculo</div></td></tr>':'')+
   flPag.map(v=>
     '<tr><td><div style="font-weight:700">'+v.marca+' '+v.modelo+' <span style="color:var(--t3);font-weight:400">'+(v.versao||'')+'</span></div>'+
     '<div style="font-size:11px;color:var(--t3)">'+v.cor+' &bull; '+v.combustivel+'</div></td>'+
@@ -280,6 +280,7 @@ function renderVeic(){
     '<td>'+(v.tipo_est==='consignado'?'<span class="badge bg-y">Consig.</span>':'<span class="badge bg-gr">Proprio</span>')+
     (v.proprietario_id?'<div style="font-size:11px;color:var(--t3);margin-top:2px">'+(fNome(v.proprietario_id)||'-')+'</div>':'')+'</td>'+
     '<td style="font-weight:800;color:var(--accent)">R$ '+brl(v.preco)+'</td>'+
+    '<td>'+repCelula(v)+'</td>'+
     '<td>'+sbV(v.status)+'</td>'+
     '<td><div class="acts">'+
     (v.status==='disponivel'?
@@ -288,12 +289,319 @@ function renderVeic(){
     :v.status==='reservado'?
     '<button class="btn bg2 bsm" onclick="liberarReserva('+v.id+')" title="Liberar Reserva">&#128275;</button>'
     :'')+
+    '<button class="btn bw bsm" onclick="fmReparos('+v.id+')" title="Previsao para Reparos">&#128295;</button>'+
     '<button class="btn bi bsm" onclick="verHistorico('+v.id+')" title="Historico">&#128203;</button>'+
     '<button class="btn bg2 bsm" onclick="fmVeic('+v.id+')" title="Editar">&#9999;</button>'+
     (podeAcao('excluir')?'<button class="btn bd bsm" onclick="dlVeic('+v.id+')" title="Excluir">&#128465;</button>':'')+
     '</div></td></tr>'
   ).join('')+
   '</tbody></table>'+pagV+'</div>';
+}
+
+// ── Previsao para Reparos ────────────────────────────────────
+// Previsao do que PODE ser gasto com o veiculo (tipicamente garantia), e a
+// baixa quando o servico e feito de verdade.
+//
+// 🔴 A baixa NAO monta despesa por conta propria: ela cria a MANUTENCAO e
+// deixa a cadeia do shared (_despesaDeManutencao) gerar a despesa -- a mesma
+// que a aba Manutencao usa. Duas montagens divergiriam com o tempo.
+//
+// 🔴 O previsto e uma LISTA, nao um campo: um carro em garantia pode ter
+// "revisao de freio" e "retifica" ao mesmo tempo, e se baixa um sem perder o
+// outro. Com um campo unico, baixa parcial viraria conta de cabeca.
+
+// Garantia legal do CDC -- o mesmo prazo que os contratos de venda prometem
+// ("garantia legal de 90 (noventa) dias"). ⚠️ Nao e numero meu: vem do
+// documento que a loja assina.
+var REP_GARANTIA_DIAS = 90;
+
+// 🔴 repNum("abc") devolve 0, e 0 e valor legitimo -- por isso quem valida usa
+// repTemDigito ANTES. Mesma licao da baixa em lote de multas da LOKA.
+function repNum(t){
+  if(t===null||t===undefined) return 0;
+  if(typeof t==="number") return isFinite(t)?t:0;
+  var s=String(t).trim(); if(!s) return 0;
+  if(s.indexOf(",")>=0) s=s.replace(/\./g,"").replace(",",".");
+  var n=parseFloat(s.replace(/[^0-9.\-]/g,""));
+  return isFinite(n)?n:0;
+}
+function repTemDigito(t){ return /[0-9]/.test(String(t===null||t===undefined?"":t)); }
+function repEsc(s){
+  return String(s===null||s===undefined?"":s)
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+
+// ⚠️ Normaliza lista/objeto/nulo: o Firestore guarda array, mas cache antigo e
+// importacao podem trazer objeto indexado.
+function repLista(v){
+  var r=v&&v.reparos;
+  if(!r) return [];
+  var arr = Object.prototype.toString.call(r)==="[object Array]"
+    ? r : Object.keys(r).map(function(k){return r[k];});
+  return arr.filter(function(x){ return x&&typeof x==="object"; });
+}
+function repAbertos(v){ return repLista(v).filter(function(x){ return x.status!=="realizado"; }); }
+function repFeitos(v){  return repLista(v).filter(function(x){ return x.status==="realizado"; }); }
+function repSoma(l){ return l.reduce(function(s,x){ return s+repNum(x.valor); },0); }
+function repTotalPrevisto(v){ return repSoma(repAbertos(v)); }
+
+// 🔴 A venda MAIS RECENTE, nao a primeira: ha carro vendido duas vezes nos
+// dados reais (SWI1J24, 13/08 e 20/10). A garantia corre da ultima saida.
+function repVendaDo(v){
+  var melhor=null;
+  (DB.vendas||[]).forEach(function(s){
+    if(!s||!v||s.veiculo_id!=v.id||!s.data) return;
+    if(!melhor||String(s.data)>String(melhor.data)) melhor=s;
+  });
+  return melhor;
+}
+function repGarantia(v){
+  if(!v||v.status!=="vendido") return null;
+  var s=repVendaDo(v);
+  // Uma guarda so: data ausente, vazia ou torta cai toda no isNaN --
+  // `new Date("T12:00")` e Invalid Date. Checar !s.data antes seria um
+  // segundo caminho para o mesmo resultado, que nenhum teste distingue.
+  var d=new Date(String((s&&s.data)||"")+"T12:00");
+  if(isNaN(d.getTime())) return {semData:true};
+  var hoje=new Date(); hoje.setHours(12,0,0,0);
+  var dias=Math.floor((hoje-d)/86400000);
+  return {data:s.data, dias:dias, resta:REP_GARANTIA_DIAS-dias,
+          vigente:dias>=0&&dias<=REP_GARANTIA_DIAS};
+}
+
+// 🔴 Sem previsao nenhuma mostra travessao, NUNCA R$ 0,00: zero previsto e
+// "nada a gastar"; ausencia e "ninguem avaliou ainda". Sao coisas diferentes.
+function repCelula(v){
+  var ab=repAbertos(v), fe=repFeitos(v), g=repGarantia(v), h="";
+  if(ab.length) h+="<div style=\"font-weight:800;color:var(--warn)\">R$ "+brl(repTotalPrevisto(v))+"</div>"+
+    "<div style=\"font-size:10px;color:var(--t3)\">"+ab.length+" previsto(s)</div>";
+  else h+="<span style=\"color:var(--t3)\">&mdash;</span>";
+  if(g&&g.vigente) h+="<div style=\"font-size:10px;color:var(--ok)\">garantia: faltam "+g.resta+" dia(s)</div>";
+  else if(g&&!g.semData) h+="<div style=\"font-size:10px;color:var(--t3)\">garantia vencida</div>";
+  if(fe.length) h+="<div style=\"font-size:10px;color:var(--t3)\">"+fe.length+" baixado(s) &middot; R$ "+brl(repSoma(fe))+"</div>";
+  return h;
+}
+
+// ── o modal da lista ─────────────────────────────────────────
+function fmReparos(vid){
+  var v=DB.veiculos.find(function(x){return x.id==vid;});
+  if(!v){toast("Veiculo nao encontrado","err");return;}
+  var ab=repAbertos(v), fe=repFeitos(v), g=repGarantia(v);
+
+  var aviso="";
+  if(g&&g.vigente) aviso="<div class=\"ib\">&#128737; Vendido em "+repEsc(fd(g.data))+
+    " &mdash; garantia legal de "+REP_GARANTIA_DIAS+" dias <b>vigente</b>, faltam "+g.resta+" dia(s).</div>";
+  else if(g&&!g.semData) aviso="<div class=\"ib\">Vendido em "+repEsc(fd(g.data))+
+    " &mdash; garantia de "+REP_GARANTIA_DIAS+" dias <b>vencida</b> ha "+(g.dias-REP_GARANTIA_DIAS)+" dia(s).</div>";
+  else if(g) aviso="<div class=\"ib\">Vendido, mas a venda nao tem data &mdash; nao da para dizer se a garantia esta vigente.</div>";
+
+  function linhas(lista,feito){
+    return lista.map(function(it){
+      return "<tr><td>"+repEsc(it.descricao||"(sem descricao)")+
+        (it.garantia?" <span class=\"badge bg-y\">garantia</span>":"")+
+        (it.obs?"<div style=\"font-size:11px;color:var(--t3)\">"+repEsc(it.obs)+"</div>":"")+
+        (feito&&it.realizadoEm?"<div style=\"font-size:11px;color:var(--t3)\">baixado em "+repEsc(fd(it.realizadoEm))+"</div>":"")+
+        "</td><td style=\"font-weight:700;white-space:nowrap\">R$ "+brl(repNum(it.valor))+"</td>"+
+        "<td><div class=\"acts\">"+
+        (feito?"":"<button class=\"btn bs bsm\" onclick=\"repBaixaAbrir("+vid+",'"+repEsc(it.id)+"')\" title=\"Dar baixa (servico realizado)\">&#10004;</button>")+
+        (feito?"":"<button class=\"btn bd bsm\" onclick=\"repExcluir("+vid+",'"+repEsc(it.id)+"')\" title=\"Excluir previsao\">&#128465;</button>")+
+        "</div></td></tr>";
+    }).join("");
+  }
+
+  om('<div class="mt2"><span>&#128295; Previsao para Reparos</span>'+
+  '<button class="btn bg2 bsm" onclick="cm()">X</button></div>'+
+  '<div style="font-weight:700;margin-bottom:2px">'+repEsc(v.marca+" "+v.modelo+" "+(v.versao||""))+'</div>'+
+  '<div style="font-family:monospace;color:var(--t3);font-size:12px;margin-bottom:10px">'+repEsc(v.placa)+'</div>'+
+  aviso+
+  '<div class="shd" style="margin-top:12px">Previsto em aberto'+(ab.length?' &mdash; R$ '+brl(repTotalPrevisto(v)):'')+'</div>'+
+  (ab.length?'<div class="tw"><table><thead><tr><th>Servico</th><th>Valor</th><th>Acoes</th></tr></thead><tbody>'+
+    linhas(ab,false)+'</tbody></table></div>'
+   :'<div style="font-size:12px;color:var(--t3);padding:6px 0">Nenhuma previsao registrada para este veiculo.</div>')+
+  '<div class="shd" style="margin-top:14px">Nova previsao</div>'+
+  '<div class="fr"><div class="fg full"><label>Servico previsto *</label>'+
+  '<input id="rpDesc" placeholder="Ex: revisao de freios, retifica do motor..."></div></div>'+
+  '<div class="fr"><div class="fg"><label>Valor previsto (R$) *</label>'+
+  '<input id="rpVal" type="number" step="0.01" placeholder="800,00"></div>'+
+  '<div class="fg"><label>&nbsp;</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer">'+
+  '<input type="checkbox" id="rpGar" style="width:auto"'+((g&&g.vigente)?' checked':'')+'> cobre pela garantia</label></div></div>'+
+  '<div class="fr"><div class="fg full"><label>Observacoes</label>'+
+  '<input id="rpObs" placeholder="opcional"></div></div>'+
+  '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">'+
+  '<button class="btn bp" onclick="repAdicionar('+vid+')">+ Adicionar previsao</button></div>'+
+  (fe.length?'<div class="shd" style="margin-top:16px">Ja baixado &mdash; R$ '+brl(repSoma(fe))+'</div>'+
+    '<div class="tw"><table><thead><tr><th>Servico</th><th>Valor</th><th></th></tr></thead><tbody>'+
+    linhas(fe,true)+'</tbody></table></div>'+
+    '<div style="font-size:11px;color:var(--t3);margin-top:6px">O que foi baixado esta em Manutencao e em Despesas. O registro fica aqui como historico.</div>':'')+
+  '<div class="mf"><button class="btn bg2" onclick="cm()">Fechar</button></div>', true);
+}
+
+// ── gravar uma previsao ──────────────────────────────────────
+// 🔴 Grava PRIMEIRO, mexe na tela depois que o banco confirma -- o padrao que
+// o CRM passou a seguir quando avisava "salvo" sem ter salvado.
+function _repSalvarVeic(v, cb){
+  fsave("veiculos", v, function(err){
+    if(err){
+      toast("NAO foi salvo: "+(err&&err.code==="permission-denied"
+        ?"o banco nao autoriza gravar em veiculos."
+        :(err.message||"falha de conexao")),"err",8000);
+      return;
+    }
+    sDB(); cb();
+  });
+}
+
+function repAdicionar(vid){
+  var v=DB.veiculos.find(function(x){return x.id==vid;});
+  if(!v){toast("Veiculo nao encontrado","err");return;}
+  var desc=(document.getElementById("rpDesc")||{value:""}).value.trim();
+  var val =(document.getElementById("rpVal") ||{value:""}).value;
+  var gar =!!(document.getElementById("rpGar")||{}).checked;
+  var obs =(document.getElementById("rpObs") ||{value:""}).value.trim();
+  if(!desc){toast("Informe o servico previsto","err");return;}
+  // 🔴 repNum("abc") e 0: sem exigir digito, erro de digitacao entraria como
+  // previsao de R$ 0,00 sem ninguem notar.
+  if(!repTemDigito(val)){toast("Informe o valor previsto","err");return;}
+  var n=repNum(val);
+  if(n<=0){toast("O valor previsto tem de ser maior que zero","err");return;}
+
+  var lista=repLista(v).slice();
+  lista.push({ id:"rp"+Date.now()+Math.floor(Math.random()*1000),
+    descricao:desc, valor:String(n), garantia:gar, obs:obs,
+    status:"previsto", criadoEm:_repHoje(), criadoPor:(getSession()||{}).nome||"" });
+  var novo=Object.assign({},v,{reparos:lista});
+  _repSalvarVeic(novo,function(){
+    DB.veiculos=DB.veiculos.map(function(x){return x.id==v.id?novo:x;});
+    renderVeic(); fmReparos(vid);
+    toast("Previsao de R$ "+brl(n)+" registrada","ok");
+  });
+}
+
+function repExcluir(vid,itemId){
+  var v=DB.veiculos.find(function(x){return x.id==vid;});
+  if(!v) return;
+  var it=repLista(v).find(function(x){return String(x.id)===String(itemId);});
+  if(!it){toast("Previsao nao encontrada","err");return;}
+  if(it.status==="realizado"){toast("Esta previsao ja foi baixada e nao pode ser excluida","err",6000);return;}
+  if(!confirm("Excluir a previsao \""+(it.descricao||"")+"\" de R$ "+brl(repNum(it.valor))+"?"))return;
+  var lista=repLista(v).filter(function(x){return String(x.id)!==String(itemId);});
+  var novo=Object.assign({},v,{reparos:lista});
+  _repSalvarVeic(novo,function(){
+    DB.veiculos=DB.veiculos.map(function(x){return x.id==v.id?novo:x;});
+    renderVeic(); fmReparos(vid);
+    toast("Previsao excluida","ok");
+  });
+}
+
+function _repHoje(){
+  // 🔴 hora LOCAL: toISOString() joga o lancamento da noite para o dia seguinte
+  var d=new Date();
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
+
+// ── a baixa ──────────────────────────────────────────────────
+function repBaixaAbrir(vid,itemId){
+  var v=DB.veiculos.find(function(x){return x.id==vid;});
+  if(!v){toast("Veiculo nao encontrado","err");return;}
+  var it=repLista(v).find(function(x){return String(x.id)===String(itemId);});
+  if(!it){toast("Previsao nao encontrada","err");return;}
+  if(it.status==="realizado"){toast("Esta previsao ja foi baixada","err");return;}
+  var prev=repNum(it.valor);
+  var fOpts=(DB.fornecedores||[]).map(function(f){return "<option>"+repEsc(f.nome)+"</option>";}).join("");
+
+  om('<div class="mt2"><span>&#10004; Dar baixa &mdash; servico realizado</span>'+
+  '<button class="btn bg2 bsm" onclick="cm()">X</button></div>'+
+  '<div class="ib">Isto cria a <b>manutencao</b> do veiculo e lanca a <b>despesa</b> automaticamente. A previsao fica no historico como baixada.</div>'+
+  '<div style="font-weight:700;margin:8px 0 2px">'+repEsc(v.marca+" "+v.modelo)+' &middot; '+repEsc(v.placa)+'</div>'+
+  '<div style="font-size:12px;color:var(--t3);margin-bottom:10px">Previsto: R$ '+brl(prev)+'</div>'+
+  '<div class="fr"><div class="fg full"><label>Servico realizado *</label>'+
+  '<input id="rbDesc" value="'+repEsc(it.descricao||"")+'"></div></div>'+
+  '<div class="fr"><div class="fg"><label>Valor realizado (R$) *</label>'+
+  '<input id="rbVal" type="number" step="0.01" value="'+prev+'" oninput="repBaixaDif('+prev+')"></div>'+
+  '<div class="fg"><label>Data *</label><input id="rbData" type="date" value="'+_repHoje()+'"></div></div>'+
+  '<div id="rbDif" style="font-size:12px;min-height:18px;line-height:18px;margin-bottom:6px"></div>'+
+  '<div class="fr"><div class="fg"><label>Oficina / fornecedor</label>'+
+  '<input id="rbOf" list="rb-forn" placeholder="quem fez o servico">'+
+  '<datalist id="rb-forn">'+fOpts+'</datalist></div>'+
+  '<div class="fg"><label>Situacao</label><select id="rbSt">'+
+  '<option value="concluida">concluida</option><option value="andamento">andamento</option>'+
+  '<option value="pendente">pendente</option></select></div></div>'+
+  '<div class="fr"><div class="fg full"><label>Observacoes</label>'+
+  '<input id="rbObs" value="'+repEsc(it.obs||"")+'"></div></div>'+
+  '<div class="mf"><button class="btn bg2" onclick="fmReparos('+vid+')">&larr; Voltar</button>'+
+  '<button class="btn bp" id="rbOk" onclick="repBaixaConfirmar('+vid+',\''+repEsc(it.id)+'\')">&#10004; Confirmar baixa</button></div>', true);
+  repBaixaDif(prev);
+}
+
+// Mostra a diferenca ao vivo. ⚠️ So DESENHA -- nao recalcula nada, senao um
+// valor ajustado a mao seria sobrescrito a cada tecla.
+function repBaixaDif(prev){
+  var el=document.getElementById("rbDif"); if(!el) return;
+  var atual=repNum((document.getElementById("rbVal")||{value:""}).value);
+  var d=atual-repNum(prev);
+  if(!atual){ el.innerHTML=""; return; }
+  if(Math.abs(d)<0.005) el.innerHTML="<span style=\"color:var(--ok)\">&#10004; igual ao previsto</span>";
+  else if(d>0) el.innerHTML="<span style=\"color:var(--danger)\">R$ "+brl(d)+" ACIMA do previsto</span>";
+  else el.innerHTML="<span style=\"color:var(--ok)\">R$ "+brl(-d)+" abaixo do previsto</span>";
+}
+
+function repBaixaConfirmar(vid,itemId){
+  var v=DB.veiculos.find(function(x){return x.id==vid;});
+  if(!v){toast("Veiculo nao encontrado","err");return;}
+  var lista=repLista(v).slice();
+  var pos=-1;
+  lista.forEach(function(x,i){ if(String(x.id)===String(itemId)) pos=i; });
+  if(pos<0){toast("Previsao nao encontrada","err");return;}
+  if(lista[pos].status==="realizado"){toast("Esta previsao ja foi baixada","err");return;}
+
+  var desc=(document.getElementById("rbDesc")||{value:""}).value.trim();
+  var val =(document.getElementById("rbVal") ||{value:""}).value;
+  var data=(document.getElementById("rbData")||{value:""}).value;
+  var of  =(document.getElementById("rbOf")  ||{value:""}).value.trim();
+  var st  =(document.getElementById("rbSt")  ||{value:"concluida"}).value;
+  var obs =(document.getElementById("rbObs") ||{value:""}).value.trim();
+
+  if(!desc){toast("Informe o servico realizado","err");return;}
+  if(!repTemDigito(val)){toast("Informe o valor realizado","err");return;}
+  var n=repNum(val);
+  if(n<=0){toast("O valor realizado tem de ser maior que zero","err");return;}
+  if(!data){toast("Informe a data do servico","err");return;}
+
+  // 🔴 A manutencao e montada no formato da aba Manutencao, e a despesa sai da
+  // MESMA _despesaDeManutencao do shared -- fica identica a que a outra tela
+  // geraria para o mesmo servico.
+  var mnt={ id:nid(DB.manutencoes||[]), veiculo_id:v.id, placa:v.placa||"",
+    tipo:desc, status:st, data:data, valor:String(n), oficina:of,
+    descricao:(obs?obs+" ":"")+"[baixa de previsao de reparo: previsto R$ "+brl(repNum(lista[pos].valor))+"]" };
+  var desp=_despesaDeManutencao(mnt);
+
+  lista[pos]=Object.assign({},lista[pos],{ status:"realizado",
+    valorRealizado:String(n), realizadoEm:data, manutencao_id:mnt.id,
+    baixadoPor:(getSession()||{}).nome||"" });
+  var novo=Object.assign({},v,{reparos:lista});
+
+  var btn=document.getElementById("rbOk");
+  if(btn){ btn.disabled=true; btn.textContent="Gravando..."; }
+  function destrava(){ if(btn){ btn.disabled=false; btn.innerHTML="&#10004; Confirmar baixa"; } }
+
+  // os tres registros vao juntos: tudo ou nada
+  _gravarTudo([{col:"manutencoes",obj:mnt},{col:"despesas",obj:desp},{col:"veiculos",obj:novo}],
+  function(erros){
+    if(erros.length){
+      destrava();
+      toast("NAO foi dada a baixa -- "+erros.join(", "),"err",8000);
+      return;   // o modal fica aberto, nada do que foi digitado se perde
+    }
+    if(!DB.manutencoes) DB.manutencoes=[];
+    DB.manutencoes.push(mnt);
+    if(!DB.despesas) DB.despesas=[];
+    var di=DB.despesas.findIndex(function(d){return d.id==desp.id;});
+    if(di>=0) DB.despesas[di]=desp; else DB.despesas.push(desp);
+    DB.veiculos=DB.veiculos.map(function(x){return x.id==v.id?novo:x;});
+    sDB(); renderVeic(); fmReparos(vid);
+    toast("Baixa feita: manutencao registrada e despesa de R$ "+brl(n)+" lancada","ok",6000);
+  });
 }
 
 function renderPlaca(){
