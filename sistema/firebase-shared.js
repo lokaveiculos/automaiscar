@@ -242,6 +242,140 @@ function amHashSenha(senha, salt){
   });
 }
 
+// ── Busca de veiculo por PLACA ou MODELO ─────────────────────
+// Pedido do Rogel em 19/11/2026: poder pesquisar por placa ou por modelo em
+// todos os campos de veiculo do sistema.
+//
+// Vive aqui porque sao CINCO seletores (contrato, venda, despesa,
+// despesa_form e manutencao). Em cinco copias, uma aprenderia regra nova e as
+// outras nao -- e o texto da option de cada um ja e diferente.
+
+// Tira acento, caixa e pontuacao: assim "PLF-0254" casa com "plf0254" e
+// "plf 0254". Medido: das 53 placas, 27 estao gravadas COM hifen e 26 SEM.
+function veicNormBusca(s) {
+  return semAcento(String(s === null || s === undefined ? "" : s)).replace(/[^a-z0-9]/g, "");
+}
+
+// A caixa de busca ao lado do seletor. `selectId` e o <select> que ela filtra.
+// ⚠️ min-width:0 no seletor e obrigatorio: flex item nao encolhe abaixo do
+// conteudo, e as opcoes sao longas (licao de 02/10).
+function veicBuscaHtml(selectId, selectHtml, placeholder) {
+  var bid = "vb-" + selectId;
+  return "<div style=\"display:flex;gap:8px\">" +
+    "<input id=\"" + bid + "\" data-veic-sel=\"" + selectId + "\"" +
+    " style=\"flex:0 0 150px\" autocomplete=\"off\"" +
+    " placeholder=\"" + (placeholder || "Placa ou modelo") + "\"" +
+    " oninput=\"veicBuscaFiltrar(this)\">" +
+    selectHtml +
+    "</div>" +
+    "<span id=\"" + bid + "-aviso\" style=\"font-size:12px;line-height:18px;display:block;min-height:18px\"></span>";
+}
+
+// 🔴 A lista completa fica guardada NO PROPRIO <select> (sel._veicTodas).
+// Quando o modal e recriado pelo om(), a propriedade desaparece junto com o
+// elemento -- nao ha cache velho para invalidar, e um cadastro novo aparece na
+// proxima abertura.
+function veicBuscaTodas(sel) {
+  if (!sel) return [];
+  var n = (sel.options || []).length;
+  // 🔴 Refaz quando o seletor tem MAIS opcoes do que a lista guardada: a
+  // despesa_form.html acrescenta os veiculos por JS depois do load, e quem
+  // digitar antes disso teria guardado uma lista de uma opcao so.
+  if (!sel._veicTodas || n > sel._veicTodas.length) {
+    var t = [], ops = sel.options || [];
+    for (var i = 0; i < ops.length; i++) {
+      t.push({ v: ops[i].value, t: ops[i].textContent || ops[i].text || "" });
+    }
+    sel._veicTodas = t;
+  }
+  return sel._veicTodas;
+}
+
+// 🔴 Trava de reentrancia: ligada enquanto o filtro roda. Sem ela, o
+// sel.onchange() que o filtro dispara chamaria o veicBuscaLimpar do
+// contrato e apagaria o que a pessoa acabou de digitar.
+var _vbFiltrando = false;
+
+function veicBuscaFiltrar(inputEl) {
+  if (!inputEl) return;
+  var selectId = inputEl.getAttribute ? inputEl.getAttribute("data-veic-sel") : "";
+  var sel = document.getElementById(selectId || "");
+  if (!sel) return;
+  var todas = veicBuscaTodas(sel);
+  var escolhido = sel.value;        // 🔴 o que ja estava escolhido
+  var termo = veicNormBusca(inputEl.value);
+
+  // os resultados de verdade (fora a opcao vazia)
+  var achados = todas.filter(function (o) {
+    return o.v !== "" && termo && veicNormBusca(o.t).indexOf(termo) >= 0;
+  });
+
+  // 🔴 A escolha e decidida ANTES de montar o HTML, para o `selected`
+  // carregar a selecao sozinho. Com um `sel.value = ...` depois do
+  // innerHTML, uma option quebrada (aspa no value) ficaria escondida pela
+  // atribuicao -- foi o que mascarou defeito na v157 da LOKA.
+  // Sobrou um resultado so: e o caso de digitar a placa inteira.
+  var novo = achados.length === 1 ? achados[0].v : escolhido;
+
+  // A opcao VAZIA e a ESCOLHIDA nunca saem da lista: sem a vazia nao ha como
+  // desmarcar, e sem a escolhida um caractere errado no meio da digitacao
+  // apagaria o veiculo que a pessoa ja tinha selecionado.
+  var vis = todas.filter(function (o) {
+    if (o.v === "" || o.v === novo) return true;
+    if (!termo) return true;
+    return veicNormBusca(o.t).indexOf(termo) >= 0;
+  });
+
+  var html = "";
+  for (var i = 0; i < vis.length; i++) {
+    html += "<option value=\"" + String(vis[i].v).replace(/&/g, "&amp;").replace(/"/g, "&quot;") + "\"" +
+      (vis[i].v === novo ? " selected" : "") + ">" +
+      String(vis[i].t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") +
+      "</option>";
+  }
+  // ⚠️ trocar o innerHTML de um <select> ZERA o value (medido em 03/11):
+  // quem carrega a selecao e o `selected` montado acima.
+  sel.innerHTML = html;
+
+  // 🔴 So avisa a tela quando o veiculo REALMENTE mudou: a cada tecla com um
+  // unico resultado, disparar o onchange chamaria autoPreco/autoPlaca/
+  // selVeic de novo sobre a mesma escolha.
+  if (novo !== escolhido && typeof sel.onchange === "function") {
+    // 🔴 a trava impede que o veicBuscaLimpar chamado de dentro do onchange
+    // apague o que a pessoa acabou de digitar
+    _vbFiltrando = true;
+    try { sel.onchange(); } catch (e) {}
+    _vbFiltrando = false;
+  }
+
+  var av = document.getElementById("vb-" + selectId + "-aviso");
+  if (!av) return;
+  var totReais = todas.filter(function (o) { return o.v !== ""; }).length;
+  if (!termo) { av.innerHTML = ""; return; }
+  if (!achados.length) {
+    av.innerHTML = "<span style=\"color:var(--danger, #dc2626)\">nenhum veiculo com " +
+      "\u00ab" + String(inputEl.value).replace(/&/g, "&amp;").replace(/</g, "&lt;") + "\u00bb</span>";
+  } else if (achados.length === 1) {
+    av.innerHTML = "<span style=\"color:var(--success, #16a34a)\">\u2713 " +
+      String(achados[0].t).replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</span>";
+  } else {
+    av.innerHTML = "<span style=\"color:var(--text-muted, #6b7585)\">" + achados.length + " de " + totReais +
+      " \u2014 escolha na lista</span>";
+  }
+}
+
+// Mexer no seletor a mao limpa a busca: a caixa para de opinar sobre uma
+// escolha que nao foi ela que fez.
+function veicBuscaLimpar(selectId) {
+  if (_vbFiltrando) return;   // veio de dentro do filtro: nao e a pessoa mexendo
+  var b = document.getElementById("vb-" + selectId);
+  if (b) b.value = "";
+  var av = document.getElementById("vb-" + selectId + "-aviso");
+  if (av) av.innerHTML = "";
+  var sel = document.getElementById(selectId);
+  if (sel) sel._veicTodas = null;
+}
+
 // ── Manutencao -> Despesa ────────────────────────────────────
 // 🔴 Vive aqui, e nao numa pagina, porque DUAS telas lancam manutencao:
 // a aba Manutencao (gestao.html) e a baixa da previsao de reparo

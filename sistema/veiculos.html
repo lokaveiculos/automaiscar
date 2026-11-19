@@ -253,25 +253,57 @@ checkAuth(function() {
 });
 function renderTab(){ vTab==='placa'?renderPlaca():renderVeic(); }
 
+// ── Aba Estoque x Aba Vendidos ───────────────────────────────────────────
+// 🔴 A particao e por status: vendido de um lado, TODO O RESTO do outro.
+// Carro sem status cai em Estoque, que e a verdade (nao foi vendido), e a
+// soma das duas abas e sempre a frota inteira -- nenhum carro se perde nem
+// aparece nas duas.
+function veicDaAba() {
+  var todos = (DB && DB.veiculos) || [];
+  if (vTab === "vendidos") return todos.filter(function (x) { return x && x.status === "vendido"; });
+  return todos.filter(function (x) { return x && x.status !== "vendido"; });
+}
+
+// A lista que aparece na tela -- e a MESMA que o relatorio exporta.
+// ⚠️ Na aba Vendidos o seletor de status nao existe (sao todos o mesmo
+// status), entao o vFilt NAO e aplicado la: aplicado, um filtro deixado em
+// "disponivel" na outra aba esvaziaria a lista sem nada na tela explicando.
+function veicFiltrados() {
+  var m = semAcento(vSrch);
+  return veicDaAba().filter(function (x) {
+    var okBusca = !m || semAcento(x.placa).includes(m) ||
+      semAcento(x.marca).includes(m) || semAcento(x.modelo).includes(m);
+    var okSt = (vTab === "vendidos") || vFilt === "todos" || x.status === vFilt;
+    return okBusca && okSt;
+  });
+}
+
 function renderVeic(){
-  const fl=DB.veiculos.filter(v=>{const m=semAcento(vSrch);return(!m||semAcento(v.placa).includes(m)||semAcento(v.marca).includes(m)||semAcento(v.modelo).includes(m))&&(vFilt==='todos'||v.status===vFilt);});
+  const aba=veicDaAba(), fl=veicFiltrados(), vend=vTab==='vendidos';
+  const nVend=((DB&&DB.veiculos)||[]).filter(x=>x&&x.status==='vendido').length;
+  const nEst=((DB&&DB.veiculos)||[]).length-nVend;
   var _pv=Math.ceil(fl.length/PAG_SIZE)||1;if(vPag>_pv)vPag=1;var flPag=pagSlice(fl,vPag);var pagV=pagHtml(vPag,fl.length,'vPag--;renderVeic()','vPag++;renderVeic()');
   document.getElementById('main').innerHTML=
-  '<div class="ph"><div><div class="pt">Veiculos</div><div class="ps">'+DB.veiculos.length+' cadastrados</div></div>'+
+  '<div class="ph"><div><div class="pt">'+(vend?'Veiculos Vendidos':'Veiculos em Estoque')+'</div><div class="ps">'+
+  (fl.length===aba.length?aba.length:fl.length+' de '+aba.length)+(vend?' vendido(s)':' em estoque')+
+  ' &bull; '+((DB&&DB.veiculos)||[]).length+' cadastrados</div></div>'+
   '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
   '<button class="btn bp" onclick="fmVeic(null)">+ Novo Veiculo</button>'+
   '<button class="btn bg2" onclick="exportEstoque()">&#128229; Exportar</button>'+
   '</div></div>'+
   '<div class="tabs">'+
-  '<div class="tab active">&#128664; Estoque</div>'+
+  '<div class="tab'+(vend?'':' active')+'" onclick="vTab=\'veiculos\';vPag=1;renderVeic()">&#128664; Em estoque ('+nEst+')</div>'+
+  '<div class="tab'+(vend?' active':'')+'" onclick="vTab=\'vendidos\';vPag=1;renderVeic()">&#128176; Vendidos ('+nVend+')</div>'+
   '<div class="tab" onclick="vTab=\'placa\';renderPlaca()">&#9524; Placa de Venda</div></div>'+
   '<div class="sb2"><div class="sw"><span class="sico">&#128269;</span>'+
   '<input id="busca-veiculos" value="'+vSrch+'" oninput="vSrch=this.value;vPag=1;comFoco(renderVeic)" placeholder="Placa, marca ou modelo..."></div>'+
-  '<select style="width:auto;min-width:130px" onchange="vFilt=this.value;vPag=1;renderVeic()">'+
-  ['todos','disponivel','vendido','consignado','manutencao'].map(s=>'<option value="'+s+'" '+(vFilt===s?'selected':'')+'>'+s+'</option>').join('')+
-  '</select></div>'+
+  (vend?'':'<select style="width:auto;min-width:130px" onchange="vFilt=this.value;vPag=1;renderVeic()">'+
+  ['todos','disponivel','consignado','manutencao'].map(s=>'<option value="'+s+'" '+(vFilt===s?'selected':'')+'>'+s+'</option>').join('')+
+  '</select>')+'</div>'+
   '<div class="tw"><table><thead><tr><th>Veiculo</th><th>Placa/Chassi</th><th>Ano/KM</th><th>Estoque</th><th>Preco</th><th>Previsao Reparos</th><th>Status</th><th>Acoes</th></tr></thead><tbody>'+
-  (fl.length===0?'<tr><td colspan="8"><div class="empty"><span class="ei">&#128663;</span>Nenhum veiculo</div></td></tr>':'')+
+  (fl.length===0?'<tr><td colspan="8"><div class="empty"><span class="ei">&#128663;</span>'+
+    (aba.length===0?(vend?'Nenhum veiculo vendido':'Nenhum veiculo em estoque')
+                   :'Nenhum veiculo encontrado com esta busca')+'</div></td></tr>':'')+
   flPag.map(v=>
     '<tr><td><div style="font-weight:700">'+v.marca+' '+v.modelo+' <span style="color:var(--t3);font-weight:400">'+(v.versao||'')+'</span></div>'+
     '<div style="font-size:11px;color:var(--t3)">'+v.cor+' &bull; '+v.combustivel+'</div></td>'+
@@ -838,12 +870,15 @@ function exportEstoque(){
     {label:'RENAVAM',key:'renavam'},
     {label:'Opcionais',key:'opcionais'},
   ];
-  var fl = vFilt==='todos'?DB.veiculos:DB.veiculos.filter(function(v){return v.status===vFilt;});
-  var tit = 'Estoque Auto Mais - '+new Date().toLocaleDateString('pt-BR');
+  // 🔴 A MESMA lista da tela (aba + busca + filtro). Exportar da aba
+  // Vendidos com a frota inteira faria o papel contradizer o que se ve.
+  var fl = veicFiltrados();
+  var _abaRot = vTab==='vendidos' ? 'Vendidos' : 'Em estoque';
+  var tit = (vTab==='vendidos'?'Vendidos':'Estoque')+' Auto Mais - '+new Date().toLocaleDateString('pt-BR');
   // Perguntar formato
   if(confirm('Exportar como PDF para impressao?\nCancele para exportar CSV (Excel).')) {
     exportPrint(
-      'Relatorio de Estoque',
+      'Relatorio de '+_abaRot,
       [{label:'Placa',key:'placa'},{label:'Veiculo',fn:function(v){return v.marca+' '+v.modelo+' '+( v.versao||'');}},
        {label:'Ano',fn:function(v){
           // Fabricacao/modelo. Quando sao iguais, repetir "2017/2017" so
@@ -857,10 +892,10 @@ function exportEstoque(){
        {label:'Preco',fn:function(v){return 'R$ '+brl(v.preco);}},
        {label:'Status',key:'status'}],
       fl,
-      fl.length+' veiculos &bull; Filtro: '+vFilt
+      fl.length+' veiculos &bull; Aba: '+_abaRot+(vTab==='vendidos'?'':' &bull; Filtro: '+vFilt)+(vSrch?' &bull; Busca: '+vSrch:'')
     );
   } else {
-    exportCSV(fl, 'estoque-automais-'+Date.now()+'.csv', cols);
+    exportCSV(fl, (vTab==='vendidos'?'vendidos':'estoque')+'-automais-'+Date.now()+'.csv', cols);
   }
 }
 

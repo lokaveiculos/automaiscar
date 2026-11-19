@@ -317,7 +317,9 @@ function fmMnt(id){
   om(
     '<div class="mt2"><span>'+(id?'Editar':'Novo Registro')+'</span><button class="btn bg2 bsm" onclick="cm()">X</button></div>' +
     '<div class="fr"><div class="fg full"><label>Veiculo *</label>' +
-    '<select id="mv" onchange="selVeic(this)"><option value="">Selecione...</option>'+optsV+'</select></div></div>' +
+    veicBuscaHtml('mv',
+      '<select id="mv" style="flex:1;min-width:0" onchange="selVeic(this)"><option value="">Selecione...</option>'+optsV+'</select>') +
+    '</div></div>' +
     '<input type="hidden" id="mpl" value="'+(m.placa||'')+'">' +
     '<div class="fr">' +
     '<div class="fg"><label>Servico *</label><input id="mtp" value="'+m.tipo+'" placeholder="Revisao, troca de oleo..."></div>' +

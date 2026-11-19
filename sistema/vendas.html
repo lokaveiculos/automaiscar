@@ -352,8 +352,11 @@ function novaVenda(preVid){
   '<div class="fr"><div class="fg"><label>Numero</label><input id="vdnum" value="'+num+'" readonly></div>'+
   '<div class="fg"><label>Data *</label><input id="vddata" type="date" value="'+hoje+'"></div></div>'+
   '<div class="fr">'+
-  '<div class="fg"><label>Veiculo *</label><select id="vdveic" onchange="autoPreco()">'+
-  '<option value="">Selecione...</option>'+disp.map(v=>'<option value="'+v.id+'" '+(v.id==preVid?'selected':'')+'>'+v.marca+' '+v.modelo+' '+v.placa+' - R$'+brl(v.preco)+'</option>').join('')+'</select></div>'+
+  '<div class="fg"><label>Veiculo *</label>'+
+  veicBuscaHtml('vdveic',
+    '<select id="vdveic" style="flex:1;min-width:0" onchange="autoPreco()">'+
+    '<option value="">Selecione...</option>'+disp.map(v=>'<option value="'+v.id+'" '+(v.id==preVid?'selected':'')+'>'+v.marca+' '+v.modelo+' '+v.placa+' - R$'+brl(v.preco)+'</option>').join('')+'</select>')+
+  '</div>'+
   '<div class="fg"><label>Cliente *</label><select id="vdcli"><option value="">Selecione...</option>'+DB.clientes.map(c=>'<option value="'+c.id+'">'+c.nome+'</option>').join('')+'</select></div></div>'+
   '<div class="fr"><div class="fg"><label>Valor de Venda (R$) *</label><input id="vdval" type="number" value="'+(vPre?vPre.preco:'')+'" placeholder="85000"></div>'+
   '<div class="fg"><label>Entrada (R$)</label><input id="vdent" type="number" placeholder="0"></div></div>'+

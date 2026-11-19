@@ -404,7 +404,9 @@ function fmDesp(id){
     '<input id="dval" type="number" step="0.01" value="'+(d.valor||'')+'" placeholder="0,00"></div></div>'+
 
     '<div class="fr"><div class="fg full"><label>Ve\u00edculo (selecione para preencher a placa automaticamente)</label>'+
-    '<select id="dveic" onchange="autoPlaca()">'+optsV+'</select></div></div>'+
+    veicBuscaHtml('dveic',
+      '<select id="dveic" style="flex:1;min-width:0" onchange="autoPlaca()">'+optsV+'</select>')+
+    '</div></div>'+
 
     '<div class="fr">'+
     '<div class="fg"><label>Placa</label>'+

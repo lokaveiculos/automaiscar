@@ -45,7 +45,12 @@ textarea{resize:vertical;min-height:70px}
     <div class="fg"><label>Valor (R$) *</label><input id="dval" type="number" step="0.01" placeholder="0,00"></div>
   </div>
   <div class="fr"><div class="fg full"><label>Veiculo (placa preenchida automaticamente)</label>
-    <select id="dveic" onchange="autoPlaca()"><option value="">-- Selecione --</option></select>
+    <div style="display:flex;gap:8px">
+      <input id="vb-dveic" data-veic-sel="dveic" style="flex:0 0 150px" autocomplete="off"
+             placeholder="Placa ou modelo" oninput="veicBuscaFiltrar(this)">
+      <select id="dveic" style="flex:1;min-width:0" onchange="autoPlaca()"><option value="">-- Selecione --</option></select>
+    </div>
+    <span id="vb-dveic-aviso" style="font-size:12px;line-height:18px;display:block;min-height:18px"></span>
   </div></div>
   <div class="fr">
     <div class="fg"><label>Placa</label><input id="dplaca" placeholder="ABC-1234" style="font-family:monospace;font-weight:700;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></div>
@@ -180,6 +185,7 @@ function salvar(){
   document.getElementById('ok').style.display='block';
   // Limpar campos
   document.getElementById('dveic').value='';
+  veicBuscaLimpar('dveic');
   document.getElementById('dplaca').value='';
   document.getElementById('dprop').value='';
   document.getElementById('dforn').value='';
