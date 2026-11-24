@@ -251,7 +251,11 @@ checkAuth(function() {
     renderTab()
   }).catch(function(e){ console.error('[veiculos.html]', e); });
 });
-function renderTab(){ vTab==='placa'?renderPlaca():renderVeic(); }
+function renderTab(){
+  if (vTab === 'placa')   return renderPlaca();
+  if (vTab === 'servico') return renderServico();
+  return renderVeic();
+}
 
 // ── Aba Estoque x Aba Vendidos ───────────────────────────────────────────
 // 🔴 A particao e por status: vendido de um lado, TODO O RESTO do outro.
@@ -294,6 +298,7 @@ function renderVeic(){
   '<div class="tabs">'+
   '<div class="tab'+(vend?'':' active')+'" onclick="vTab=\'veiculos\';vPag=1;renderVeic()">&#128664; Em estoque ('+nEst+')</div>'+
   '<div class="tab'+(vend?' active':'')+'" onclick="vTab=\'vendidos\';vPag=1;renderVeic()">&#128176; Vendidos ('+nVend+')</div>'+
+  '<div class="tab" onclick="vTab=\'servico\';renderServico()">&#128295; Em servi&ccedil;o ('+svcFora().length+')</div>'+
   '<div class="tab" onclick="vTab=\'placa\';renderPlaca()">&#9524; Placa de Venda</div></div>'+
   '<div class="sb2"><div class="sw"><span class="sico">&#128269;</span>'+
   '<input id="busca-veiculos" value="'+vSrch+'" oninput="vSrch=this.value;vPag=1;comFoco(renderVeic)" placeholder="Placa, marca ou modelo..."></div>'+
@@ -328,6 +333,461 @@ function renderVeic(){
     '</div></td></tr>'
   ).join('')+
   '</tbody></table>'+pagV+'</div>';
+}
+
+
+// ══════════════════════════════════════════════════════════════════
+//  EM SERVIÇO  —  pedido do Rogel em 24/11/2026
+// ══════════════════════════════════════════════════════════════════
+// Onde está cada veículo e desde quando: placa, veículo, local e data.
+//
+// 🔴 O dado vive DENTRO do veículo (`v.servico` / `v.servicoHist`), não
+// numa coleção nova. Medido em 24/11: as regras do Firestore são coleção
+// por coleção e recusam o que não está na lista — `emservico`, `servico` e
+// `em_servico` respondem HTTP 403, como `leads` (15/09) e `perfis`
+// (06/11). `veiculos` responde 200, e é o mesmo caminho que a Previsão de
+// Reparos (12/11) já usa.
+//
+// 🔴 E assim a trava "o mesmo carro em dois lugares" é impossível por
+// construção: um veículo tem um `v.servico`, não dois.
+
+function svcEsc(t){
+  return String(t==null?"":t)
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+// ⚠️ Data em hora LOCAL. Com toISOString() um lançamento feito depois das
+// 21h no Brasil cairia no dia seguinte.
+function svcHoje(){
+  var d=new Date(), m=String(d.getMonth()+1), dia=String(d.getDate());
+  return d.getFullYear()+"-"+(m.length<2?"0"+m:m)+"-"+(dia.length<2?"0"+dia:dia);
+}
+
+function svcVeics(){ return (DB&&DB.veiculos)||[]; }
+
+// os que estão FORA agora: têm v.servico com local
+function svcFora(){
+  return svcVeics().filter(function(v){
+    return v && v.servico && String(v.servico.local||"").trim();
+  });
+}
+
+// ⚠️ O histórico pode voltar do Firestore como objeto indexado, não array
+// (é o mesmo cuidado do repLista da Previsão de Reparos).
+function svcLista(v){
+  var h = v && v.servicoHist;
+  if (!h) return [];
+  if (Array.isArray(h)) return h.filter(function(x){ return x; });
+  if (typeof h === "object") {
+    return Object.keys(h).sort(function(a,b){ return Number(a)-Number(b); })
+      .map(function(k){ return h[k]; }).filter(function(x){ return x; });
+  }
+  return [];
+}
+
+function svcDias(iso){
+  var d=String(iso||"").slice(0,10);
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(d)) return null;
+  var t=new Date(d+"T12:00:00").getTime();
+  if(isNaN(t)) return null;
+  return Math.round((new Date(svcHoje()+"T12:00:00").getTime()-t)/86400000);
+}
+
+function svcDataBR(iso){
+  var d=String(iso||"").slice(0,10);
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(d)) return "\u2014";
+  var x=d.split("-"); return x[2]+"/"+x[1]+"/"+x[0];
+}
+
+// Locais já usados + oficinas das manutenções + fornecedores.
+// ⚠️ É <datalist>, não <select>: lista fechada impediria um destino novo
+// (cliente, despachante, pátio, vistoria) — a lição do fornecedor nas
+// despesas (26/09).
+function svcLocais(){
+  var vistos={}, fora=[];
+  function por(t){
+    var v=String(t==null?"":t).trim();
+    if(!v) return;
+    var k=semAcento(v);
+    if(vistos[k]) return;
+    vistos[k]=1; fora.push(v);
+  }
+  svcVeics().forEach(function(v){
+    if(v&&v.servico) por(v.servico.local);
+    svcLista(v).forEach(function(h){ por(h&&h.local); });
+  });
+  ((DB&&DB.manutencoes)||[]).forEach(function(m){ por(m&&m.oficina); });
+  ((DB&&DB.fornecedores)||[]).forEach(function(f){ por(f&&f.nome); });
+  return fora.sort(function(a,b){ return semAcento(a)<semAcento(b)?-1:1; });
+}
+
+// ── a lista da tela ─────────────────────────────────────────────────
+let svcSrch="", svcLoc="", svcDe="", svcAte="", svcHist=false, svcPag=1;
+
+// Cada linha da tela: um veículo fora agora, ou um retorno do histórico.
+function svcLinhas(){
+  var fora=[];
+  svcVeics().forEach(function(v){
+    if(!v) return;
+    if(v.servico && String(v.servico.local||"").trim()){
+      fora.push({v:v, s:v.servico, volt:false, idx:-1});
+    }
+    if(svcHist){
+      svcLista(v).forEach(function(h,i){ fora.push({v:v, s:h, volt:true, idx:i}); });
+    }
+  });
+  var q=semAcento(svcSrch);
+  fora=fora.filter(function(r){
+    if(svcLoc && semAcento(r.s.local)!==semAcento(svcLoc)) return false;
+    var d=String(r.s.data||"").slice(0,10);
+    // ⚠️ Registro SEM data sai do resultado quando há período: não dá para
+    // afirmar que ele cai no intervalo pedido. E a tela diz quantos saíram.
+    if(svcDe  && (!d || d<svcDe))  return false;
+    if(svcAte && (!d || d>svcAte)) return false;
+    if(q){
+      var alvo=semAcento([r.v.placa,r.v.marca,r.v.modelo,r.s.local,r.s.obs,
+        r.s.quem].join(" "));
+      if(alvo.indexOf(q)<0) return false;
+    }
+    return true;
+  });
+  // mais antigo primeiro: é o que precisa de atenção. Sem data vai ao fim.
+  fora.sort(function(a,b){
+    var da=String(a.s.data||"9999"), db2=String(b.s.data||"9999");
+    if(da!==db2) return da<db2?-1:1;
+    return String(a.v.placa||"")<String(b.v.placa||"")?-1:1;
+  });
+  return fora;
+}
+
+function svcSemData(){
+  if(!svcDe && !svcAte) return 0;
+  var n=0;
+  svcVeics().forEach(function(v){
+    if(!v) return;
+    if(v.servico && String(v.servico.local||"").trim() && !String(v.servico.data||"").slice(0,10)) n++;
+    if(svcHist) svcLista(v).forEach(function(h){ if(h && !String(h.data||"").slice(0,10)) n++; });
+  });
+  return n;
+}
+
+function renderServico(){
+  var foraAgora=svcFora();
+  var fl=svcLinhas();
+  var _pv=Math.ceil(fl.length/PAG_SIZE)||1; if(svcPag>_pv) svcPag=1;
+  var flPag=pagSlice(fl,svcPag);
+  var pagV=pagHtml(svcPag,fl.length,"svcPag--;renderServico()","svcPag++;renderServico()");
+  var nVend=svcVeics().filter(function(x){return x&&x.status==="vendido";}).length;
+  var nEst=svcVeics().length-nVend;
+
+  // locais com registro, para o seletor. Opção que não filtra nada só
+  // atrapalha (padrão dos filtros de Vendas e do órgão das multas da LOKÁ).
+  var cont={};
+  svcLinhas.todos=null;
+  svcVeics().forEach(function(v){
+    if(!v) return;
+    function marca(l){
+      var t=String(l||"").trim(); if(!t) return;
+      var k=semAcento(t);
+      if(!cont[k]) cont[k]={nome:t,n:0};
+      cont[k].n++;
+    }
+    if(v.servico) marca(v.servico.local);
+    if(svcHist) svcLista(v).forEach(function(h){ marca(h&&h.local); });
+  });
+  var chaves=Object.keys(cont).sort();
+
+  var maisAntigo=0;
+  foraAgora.forEach(function(v){
+    var d=svcDias(v.servico&&v.servico.data);
+    if(d!=null && d>maisAntigo) maisAntigo=d;
+  });
+  var locaisAtivos={};
+  foraAgora.forEach(function(v){
+    var k=semAcento(v.servico&&v.servico.local); if(k) locaisAtivos[k]=1;
+  });
+  var nHist=0;
+  svcVeics().forEach(function(v){ nHist+=svcLista(v).length; });
+
+  var semData=svcSemData();
+  var aviso=semData
+    ? '<div class="ib" style="background:#fdecea;color:#7a1c12">\u26a0 '+semData+
+      ' registro(s) sem data de sa\u00edda ficaram de fora do filtro</div>'
+    : "";
+
+  document.getElementById("main").innerHTML=
+  '<div class="ph"><div><div class="pt">Ve\u00edculos em Servi\u00e7o</div><div class="ps">'+
+  (fl.length===foraAgora.length&&!svcHist?foraAgora.length:fl.length+" de "+foraAgora.length)+
+  ' fora agora &bull; '+svcVeics().length+' cadastrados</div></div>'+
+  '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
+  '<button class="btn bp" onclick="svcAbrir(null)">+ Enviar ve\u00edculo</button>'+
+  '</div></div>'+
+  '<div class="tabs">'+
+  '<div class="tab" onclick="vTab=\'veiculos\';vPag=1;renderVeic()">&#128664; Em estoque ('+nEst+')</div>'+
+  '<div class="tab" onclick="vTab=\'vendidos\';vPag=1;renderVeic()">&#128176; Vendidos ('+nVend+')</div>'+
+  '<div class="tab active">&#128295; Em servi\u00e7o ('+foraAgora.length+')</div>'+
+  '<div class="tab" onclick="vTab=\'placa\';renderPlaca()">&#9524; Placa de Venda</div></div>'+
+  '<div class="sb2"><div class="sw"><span class="sico">&#128269;</span>'+
+  '<input id="busca-servico" value="'+svcEsc(svcSrch)+'" oninput="svcSrch=this.value;svcPag=1;comFoco(renderServico)" placeholder="Placa, ve\u00edculo, local, quem enviou...">'+
+  '</div>'+
+  '<select style="width:auto;min-width:150px" onchange="svcLoc=this.value;svcPag=1;renderServico()">'+
+  '<option value="">Todos os locais</option>'+
+  chaves.map(function(k){
+    return '<option value="'+svcEsc(cont[k].nome)+'"'+
+      (semAcento(cont[k].nome)===semAcento(svcLoc)?" selected":"")+'>'+
+      svcEsc(cont[k].nome)+' ('+cont[k].n+')</option>';
+  }).join("")+
+  '</select>'+
+  '<input type="date" style="width:auto" value="'+svcEsc(svcDe)+'" title="De" onchange="svcDe=this.value;svcPag=1;renderServico()">'+
+  '<input type="date" style="width:auto" value="'+svcEsc(svcAte)+'" title="At\u00e9" onchange="svcAte=this.value;svcPag=1;renderServico()">'+
+  '<button class="btn bg2" onclick="svcLimpar()">Limpar</button>'+
+  '<label style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">'+
+  '<input type="checkbox" '+(svcHist?"checked":"")+' onchange="svcHist=this.checked;svcPag=1;renderServico()"> Mostrar hist\u00f3rico'+
+  '</label></div>'+
+  // ⚠️ `.sg` e a grade de cartoes da casa, com `.sl` (rotulo) e `.sv`
+  // (valor) dentro de `.card`. `.cards`/`.cl`/`.cv` nao existem no ds.css.
+  '<div class="sg" style="grid-template-columns:repeat(4,1fr)">'+
+  '<div class="card" style="padding:16px 20px"><div class="sl">Fora agora</div><div class="sv">'+foraAgora.length+'</div></div>'+
+  '<div class="card" style="padding:16px 20px"><div class="sl">Locais diferentes</div><div class="sv">'+Object.keys(locaisAtivos).length+'</div></div>'+
+  '<div class="card" style="padding:16px 20px"><div class="sl">H\u00e1 mais tempo fora</div><div class="sv">'+(maisAntigo?maisAntigo+" dia(s)":"\u2014")+'</div></div>'+
+  '<div class="card" style="padding:16px 20px"><div class="sl">Retornos no hist\u00f3rico</div><div class="sv">'+nHist+'</div></div>'+
+  '</div>'+
+  aviso+
+  '<div class="tw"><table><thead><tr><th>Placa</th><th>Ve\u00edculo</th><th>Local</th><th>Data</th><th>Quem enviou</th><th>A\u00e7\u00f5es</th></tr></thead><tbody>'+
+  (fl.length===0
+    ? '<tr><td colspan="6"><div class="empty"><span class="ei">&#128295;</span>'+
+      (foraAgora.length===0&&!svcHist
+        ? 'Nenhum ve\u00edculo em servi\u00e7o.<br><span style="font-size:11px">Use <strong>+ Enviar ve\u00edculo</strong> para registrar para onde o carro foi e desde quando.</span>'
+        : 'Nenhum registro encontrado com estes filtros.')+'</div></td></tr>'
+    : "")+
+  flPag.map(function(r){
+    var dias=svcDias(r.s.data);
+    var prev=String(r.s.previsao||"").slice(0,10);
+    var atrasado=(!r.volt && prev && prev<svcHoje());
+    return '<tr>'+
+    '<td><div style="font-family:monospace;font-weight:700">'+svcEsc(r.v.placa)+'</div></td>'+
+    '<td><div style="font-weight:700">'+svcEsc(((r.v.marca||"")+" "+(r.v.modelo||"")).trim()||"\u2014")+'</div>'+
+      '<div style="font-size:11px;color:var(--text-muted)">'+svcEsc(r.v.versao||"")+'</div></td>'+
+    '<td><div style="font-weight:700">'+svcEsc(r.s.local||"\u2014")+'</div>'+
+      (r.s.obs?'<div style="font-size:11px;color:var(--text-muted)">'+svcEsc(r.s.obs)+'</div>':"")+'</td>'+
+    '<td><div style="font-weight:700">'+svcDataBR(r.s.data)+'</div>'+
+      (r.volt
+        ?'<div style="font-size:11px;color:var(--success)">voltou '+svcDataBR(r.s.retorno)+'</div>'
+        :(dias!=null?'<div style="font-size:11px;color:var(--text-muted)">h\u00e1 '+dias+' dia(s)</div>':""))+
+      (atrasado?'<div style="font-size:11px;color:var(--danger);font-weight:700">\u26a0 previs\u00e3o era '+svcDataBR(prev)+'</div>':"")+
+    '</td>'+
+    '<td><div style="font-size:11px;color:var(--text-muted)">'+svcEsc(r.s.quem||"\u2014")+'</div></td>'+
+    '<td><div class="acts">'+
+      (r.volt?"":'<button class="btn bs bsm" onclick="svcVoltaAbrir('+r.v.id+')" title="Registrar que o ve\u00edculo voltou">\u2714 Voltou</button>')+
+      (r.volt?"":'<button class="btn bg2 bsm" onclick="svcAbrir('+r.v.id+')" title="Editar">&#9999;</button>')+
+      (r.volt&&podeAcao("excluir")?'<button class="btn bd bsm" onclick="svcApagarHist('+r.v.id+','+r.idx+')" title="Apagar do hist\u00f3rico">&#128465;</button>':"")+
+    '</div></td></tr>';
+  }).join("")+
+  '</tbody></table>'+pagV+'</div>';
+}
+
+function svcLimpar(){
+  svcSrch=""; svcLoc=""; svcDe=""; svcAte=""; svcPag=1;
+  renderServico();
+}
+
+// ── o formulário ────────────────────────────────────────────────────
+function svcAbrir(id){
+  var v = id!=null ? svcVeics().find(function(x){return x&&x.id==id;}) : null;
+  if(id!=null && !v){ toast("Veiculo nao encontrado","err"); return; }
+  var s = (v&&v.servico)||null;
+  // 🔴 Só os carros LIVRES entram no seletor — mais o que está sendo
+  // editado. É o que impede dois registros para o mesmo carro, e aqui a
+  // trava é estrutural: o veículo tem UM v.servico.
+  var livres = svcVeics().filter(function(x){
+    if(!x||!x.placa) return false;
+    if(v && x.id==v.id) return true;
+    return !(x.servico && String(x.servico.local||"").trim());
+  }).sort(function(a,b){ return String(a.placa)<String(b.placa)?-1:1; });
+
+  om('<div class="mt2"><span>'+(s?"Editar servi\u00e7o":"Enviar ve\u00edculo")+'</span>'+
+    '<button class="btn bg2 bsm" onclick="cm()">X</button></div>'+
+    (s?"":'<div class="ib">&#128161; Registre para onde o carro foi e desde quando. Quando ele voltar, use o bot\u00e3o <b>\u2714 Voltou</b> \u2014 o registro vai para o hist\u00f3rico.</div>')+
+    '<div class="fr"><div class="fg full"><label>Ve\u00edculo *</label>'+
+    veicBuscaHtml("svcVeic",
+      '<select id="svcVeic" style="flex:1;min-width:0">'+
+      '<option value="">-- Selecione --</option>'+
+      livres.map(function(x){
+        return '<option value="'+svcEsc(x.id)+'"'+(v&&x.id==v.id?" selected":"")+'>'+
+          svcEsc(x.placa+" - "+((x.marca||"")+" "+(x.modelo||"")).trim())+'</option>';
+      }).join("")+'</select>')+
+    '</div></div>'+
+    '<div class="fr"><div class="fg full"><label>Local *</label>'+
+    '<input id="svcLocal" list="svcListaLocais" value="'+svcEsc(s?s.local:"")+'" placeholder="Oficina, cliente, p\u00e1tio, despachante..." autocomplete="off">'+
+    '<datalist id="svcListaLocais">'+
+    svcLocais().map(function(l){ return '<option value="'+svcEsc(l)+'">'; }).join("")+
+    '</datalist></div></div>'+
+    '<div class="fr"><div class="fg"><label>Data de sa\u00edda *</label>'+
+    '<input id="svcData" type="date" value="'+svcEsc(s?String(s.data||"").slice(0,10):svcHoje())+'"></div>'+
+    '<div class="fg"><label>Previs\u00e3o de retorno</label>'+
+    '<input id="svcPrev" type="date" value="'+svcEsc(s?String(s.previsao||"").slice(0,10):"")+'"></div></div>'+
+    '<div class="fr"><div class="fg full"><label>Observa\u00e7\u00e3o</label>'+
+    '<textarea id="svcObs" rows="2" placeholder="O que o ve\u00edculo foi fazer, quem levou, contato...">'+svcEsc(s?s.obs:"")+'</textarea></div></div>'+
+    '<div class="mf">'+
+    (s&&podeAcao("excluir")?'<button class="btn bd" onclick="svcCancelar('+v.id+')">\ud83d\uddd1 Cancelar servi\u00e7o</button>':"")+
+    '<button class="btn bg2" onclick="cm()">Cancelar</button>'+
+    '<button class="btn bp" onclick="svcSalvar('+(v?v.id:"null")+')">Salvar</button></div>', true);
+}
+
+function svcSalvar(id){
+  var vid   = (document.getElementById("svcVeic")||{}).value||"";
+  var local = String((document.getElementById("svcLocal")||{}).value||"").trim();
+  var data  = String((document.getElementById("svcData")||{}).value||"").slice(0,10);
+  var prev  = String((document.getElementById("svcPrev")||{}).value||"").slice(0,10);
+  var obs   = String((document.getElementById("svcObs")||{}).value||"").trim();
+
+  if(!vid)   { toast("Selecione o veiculo","err"); return; }
+  if(!local) { toast("Informe o local - e para onde o veiculo foi","err"); return; }
+  if(!data)  { toast("Informe a data de saida","err"); return; }
+  // ⚠️ previsão antes da saída não é previsão
+  if(prev && prev<data){ toast("A previsao de retorno e anterior a saida","err"); return; }
+
+  var v = svcVeics().find(function(x){ return x&&x.id==vid; });
+  if(!v){ toast("Veiculo nao encontrado","err"); return; }
+
+  // 🔴 Trocar de veículo numa edição: o carro ANTIGO tem de ser liberado,
+  // senão ele fica fora para sempre sem nada na tela.
+  var antigo = (id!=null && String(id)!==String(vid))
+    ? svcVeics().find(function(x){ return x&&x.id==id; }) : null;
+  if(antigo && !(id!=null && String(id)===String(vid))){
+    var jaFora = v.servico && String(v.servico.local||"").trim();
+    if(jaFora){
+      toast(v.placa+" ja esta em "+v.servico.local+" desde "+svcDataBR(v.servico.data),"err");
+      return;
+    }
+  }
+
+  var antes = { v: v.servico, antigo: antigo?antigo.servico:undefined };
+  var quem  = (getSession()&&(getSession().nome||getSession().usuario))||"-";
+  v.servico = {
+    local: local, data: data, previsao: prev, obs: obs,
+    quem: (antes.v&&antes.v.quem)||quem,
+    criadoEm: (antes.v&&antes.v.criadoEm)||new Date().toISOString()
+  };
+  if(antes.v) { v.servico.editadoEm = new Date().toISOString(); v.servico.editadoPor = quem; }
+  var grava = [{col:"veiculos", obj:v}];
+  if(antigo){ delete antigo.servico; grava.push({col:"veiculos", obj:antigo}); }
+
+  // 🔴 Grava PRIMEIRO. Só mexe na tela depois que o banco confirma —
+  // falhando, desfaz o que mudou em memória e o modal fica aberto para
+  // não perder o que foi digitado (padrão do CRM, 15/09).
+  // 🔴 o callback recebe o ARRAY de erros, nao um booleano (shared:390).
+  // Com `function(ok){ if(!ok) }` a falha nunca seria vista: array vazio
+  // e array com erro sao os dois truthy.
+  _gravarTudo(grava, function(erros){
+    if(erros && erros.length){
+      v.servico = antes.v;
+      if(!antes.v) delete v.servico;
+      if(antigo) antigo.servico = antes.antigo;
+      toast("NAO foi salvo -- "+erros.join(", "),"err",8000);
+      return;   // o modal fica aberto, nada do que foi digitado se perde
+    }
+    sDB(); cm(); renderServico();
+    toast(antes.v?"Servico atualizado":(v.placa+" registrado em "+local),"ok");
+  });
+}
+
+// ── dar baixa: o veículo voltou ─────────────────────────────────────
+function svcVoltaAbrir(id){
+  var v = svcVeics().find(function(x){ return x&&x.id==id; });
+  if(!v || !v.servico){ toast("Registro nao encontrado","err"); return; }
+  var dias = svcDias(v.servico.data);
+  om('<div class="mt2"><span>Ve\u00edculo voltou</span>'+
+    '<button class="btn bg2 bsm" onclick="cm()">X</button></div>'+
+    '<div class="ib"><b>'+svcEsc(v.placa)+'</b> '+svcEsc(((v.marca||"")+" "+(v.modelo||"")).trim())+
+    '<br>em <b>'+svcEsc(v.servico.local||"\u2014")+'</b> desde '+svcDataBR(v.servico.data)+
+    (dias!=null?' ('+dias+' dia(s))':"")+'</div>'+
+    '<div class="fr"><div class="fg full"><label>Data do retorno *</label>'+
+    '<input id="svcVoltaData" type="date" value="'+svcHoje()+'"></div></div>'+
+    '<div class="fr"><div class="fg full"><label>Observa\u00e7\u00e3o do retorno</label>'+
+    '<textarea id="svcVoltaObs" rows="2" placeholder="Opcional"></textarea></div></div>'+
+    '<div class="mf"><button class="btn bg2" onclick="cm()">Cancelar</button>'+
+    '<button class="btn bp" onclick="svcVoltaConfirmar('+v.id+')">\u2714 Confirmar retorno</button></div>', true);
+}
+
+function svcVoltaConfirmar(id){
+  var v = svcVeics().find(function(x){ return x&&x.id==id; });
+  if(!v || !v.servico){ toast("Registro nao encontrado","err"); return; }
+  var data = String((document.getElementById("svcVoltaData")||{}).value||"").slice(0,10);
+  var obs  = String((document.getElementById("svcVoltaObs")||{}).value||"").trim();
+  if(!data){ toast("Informe a data do retorno","err"); return; }
+  var saida = String(v.servico.data||"").slice(0,10);
+  // ⚠️ retorno antes da saída não é retorno
+  if(saida && data<saida){
+    toast("O retorno ("+svcDataBR(data)+") e anterior a saida ("+svcDataBR(saida)+")","err");
+    return;
+  }
+  var antesS = v.servico, antesH = svcLista(v).slice();
+  var quem = (getSession()&&(getSession().nome||getSession().usuario))||"-";
+  // 🔴 O registro NÃO é apagado: vai para o histórico com a data do
+  // retorno. É isso que permite consultar depois quem levou o carro, para
+  // onde e por quantos dias.
+  var h = antesH.slice();
+  h.push({
+    local: antesS.local, data: antesS.data, previsao: antesS.previsao||"",
+    obs: antesS.obs||"", quem: antesS.quem||"",
+    retorno: data, obsRetorno: obs, retornoPor: quem,
+    retornoEm: new Date().toISOString()
+  });
+  v.servicoHist = h;
+  delete v.servico;
+  _gravarTudo([{col:"veiculos", obj:v}], function(erros){
+    if(erros && erros.length){
+      v.servico = antesS; v.servicoHist = antesH;
+      toast("NAO foi registrado o retorno -- "+erros.join(", "),"err",8000);
+      return;
+    }
+    sDB(); cm(); renderServico();
+    toast(v.placa+" voltou de "+(antesS.local||"-"),"ok");
+  });
+}
+
+// Cancelar o serviço: o carro não foi, ou foi lançado por engano. Diferente
+// de "voltou" — não vai para o histórico, porque não houve saída.
+function svcCancelar(id){
+  var v = svcVeics().find(function(x){ return x&&x.id==id; });
+  if(!v || !v.servico){ toast("Registro nao encontrado","err"); return; }
+  if(!confirm("Cancelar o servico de "+v.placa+" em "+(v.servico.local||"-")+"?\n\n"+
+    "Use isto quando o lancamento foi por engano. Se o veiculo FOI e voltou, "+
+    "use o botao \u2714 Voltou - assim o registro fica no historico.")) return;
+  var antes = v.servico;
+  delete v.servico;
+  _gravarTudo([{col:"veiculos", obj:v}], function(erros){
+    if(erros && erros.length){
+      v.servico = antes;
+      toast("NAO foi cancelado -- "+erros.join(", "),"err",8000);
+      return;
+    }
+    sDB(); cm(); renderServico();
+    toast("Servico cancelado","ok");
+  });
+}
+
+function svcApagarHist(id, idx){
+  var v = svcVeics().find(function(x){ return x&&x.id==id; });
+  if(!v){ toast("Veiculo nao encontrado","err"); return; }
+  var h = svcLista(v);
+  var r = h[idx];
+  if(!r){ toast("Registro nao encontrado","err"); return; }
+  if(!confirm("Apagar do historico: "+v.placa+" em "+(r.local||"-")+" ("+svcDataBR(r.data)+")?\n\n"+
+    "O banco nao tem lixeira: isto nao pode ser desfeito.")) return;
+  var antes = h.slice();
+  var novo = h.slice(); novo.splice(idx,1);
+  v.servicoHist = novo;
+  _gravarTudo([{col:"veiculos", obj:v}], function(erros){
+    if(erros && erros.length){
+      v.servicoHist = antes;
+      toast("NAO foi apagado -- "+erros.join(", "),"err",8000);
+      return;
+    }
+    sDB(); renderServico();
+    toast("Apagado do historico","ok");
+  });
 }
 
 // ── Previsao para Reparos ────────────────────────────────────
