@@ -337,6 +337,8 @@ document.getElementById('main').innerHTML=
     '</td>'+
     '<td><div class="acts">'+
     '<button class="btn bi bsm" onclick="modalContratosVenda('+v.id+')" title="Ver Documentos">&#128196;</button>'+
+    '<button class="btn bi bsm" onclick="rvAbrir('+v.id+')" title="'+rvTituloBotao(v)+'">&#129534;'+
+      (rvLista(v).length?'<sup>'+rvLista(v).length+'</sup>':'')+'</button>'+
     (podeAcao('excluir')?'<button class="btn bd bsm" onclick="dlVenda('+v.id+')" title="Excluir">&#128465;</button>':'')+
     '</div></td></tr>'
   ).join('')+'</tbody></table>'+pagVD+'</div>';
@@ -1079,6 +1081,486 @@ function vizCtDoc(id, action){
       true
     );
   }
+}
+
+
+// ════════════════════════════════════════════════════════════════════
+//  RECIBO DE PAGAMENTO DA VENDA                         28/11/2026
+// ════════════════════════════════════════════════════════════════════
+// 🔴 O recibo vive DENTRO da venda (`v.recibos[]`), nao numa colecao
+// nova: medido em 24/11 e 06/11 que colecao que as regras do Firestore
+// nao listam responde 403 (foi o caso de `leads`, `perfis`, `emservico`).
+// E o precedente da casa ja existe duas vezes: `v.reparos[]` (12/11) e
+// `v.servico` (24/11).
+//
+// 🔴 Antes disto, o sistema NAO guardava em lugar nenhum quanto o
+// cliente ja havia pago: medido nas 38 vendas e nos 39 contratos, zero
+// campos com "pago/recebido/baixa/quitado". A venda registrava o valor
+// e a FORMA do negocio; o que entrou de dinheiro, nao.
+
+// Como o dinheiro entrou. ⚠️ NAO e a mesma lista do `pagamento` da venda
+// (A vista / Financiamento / Consorcio / Entrada + Parcelas), que diz como
+// o NEGOCIO foi estruturado. Aqui e o meio pelo qual o valor chegou.
+var RV_FORMAS = ['Dinheiro', 'PIX', 'Transferencia bancaria', 'Cartao de debito',
+  'Cartao de credito', 'Cheque', 'Credito de financiamento', 'Carta de credito / consorcio',
+  'Deposito', 'Outro'];
+
+// A que o pagamento se refere. ⚠️ O vocabulario foi MEDIDO nos obs das 38
+// vendas, nao inventado: "transferencia" aparece 46 vezes, "emplacamento"
+// 20, mais entrada, parcela/boleto, troco, IPVA e multa.
+var RV_REFS = ['Sinal / entrada', 'Parcela', 'Quitacao do saldo',
+  'Transferencia e emplacamento', 'Documentacao', 'IPVA / licenciamento',
+  'Multa', 'Acessorios / servicos', 'Outro'];
+
+function rvEsc(t) {
+  return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// ⚠️ O valor na Auto Mais e NUMERO em notacao JS: medido nas 38 vendas,
+// 26 sao so digitos ("61500") e 12 tem ponto decimal ("72000.00"), zero
+// com virgula. Ler com o `mltNum` da LOKA (onde ponto e milhar) faria
+// 72000.00 virar 7.200.000.
+function rvNum(v) {
+  if (typeof v === 'number') return isFinite(v) ? v : 0;
+  var s = String(v == null ? '' : v).trim();
+  if (!s) return 0;
+  if (s.indexOf(',') >= 0) {                 // digitado a brasileira
+    s = s.replace(/\./g, '').replace(',', '.');
+  }
+  var n = Number(s.replace(/[^\d.\-]/g, ''));
+  return isFinite(n) ? n : 0;
+}
+// 🔴 Quem separa "nao informou" de "informou zero" e esta funcao, nao o
+// rvNum: medido que uma guarda de digito DENTRO do rvNum seria inerte
+// (Number("") e Number("-") ja caem no isFinite e devolvem 0 nas 8
+// entradas testadas). `rvNum('abc')` devolve 0, e 0 passaria
+// calado como "recebi nada" (licao da baixa em lote da LOKA, v94)
+function rvTemDigito(v) { return /\d/.test(String(v == null ? '' : v)); }
+
+// data em hora LOCAL: com toISOString() um recibo emitido depois das 21h
+// cairia no dia seguinte
+function rvHoje() {
+  var d = new Date(), m = String(d.getMonth() + 1), dia = String(d.getDate());
+  return d.getFullYear() + '-' + (m.length < 2 ? '0' + m : m) + '-' + (dia.length < 2 ? '0' + dia : dia);
+}
+function rvDataBR(iso) {
+  var s = String(iso || '').slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return '—';
+  var p = s.split('-');
+  return p[2] + '/' + p[1] + '/' + p[0];
+}
+
+// ⚠️ O Firestore devolve array como OBJETO indexado depois de algumas
+// gravacoes (armadilha 1 da LOKA, e ja mordeu `reparos` e `servicoHist`).
+function rvLista(v) {
+  var h = v && v.recibos;
+  if (!h) return [];
+  if (Object.prototype.toString.call(h) === '[object Array]') {
+    return h.filter(function (x) { return !!x; });
+  }
+  if (typeof h !== 'object') return [];
+  return Object.keys(h).sort(function (a, b) { return Number(a) - Number(b); })
+    .map(function (k) { return h[k]; }).filter(function (x) { return !!x; });
+}
+
+function rvPago(v) {
+  var t = 0;
+  rvLista(v).forEach(function (r) { t += rvNum(r && r.valor); });
+  return Math.round(t * 100) / 100;
+}
+function rvSaldo(v) {
+  var s = rvNum(v && v.valor) - rvPago(v);
+  return Math.round(s * 100) / 100;
+}
+
+// Numero determinístico: deriva do numero da VENDA e da ordem do recibo.
+// ⚠️ Nao e sequencial global de proposito — sequencial exigiria varrer as
+// vendas e colidiria se duas pessoas emitissem ao mesmo tempo. Assim o
+// numero nunca colide e ja diz de que venda e.
+function rvNumero(v) {
+  var num = String((v && v.numero) || '');
+  var base = num.replace(/^VD-?/i, '') || String((v && v.id) || '');
+  // 🔴 3 numeros de venda estao REPETIDOS no banco (VD-2026-007/008/009,
+  // achado de 19/09) e sao vendas de clientes e carros diferentes. Sem
+  // isto, os dois recibos sairiam com o mesmo numero.
+  if (num) {
+    var iguais = (DB.vendas || []).filter(function (x) {
+      return x && String(x.numero || '') === num;
+    }).length;
+    if (iguais > 1) base += '-' + (v && v.id);
+  }
+  return 'RV-' + base + '/' + (rvLista(v).length + 1);
+}
+
+// valor por extenso — portado do `_mltExtenso` da LOKA, que ja passou por
+// 11 casos de teste (08/10). Um recibo sem extenso e contestavel.
+function rvExtenso(n) {
+  n = Math.round((Number(n) || 0) * 100) / 100;
+  var U = ['zero', 'um', 'dois', 'três', 'quatro', 'cinco', 'seis', 'sete', 'oito', 'nove', 'dez',
+    'onze', 'doze', 'treze', 'quatorze', 'quinze', 'dezesseis', 'dezessete', 'dezoito', 'dezenove'];
+  var D = ['', '', 'vinte', 'trinta', 'quarenta', 'cinquenta', 'sessenta', 'setenta', 'oitenta', 'noventa'];
+  var C = ['', 'cento', 'duzentos', 'trezentos', 'quatrocentos', 'quinhentos', 'seiscentos', 'setecentos', 'oitocentos', 'novecentos'];
+  function ate999(v) {
+    if (v === 0) return '';
+    if (v === 100) return 'cem';
+    var t = '', c = Math.floor(v / 100), r = v % 100;
+    if (c) t = C[c];
+    if (r) {
+      var meio = r < 20 ? U[r] : D[Math.floor(r / 10)] + (r % 10 ? ' e ' + U[r % 10] : '');
+      t = t ? t + ' e ' + meio : meio;
+    }
+    return t;
+  }
+  function inteiro(v) {
+    if (v === 0) return 'zero';
+    var partes = [], escala = [['bilhão', 'bilhões', 1e9], ['milhão', 'milhões', 1e6], ['mil', 'mil', 1e3]];
+    for (var i = 0; i < escala.length; i++) {
+      var div = escala[i][2], q = Math.floor(v / div);
+      if (q) {
+        var pref = (div === 1e3 && q === 1) ? '' : ate999(q) + ' ';
+        partes.push(pref + (q === 1 ? escala[i][0] : escala[i][1]));
+        v -= q * div;
+      }
+    }
+    if (v) partes.push(ate999(v));
+    if (partes.length > 1) {
+      var ult = partes.pop();
+      var resto = Math.round(n) % 1000;
+      return partes.join(', ') + ((resto && (resto < 100 || resto % 100 === 0)) ? ' e ' : ' ') + ult;
+    }
+    return partes[0] || 'zero';
+  }
+  var reais = Math.floor(n), cent = Math.round((n - reais) * 100);
+  var txt = inteiro(reais) + (reais === 1 ? ' real' : ' reais');
+  if (cent) txt += ' e ' + inteiro(cent) + (cent === 1 ? ' centavo' : ' centavos');
+  return txt;
+}
+
+// o title do botao na linha: diz o que ja foi recebido sem custar coluna
+function rvTituloBotao(v) {
+  var l = rvLista(v);
+  if (!l.length) return 'Emitir recibo de pagamento';
+  var falta = rvSaldo(v);
+  return l.length + ' recibo(s) \u00b7 recebido R$ ' + brl(rvPago(v)) +
+    (falta > 0.004 ? ' \u00b7 falta R$ ' + brl(falta)
+      : (falta < -0.004 ? ' \u00b7 R$ ' + brl(-falta) + ' acima do valor do ve\u00edculo'
+        : ' \u00b7 quitado'));
+}
+
+function rvQuem() {
+  var s = (typeof getSession === 'function' && getSession()) || {};
+  return s.nome || s.usuario || '-';
+}
+
+// ── o modal ─────────────────────────────────────────────────────────
+var _rvVid = null;
+
+function rvAbrir(vid) {
+  var v = DB.vendas.filter(function (x) { return x.id == vid; })[0];
+  if (!v) { toast('Venda nao encontrada', 'err'); return; }
+  _rvVid = v.id;
+  var cl = (typeof cObj === 'function' && cObj(v.cliente_id)) || {};
+  var ve = (typeof vObj === 'function' && vObj(v.veiculo_id)) || {};
+  var total = rvNum(v.valor), pago = rvPago(v), saldo = rvSaldo(v);
+  // a referencia mais provavel: primeiro pagamento e sinal/entrada
+  var refPad = rvLista(v).length ? 'Parcela' : 'Sinal / entrada';
+
+  om('<div class="mt2"><span>Recibo de pagamento</span>' +
+    '<button class="btn bg2 bsm" onclick="cm()">X</button></div>' +
+    '<div class="ib">&#129534; Preencha o valor que o cliente <b>pagou agora</b>. O recibo fica registrado nesta venda, ' +
+    'então dá para tirar 2ª via depois.</div>' +
+    '<div class="sg" style="grid-template-columns:repeat(3,1fr)">' +
+    '<div class="card" style="padding:14px 18px"><div class="sl">Valor da venda</div><div class="sv">R$ ' + brl(total) + '</div></div>' +
+    '<div class="card" style="padding:14px 18px"><div class="sl">Já recebido</div><div class="sv">R$ ' + brl(pago) + '</div></div>' +
+    '<div class="card" style="padding:14px 18px"><div class="sl">' + (saldo < 0 ? 'Recebido a mais' : 'Falta receber') + '</div>' +
+    '<div class="sv">R$ ' + brl(Math.abs(saldo)) + '</div></div></div>' +
+    '<div class="fr mt2"><div class="fg full"><label>Cliente</label>' +
+    '<input value="' + rvEsc(cl.nome || '—') + '" readonly></div></div>' +
+    '<div class="fr"><div class="fg full"><label>Veículo</label>' +
+    '<input value="' + rvEsc(((ve.marca || '') + ' ' + (ve.modelo || '') + (ve.placa ? ' — ' + ve.placa : '')).trim() || '—') + '" readonly></div></div>' +
+    '<div class="fr"><div class="fg"><label>Valor recebido agora *</label>' +
+    '<input id="rvValor" placeholder="0,00" oninput="rvPrever()"></div>' +
+    '<div class="fg"><label>Data *</label><input type="date" id="rvData" value="' + rvHoje() + '"></div></div>' +
+    '<div class="fr"><div class="fg"><label>Forma de pagamento *</label><select id="rvForma">' +
+    RV_FORMAS.map(function (f) { return '<option value="' + rvEsc(f) + '">' + rvEsc(f) + '</option>'; }).join('') +
+    '</select></div>' +
+    '<div class="fg"><label>Referente a *</label><select id="rvRef">' +
+    RV_REFS.map(function (f) {
+      return '<option value="' + rvEsc(f) + '"' + (f === refPad ? ' selected' : '') + '>' + rvEsc(f) + '</option>';
+    }).join('') + '</select></div></div>' +
+    '<div class="fr"><div class="fg full"><label>Observação (sai no recibo)</label>' +
+    '<input id="rvObs" placeholder="opcional"></div></div>' +
+    '<div class="fr"><div class="fg"><label>Vias</label><select id="rvVias">' +
+    '<option value="2" selected>2 (cliente e loja)</option><option value="1">1</option></select></div>' +
+    '<div class="fg"><label>Número</label><input id="rvNumEd" value="' + rvEsc(rvNumero(v)) + '"></div></div>' +
+    '<div id="rvAviso" style="min-height:18px;line-height:18px;font-size:12px;margin:4px 0"></div>' +
+    '<div id="rvEmitidos">' + rvRenderEmitidos(v) + '</div>' +
+    '<div class="mf"><button class="btn bg2" onclick="cm()">Fechar</button>' +
+    '<button class="btn bs" id="rvBtn" onclick="rvSalvar()">&#129534; Registrar e imprimir</button></div>', 1);
+}
+
+// avisa ao vivo quando o valor passa do que falta — ⚠️ NAO bloqueia:
+// medido nos obs reais que transferencia, emplacamento e IPVA sao cobrados
+// ALEM do valor do veiculo em muitas vendas
+function rvPrever() {
+  var el = document.getElementById('rvAviso');
+  if (!el) return;
+  var v = DB.vendas.filter(function (x) { return x.id == _rvVid; })[0];
+  if (!v) { el.innerHTML = ''; return; }
+  var campo = document.getElementById('rvValor');
+  var txt = campo ? campo.value : '';
+  if (!rvTemDigito(txt)) { el.innerHTML = ''; return; }
+  var n = rvNum(txt), falta = rvSaldo(v);
+  if (n > falta + 0.004) {
+    el.innerHTML = '<span style="color:var(--danger)">&#9888; R$ ' + brl(n - falta) +
+      ' acima do que falta receber desta venda. Pode ser transfer&ecirc;ncia, emplacamento ou IPVA cobrados &agrave; parte &mdash; o recibo sai assim mesmo.</span>';
+  } else if (Math.abs(n - falta) < 0.005 && falta > 0) {
+    el.innerHTML = '<span style="color:var(--success)">&#10003; Com este pagamento a venda fica <b>quitada</b>.</span>';
+  } else {
+    el.innerHTML = '<span style="color:var(--text-muted)">Ap&oacute;s este recibo faltariam R$ ' + brl(falta - n) + '.</span>';
+  }
+}
+
+function rvRenderEmitidos(v) {
+  var l = rvLista(v);
+  if (!l.length) {
+    return '<div class="empty" style="padding:14px"><span class="ei">&#129534;</span>' +
+      'Nenhum recibo emitido para esta venda ainda.</div>';
+  }
+  return '<div style="margin-top:10px"><label>Recibos já emitidos (' + l.length + ')</label>' +
+    '<div class="tw"><table><thead><tr style="background:var(--surface)">' +
+    '<th>Número</th><th>Data</th><th>Valor</th><th>Forma</th><th>Referente a</th><th>Emitido por</th><th>Ações</th>' +
+    '</tr></thead><tbody>' +
+    l.map(function (r, i) {
+      return '<tr>' +
+        '<td><div style="font-family:monospace">' + rvEsc(r.numero || '—') + '</div></td>' +
+        '<td>' + rvDataBR(r.data) + '</td>' +
+        '<td><div style="font-weight:700">R$ ' + brl(rvNum(r.valor)) + '</div></td>' +
+        '<td>' + rvEsc(r.forma || '—') + '</td>' +
+        '<td>' + rvEsc(r.ref || '—') + '</td>' +
+        '<td><div style="font-size:11px;color:var(--text-muted)">' + rvEsc(r.quem || '—') + '</div></td>' +
+        '<td><div class="acts">' +
+        '<button class="btn bi bsm" onclick="rvSegundaVia(' + i + ')" title="2&ordf; via">&#128424;</button>' +
+        (podeAcao('excluir') ? '<button class="btn bd bsm" onclick="rvExcluir(' + i + ')" title="Excluir recibo">&#128465;</button>' : '') +
+        '</div></td></tr>';
+    }).join('') + '</tbody></table></div></div>';
+}
+
+function rvSalvar() {
+  var v = DB.vendas.filter(function (x) { return x.id == _rvVid; })[0];
+  if (!v) { toast('Venda nao encontrada', 'err'); return; }
+  var elV = document.getElementById('rvValor'), elD = document.getElementById('rvData');
+  var bruto = elV ? elV.value : '', data = elD ? String(elD.value || '').slice(0, 10) : '';
+  // 🔴 digito antes de valor: rvNum('abc') devolve 0, e um recibo de
+  // R$ 0,00 entregue ao cliente e pior do que nenhum
+  if (!rvTemDigito(bruto)) { toast('Informe o valor recebido', 'err'); return; }
+  var val = rvNum(bruto);
+  if (val <= 0) { toast('O valor recebido tem de ser maior que zero', 'err'); return; }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) { toast('Informe a data do pagamento', 'err'); return; }
+
+  var elF = document.getElementById('rvForma'), elR = document.getElementById('rvRef');
+  var elO = document.getElementById('rvObs'), elN = document.getElementById('rvNumEd');
+  var elVi = document.getElementById('rvVias');
+  var num = String((elN && elN.value) || '').trim() || rvNumero(v);
+  var cl = (typeof cObj === 'function' && cObj(v.cliente_id)) || {};
+  var ve = (typeof vObj === 'function' && vObj(v.veiculo_id)) || {};
+
+  // 🔴 COPIA CONGELADA do cliente e do veiculo. Documento emitido e
+  // documento emitido: se o cadastro mudar de endereco amanha, a 2a via
+  // nao pode sair diferente do papel que o cliente tem na mao.
+  // (regra do recibo de multa da LOKA, 08/10)
+  var rec = {
+    numero: num,
+    data: data,
+    valor: val,
+    forma: String((elF && elF.value) || ''),
+    ref: String((elR && elR.value) || ''),
+    obs: String((elO && elO.value) || '').trim(),
+    quem: rvQuem(),
+    criadoEm: new Date().toISOString(),
+    cliNome: cl.nome || '',
+    cliDoc: cl.cpf || '',
+    cliEnd: [cl.endereco, cl.cidade, cl.uf].filter(function (x) { return !!x; }).join(' - '),
+    veic: ((ve.marca || '') + ' ' + (ve.modelo || '') + (ve.versao ? ' ' + ve.versao : '')).trim(),
+    placa: ve.placa || '',
+    anoVeic: String(ve.ano || ''),
+    vendaNum: String(v.numero || ''),
+    vendaValor: rvNum(v.valor),
+    pagoAntes: rvPago(v)
+  };
+
+  var antes = v.recibos;
+  var nova = rvLista(v).concat([rec]);
+  v.recibos = nova;
+  var btn = document.getElementById('rvBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Gravando...'; }
+
+  // 🔴 o callback do _gravarTudo recebe o ARRAY de erros, nao um booleano
+  // (firebase-shared.js:390). Com `function(ok){ if(!ok) }` a falha nunca
+  // seria vista: array vazio e array com erro sao os dois truthy.
+  _gravarTudo([{ col: 'vendas', obj: v }], function (erros) {
+    if (btn) { btn.disabled = false; btn.innerHTML = '&#129534; Registrar e imprimir'; }
+    if (erros && erros.length) {
+      v.recibos = antes;
+      toast('NAO foi salvo -- ' + erros.join(', '), 'err', 8000);
+      return;   // o modal fica aberto: nada do que foi digitado se perde
+    }
+    sDB();
+    var vias = Number((elVi && elVi.value) || 2) === 1 ? 1 : 2;
+    // 🔴 grava ANTES de abrir o documento: nao se entrega ao cliente um
+    // recibo que o sistema nao conhece (regra do recibo de multa, v106)
+    rvImprimir(rec, vias);
+    var el = document.getElementById('rvEmitidos');
+    if (el) el.innerHTML = rvRenderEmitidos(v);
+    if (elV) elV.value = '';
+    rvPrever();
+    if (typeof render === 'function') render();
+    toast('Recibo ' + num + ' registrado', 'ok');
+  });
+}
+
+function rvSegundaVia(i) {
+  var v = DB.vendas.filter(function (x) { return x.id == _rvVid; })[0];
+  if (!v) { toast('Venda nao encontrada', 'err'); return; }
+  var r = rvLista(v)[i];
+  if (!r) { toast('Recibo nao encontrado', 'err'); return; }
+  rvImprimir(r, 1, true);
+}
+
+function rvExcluir(i) {
+  var v = DB.vendas.filter(function (x) { return x.id == _rvVid; })[0];
+  if (!v) { toast('Venda nao encontrada', 'err'); return; }
+  var l = rvLista(v), r = l[i];
+  if (!r) { toast('Recibo nao encontrado', 'err'); return; }
+  if (!confirm('Excluir o recibo ' + (r.numero || '') + ' de R$ ' + brl(rvNum(r.valor)) + '?\n\n' +
+    'O valor deixa de contar como recebido nesta venda.\n' +
+    'O banco nao tem lixeira: isto nao pode ser desfeito.\n' +
+    'O papel que ja foi entregue ao cliente continua existindo.')) return;
+  var antes = v.recibos;
+  var nova = l.slice();
+  nova.splice(i, 1);
+  v.recibos = nova;
+  _gravarTudo([{ col: 'vendas', obj: v }], function (erros) {
+    if (erros && erros.length) {
+      v.recibos = antes;
+      toast('NAO foi excluido -- ' + erros.join(', '), 'err', 8000);
+      return;
+    }
+    sDB();
+    var el = document.getElementById('rvEmitidos');
+    if (el) el.innerHTML = rvRenderEmitidos(v);
+    rvAtualizarCartoes();
+    rvPrever();
+    if (typeof render === 'function') render();
+    toast('Recibo excluido', 'ok');
+  });
+}
+
+function rvAtualizarCartoes() {
+  var v = DB.vendas.filter(function (x) { return x.id == _rvVid; })[0];
+  if (!v) return;
+  var alvos = document.querySelectorAll('#mdc .sg .sv');
+  if (!alvos || alvos.length < 3) return;
+  var saldo = rvSaldo(v);
+  alvos[1].textContent = 'R$ ' + brl(rvPago(v));
+  alvos[2].textContent = 'R$ ' + brl(Math.abs(saldo));
+}
+
+// ── o documento ─────────────────────────────────────────────────────
+function rvImprimir(r, vias, segundaVia) {
+  var html = '';
+  var n = vias === 1 ? 1 : 2;
+  for (var i = 0; i < n; i++) {
+    html += gerarRecibo_html(r, i === 0 ? (n === 2 ? 'VIA DO CLIENTE' : '') : 'VIA DA LOJA', segundaVia, i === n - 1);
+  }
+  impWin(html, 'Recibo ' + (r.numero || ''));
+}
+
+function gerarRecibo_html(r, rotuloVia, segundaVia, ultima) {
+  var e = DB.empresa || {};
+  var val = rvNum(r.valor);
+  var totalVenda = rvNum(r.vendaValor);
+  var pagoAcum = rvNum(r.pagoAntes) + val;
+  var falta = Math.round((totalVenda - pagoAcum) * 100) / 100;
+  var dt = rvDataBR(r.data);
+
+  var html = '<div class="page"' + (ultima ? ' style="page-break-after:auto"' : '') + '>';
+  html += docHeader('RECIBO DE PAGAMENTO', rvEsc(r.numero || ''), dt);
+  if (rotuloVia || segundaVia) {
+    html += '<div class="small" style="text-align:right;margin-bottom:4pt">' +
+      (rotuloVia ? '<strong>' + rotuloVia + '</strong>' : '') +
+      (segundaVia ? (rotuloVia ? ' &middot; ' : '') + '<strong>2ª VIA</strong> (emitida em ' +
+        new Date().toLocaleDateString('pt-BR') + ')' : '') + '</div>';
+  }
+
+  // o valor em destaque e por extenso
+  html += '<div class="secao" style="text-align:center;border:1.2pt solid #000;padding:6pt;margin-bottom:6pt">' +
+    '<div class="small" style="text-transform:uppercase;letter-spacing:.5pt">Valor recebido</div>' +
+    '<div style="font-size:17pt;font-weight:bold;margin:2pt 0">R$ ' + brl(val) + '</div>' +
+    '<div class="small">(' + rvEsc(rvExtenso(val)) + ')</div></div>';
+
+  html += '<p class="j">Recebi(emos) de <strong>' + rvEsc(r.cliNome || '—') + '</strong>' +
+    (r.cliDoc ? ', CPF/CNPJ <strong>' + rvEsc(r.cliDoc) + '</strong>' : '') +
+    (r.cliEnd ? ', residente em ' + rvEsc(r.cliEnd) : '') +
+    ', a importância de <strong>R$ ' + brl(val) + '</strong> (' + rvEsc(rvExtenso(val)) + '), ' +
+    'por meio de <strong>' + rvEsc(r.forma || '—') + '</strong>, ' +
+    'referente a <strong>' + rvEsc(r.ref || '—') + '</strong> ' +
+    'da venda do veículo abaixo descrito.</p>';
+
+  html += '<div class="secao"><div class="secao-titulo">Veículo</div><div class="grid3">' +
+    '<div class="campo"><label>Veículo</label><span>' + rvEsc(r.veic || '—') + '</span></div>' +
+    '<div class="campo"><label>Placa</label><span>' + rvEsc(r.placa || '—') + '</span></div>' +
+    '<div class="campo"><label>Ano</label><span>' + rvEsc(r.anoVeic || '—') + '</span></div>' +
+    '</div></div>';
+
+  html += '<div class="secao"><div class="secao-titulo">Composição</div><div class="grid3">' +
+    '<div class="campo"><label>Venda nº</label><span>' + rvEsc(r.vendaNum || '—') + '</span></div>' +
+    '<div class="campo"><label>Valor da venda</label><span>R$ ' + brl(totalVenda) + '</span></div>' +
+    '<div class="campo"><label>Total recebido até aqui</label><span>R$ ' + brl(pagoAcum) + '</span></div>' +
+    '</div>';
+  // 🔴 o saldo e DITO. Recibo que nao diz quanto falta deixa as duas partes
+  // sem referencia do que ainda se deve.
+  if (falta > 0.004) {
+    html += '<p class="j small" style="margin-top:3pt">Saldo remanescente desta venda nesta data: ' +
+      '<strong>R$ ' + brl(falta) + '</strong>.</p>';
+  } else if (falta < -0.004) {
+    html += '<p class="j small" style="margin-top:3pt">Recebido além do valor do veículo: ' +
+      '<strong>R$ ' + brl(-falta) + '</strong> (valores cobrados à parte, como transferência, ' +
+      'emplacamento ou licenciamento).</p>';
+  } else {
+    html += '<p class="j small" style="margin-top:3pt"><strong>Valor do veículo integralmente ' +
+      'recebido nesta data.</strong></p>';
+  }
+  html += '</div>';
+
+  if (r.obs) {
+    html += '<div class="secao"><div class="secao-titulo">Observação</div>' +
+      '<p class="j">' + rvEsc(r.obs) + '</p></div>';
+  }
+
+  // 🔴 A quitacao e RESSALVADA. Um recibo que desse quitacao geral da venda
+  // ao receber uma parcela seria um problema juridico, nao um detalhe de
+  // redacao (mesma decisao do recibo de pagamento da LOKA, v128).
+  html += '<p class="j">Para clareza, firmo(amos) o presente recibo, dando quitação ' +
+    '<strong>exclusivamente quanto ao valor e à finalidade acima discriminados</strong>, ' +
+    'permanecendo inalteradas as demais obrigações contratuais das partes.</p>';
+
+  html += '<div class="local">' + rvEsc(e.cidade || 'Feira de Santana') + ' - ' +
+    rvEsc(e.uf || 'BA') + ', ' + dt + '.</div>';
+
+  html += '<div class="assinaturas"><div class="assin"><div class="assin-linha"></div>' +
+    '<div class="assin-nome">' + rvEsc(e.nome || 'AUTO MAIS COMERCIO E CORRETORA DE VEICULOS LTDA') + '</div>' +
+    '<div class="assin-cargo">CNPJ: ' + rvEsc(e.cnpj || '05.622.137/0001-00') + ' &middot; RECEBEDOR</div></div>' +
+    '<div class="assin"><div class="assin-linha"></div>' +
+    '<div class="assin-nome">' + rvEsc(r.cliNome || '') + '</div>' +
+    '<div class="assin-cargo">PAGADOR(A)' + (r.cliDoc ? ' - CPF/CNPJ: ' + rvEsc(r.cliDoc) : '') + '</div></div></div>';
+
+  html += '<div class="small" style="margin-top:6pt;color:#444">Emitido por ' + rvEsc(r.quem || '-') +
+    '. Este documento comprova o pagamento aqui descrito e não substitui documento fiscal.</div>';
+
+  html += '</div>';
+  return html;
 }
 
 checkAuth(function() {
