@@ -1213,6 +1213,10 @@ function rvExtenso(n) {
     return t;
   }
   function inteiro(v) {
+    // 🔴 o separador da ultima parte sai do PROPRIO argumento, nao do `n`
+    // externo: com `Math.round(n)`, 1500,55 virava 1501, o resto dava 501 e
+    // o " e " nao entrava — "mil quinhentos" em vez de "mil e quinhentos".
+    var orig = v;
     if (v === 0) return 'zero';
     var partes = [], escala = [['bilhão', 'bilhões', 1e9], ['milhão', 'milhões', 1e6], ['mil', 'mil', 1e3]];
     for (var i = 0; i < escala.length; i++) {
@@ -1226,7 +1230,7 @@ function rvExtenso(n) {
     if (v) partes.push(ate999(v));
     if (partes.length > 1) {
       var ult = partes.pop();
-      var resto = Math.round(n) % 1000;
+      var resto = orig % 1000;
       return partes.join(', ') + ((resto && (resto < 100 || resto % 100 === 0)) ? ' e ' : ' ') + ult;
     }
     return partes[0] || 'zero';
